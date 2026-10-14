@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ws_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Subtle Spinning Progress Bar (Tinted to your accent) -->
+    <ProgressBar
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:indeterminate="true"
+        android:indeterminateTint="@color/ws_accent"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Minimalistic Loading Message -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Loading weekly schedule..."
+        android:textColor="@color/ws_text"
+        android:textSize="14sp"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="6dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="// analyzing class &amp; shift sync"
+        android:textColor="@color/ws_muted"
+        android:textSize="11sp"
+        android:fontFamily="monospace" />
+
+</LinearLayout>

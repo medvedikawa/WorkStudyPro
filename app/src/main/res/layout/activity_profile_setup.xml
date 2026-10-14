@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ws_bg"
+    android:fillViewport="true"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <ImageButton
+            android:id="@+id/btnReturnBack"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/back_arrow"
+            app:tint="@color/ws_accent"
+            android:contentDescription="Return back"
+            android:scaleType="centerInside" />
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create Your Profile"
+            android:paddingTop="1dp"
+            android:textColor="@color/ws_text"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Set up your working student profile to begin tracking."
+            android:textColor="@color/ws_muted"
+            android:textSize="12sp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Avatar / Media Upload Container -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_input"
+            android:padding="20dp"
+            android:layout_marginBottom="24dp">
+
+
+            <Button
+                android:id="@+id/btnSelectAlbumMedia"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📷\nChoose Photo"
+                android:textColor="@color/ws_accent2"
+                android:backgroundTint="@color/ws_surface2"
+                android:textSize="17sp" />
+        </LinearLayout>
+
+        <!-- Full Name Input -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FULL NAME"
+            android:textColor="@color/ws_text2"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etProfileName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="e.g. Jelzy De Castro"
+            android:textColorHint="@color/ws_muted"
+            android:textColor="@color/ws_text"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:inputType="textPersonName"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Program / Course Input -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PROGRAM / COURSE"
+            android:textColor="@color/ws_text2"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etProfileCourse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="e.g. BS Information Technology"
+            android:textColorHint="@color/ws_muted"
+            android:textColor="@color/ws_text"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:inputType="text"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Complete Setup Button -->
+        <Button
+            android:id="@+id/btnCompleteSetup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/ws_accent"
+            android:padding="12dp" />
+
+    </LinearLayout>
+</ScrollView>

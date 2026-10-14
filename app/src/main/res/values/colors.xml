@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ws_bg">#0d0f14</color>
+    <color name="ws_surface">#14171f</color>
+    <color name="ws_surface2">#1c2030</color>
+    <color name="ws_border">#252d42</color>
+    <color name="ws_accent">#ff6b47</color>
+    <color name="ws_accent2">#7eb8f7</color>
+    <color name="ws_text">#dce4f0</color>
+    <color name="ws_text2">#a0aec0</color>
+    <color name="ws_muted">#546280</color>
+    <color name="ws_fire">#2E1619</color>
+    <color name="ws_ember">#8B2628</color>
+</resources>

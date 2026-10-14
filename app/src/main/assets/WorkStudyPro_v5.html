@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkStudyPro — Work-Study Conflict & Load Monitoring System</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #14171f;
+    --surface2: #1c2030;
+    --surface3: #222840;
+    --border: #252d42;
+    --accent: #ff6b47;       /* warm coral-orange — the main pop */
+    --accent2: #7eb8f7;      /* muted sky blue */
+    --accent3: #f5c842;      /* amber */
+    --danger: #f26b6b;
+    --success: #52c97a;
+    --text: #dce4f0;
+    --text2: #a0aec0;
+    --muted: #546280;
+    --card-glow: rgba(255,107,71,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── LOGIN SCREEN ─── */
+  #loginScreen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    z-index: 9999;
+    overflow: hidden;
+  }
+
+  .login-left {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    position: relative;
+  }
+
+  .login-bg-art {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 30% 60%, rgba(255,107,71,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 70% 30%, rgba(126,184,247,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* subtle grid lines */
+  .login-bg-art::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,107,71,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,107,71,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .login-box {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    z-index: 2;
+  }
+
+  .login-logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .login-logo span { color: var(--accent); }
+
+  .login-tagline {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 36px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .login-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .login-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 16px;
+  }
+  .login-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255,107,71,0.12);
+  }
+
+  .login-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+    font-size: 0.72rem;
+  }
+  .login-check { display: flex; align-items: center; gap: 6px; color: var(--text2); cursor: pointer; }
+  .login-forgot { color: var(--accent); cursor: pointer; }
+  .login-forgot:hover { text-decoration: underline; }
+
+  .btn-login {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .btn-login:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+  .login-or {
+    display: flex; align-items: center; gap: 12px;
+    margin: 18px 0;
+    font-size: 0.68rem; color: var(--muted);
+  }
+  .login-or::before, .login-or::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .btn-demo {
+    width: 100%;
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.84rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-demo:hover { border-color: var(--accent); color: var(--accent); }
+
+  .login-footer {
+    margin-top: 28px;
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .login-footer a { color: var(--accent); cursor: pointer; }
+
+  .login-right {
+    width: 420px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-right-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(126,184,247,0.05) 0%, transparent 70%);
+  }
+
+  .login-preview {
+    position: relative; z-index: 2; width: 100%;
+  }
+
+  .preview-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .preview-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .preview-stat-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 12px;
+  }
+  .preview-stat {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--border);
+  }
+  .preview-stat-val {
+    font-size: 1.5rem; font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+  }
+  .preview-stat-lbl { font-size: 0.6rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
+
+  .preview-bar-row { margin-bottom: 8px; }
+  .preview-bar-label { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text2); margin-bottom: 4px; }
+  .preview-track { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .preview-fill { height: 100%; border-radius: 99px; }
+
+  .preview-alert {
+    background: rgba(242,107,107,0.06);
+    border: 1px solid rgba(242,107,107,0.25);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.68rem;
+    color: var(--danger);
+    display: flex; gap: 8px; align-items: center;
+  }
+
+  /* ─── APP LAYOUT ─── */
+  #app { display: none; }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 230px;
+    min-width: 230px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    z-index: 100;
+    overflow-y: auto;
+  }
+
+  .logo-area {
+    padding: 22px 18px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-text {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .logo-text span { color: var(--accent); }
+  .logo-sub { font-size: 0.6rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1.2px; font-family: 'JetBrains Mono', monospace; }
+
+  .user-badge {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #ff9a6c);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.72rem; color: #fff;
+    flex-shrink: 0;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 0.76rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 0.6rem; color: var(--muted); margin-top: 1px; }
+  .user-status {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--success); flex-shrink: 0;
+    box-shadow: 0 0 6px var(--success);
+  }
+
+  .nav { padding: 10px 0; flex: 1; }
+  .nav-label { font-size: 0.56rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); padding: 10px 18px 4px; font-family: 'JetBrains Mono', monospace; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 18px;
+    font-size: 0.78rem; font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    position: relative;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(255,107,71,0.07); }
+  .nav-item .icon { font-size: 0.95rem; width: 18px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--danger);
+    color: #fff;
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 99px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .sidebar-footer {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 8px;
+  }
+  .sidebar-footer-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 7px; border-radius: 7px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.68rem; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sidebar-footer-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── MAIN ─── */
+  .main { margin-left: 230px; flex: 1; display: flex; flex-direction: column; }
+
+  .topbar {
+    padding: 14px 26px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .page-title { font-size: 1rem; font-weight: 700; }
+  .page-sub { font-size: 0.67rem; color: var(--muted); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .badge-row { display: flex; gap: 8px; }
+  .badge {
+    font-size: 0.6rem; font-weight: 600; padding: 3px 9px; border-radius: 99px;
+    border: 1px solid; text-transform: uppercase; letter-spacing: 0.5px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .badge-orange { border-color: var(--accent); color: var(--accent); background: rgba(255,107,71,0.09); }
+  .badge-blue { border-color: var(--accent2); color: var(--accent2); background: rgba(126,184,247,0.09); }
+  .badge-yellow { border-color: var(--accent3); color: var(--accent3); background: rgba(245,200,66,0.09); }
+  .badge-red { border-color: var(--danger); color: var(--danger); background: rgba(242,107,107,0.09); }
+  .badge-green { border-color: var(--success); color: var(--success); background: rgba(82,201,122,0.09); }
+
+  .notif-btn {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 0.9rem; position: relative;
+    transition: border-color 0.15s;
+  }
+  .notif-btn:hover { border-color: var(--accent); }
+  .notif-dot {
+    position: absolute; top: 4px; right: 4px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--danger); border: 1.5px solid var(--surface);
+  }
+
+  .content { padding: 22px 26px; flex: 1; }
+
+  /* ─── PAGES ─── */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeUp 0.2s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .card-title {
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); margin-bottom: 14px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .gap14 { display: flex; flex-direction: column; gap: 14px; }
+  .mb12 { margin-bottom: 12px; }
+  .mb16 { margin-bottom: 16px; }
+  .mb20 { margin-bottom: 20px; }
+
+  /* ─── STAT CARDS ─── */
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--card-accent, var(--accent)); }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--card-accent, var(--accent));
+  }
+  .stat-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+  .stat-value { font-size: 1.9rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+  .stat-sub { font-size: 0.65rem; color: var(--muted); margin-top: 6px; }
+  .stat-icon { position: absolute; right: 14px; top: 14px; font-size: 1.3rem; opacity: 0.2; }
+
+  /* ─── CHART SECTION ─── */
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* ─── GAUGE ─── */
+  .gauge-wrap { text-align: center; padding: 10px 0 4px; }
+  .gauge-svg { width: 160px; height: 90px; overflow: visible; }
+
+  /* ─── PROGRESS ─── */
+  .progress-row { margin-bottom: 12px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 5px; }
+  .progress-label span:first-child { font-weight: 500; }
+  .progress-label span:last-child { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; }
+  .progress-track { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+
+  /* ─── TABLE ─── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.74rem; }
+  th { text-align: left; padding: 8px 10px; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+  td { padding: 9px 10px; border-bottom: 1px solid rgba(37,45,66,0.6); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* ─── ALERTS ─── */
+  .alert {
+    border-radius: 9px;
+    padding: 13px 14px;
+    margin-bottom: 10px;
+    border: 1px solid;
+    display: flex;
+    gap: 11px;
+    align-items: flex-start;
+  }
+  .alert-danger { border-color: rgba(242,107,107,0.3); background: rgba(242,107,107,0.05); }
+  .alert-warn { border-color: rgba(245,200,66,0.3); background: rgba(245,200,66,0.05); }
+  .alert-info { border-color: rgba(126,184,247,0.3); background: rgba(126,184,247,0.05); }
+  .alert-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+  .alert-title { font-size: 0.76rem; font-weight: 600; }
+  .alert-desc { font-size: 0.66rem; color: var(--text2); margin-top: 4px; line-height: 1.6; }
+
+  /* ─── PRIORITY LIST ─── */
+  .priority-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 13px;
+    border-radius: 9px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    transition: border-color 0.15s;
+  }
+  .priority-item:hover { border-color: var(--accent); }
+  .priority-rank {
+    width: 26px; height: 26px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+  }
+  .rank-1 { background: rgba(242,107,107,0.15); color: var(--danger); }
+  .rank-2 { background: rgba(255,107,71,0.15); color: var(--accent); }
+  .rank-3 { background: rgba(245,200,66,0.15); color: var(--accent3); }
+  .rank-other { background: var(--border); color: var(--muted); }
+  .priority-info { flex: 1; min-width: 0; }
+  .priority-task { font-size: 0.77rem; font-weight: 600; }
+  .priority-meta { font-size: 0.62rem; color: var(--muted); margin-top: 3px; }
+  .priority-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.76rem; font-weight: 700;
+    padding: 3px 8px; border-radius: 6px;
+    background: rgba(255,107,71,0.1); color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ─── SCHEDULE GRID ─── */
+  .week-grid { display: grid; grid-template-columns: 54px repeat(7, 1fr); gap: 1px; background: var(--border); border-radius: 10px; overflow: hidden; font-size: 0.62rem; }
+  .week-cell { background: var(--surface2); padding: 5px 3px; min-height: 34px; text-align: center; position: relative; }
+  .week-header { background: var(--surface); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-size: 0.58rem; font-family: 'JetBrains Mono', monospace; }
+  .week-time { background: var(--surface); color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; display: flex; align-items: center; justify-content: center; }
+  .sched-class { background: rgba(126,184,247,0.18); color: var(--accent2); border-left: 2px solid var(--accent2); border-radius: 3px; padding: 2px 4px; margin: 1px; font-size: 0.56rem; text-align: left; font-weight: 600; }
+  .sched-work { background: rgba(255,107,71,0.14); color: var(--accent); border-left: 2px solid var(--accent); border-radius: 3px; padding: 2px 4px; margin: 1px; font-size: 0.56rem; text-align: left; font-weight: 600; }
+  .sched-conflict { background: rgba(242,107,107,0.22); color: var(--danger); border-left: 2px solid var(--danger); border-radius: 3px; padding: 2px 4px; margin: 1px; font-size: 0.56rem; text-align: left; font-weight: 600; animation: pulseFade 1.8s infinite; }
+  @keyframes pulseFade { 0%,100% { opacity:1; } 50% { opacity:0.55; } }
+
+  /* ─── FORMS ─── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 0.65rem; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255,107,71,0.1);
+  }
+  select option { background: var(--surface2); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'Outfit', sans-serif; font-size: 0.76rem; font-weight: 600;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(242,107,107,0.09); border: 1px solid rgba(242,107,107,0.3); color: var(--danger); }
+  .btn-danger:hover { background: rgba(242,107,107,0.18); }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 0.86rem; font-weight: 700; }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.63rem; margin-top: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* ─── TOAST ─── */
+  .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 0.74rem;
+    max-width: 300px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    animation: slideIn 0.25s ease;
+    display: flex; align-items: center; gap: 8px;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
+  .toast.success { border-color: rgba(82,201,122,0.4); }
+  .toast.error { border-color: rgba(242,107,107,0.4); }
+  .toast.warning { border-color: rgba(245,200,66,0.4); }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .gap8 { gap: 8px; }
+  .text-muted { color: var(--muted); }
+  .text-sm { font-size: 0.7rem; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .fw700 { font-weight: 700; }
+
+  /* admin */
+  .admin-stat { text-align: center; padding: 18px; background: var(--surface2); border-radius: 10px; border: 1px solid var(--border); }
+  .admin-stat-val { font-size: 1.5rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+  .admin-stat-lbl { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 4px; }
+  .risk-low { color: var(--success); }
+  .risk-mod { color: var(--accent3); }
+  .risk-high { color: var(--danger); }
+
+  /* ─── ENTRY FILTER BUTTONS ─── */
+  .entry-filter {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 12px;
+    font-size: 0.68rem; font-weight: 500; color: var(--muted);
+    cursor: pointer; transition: all 0.15s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .entry-filter:hover { border-color: var(--accent); color: var(--accent); }
+  .entry-filter.active { background: rgba(255,107,71,0.12); border-color: var(--accent); color: var(--accent); }
+  .entry-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    margin-bottom: 6px; transition: border-color 0.15s;
+  }
+  .entry-item:hover { border-color: var(--muted); }
+  .entry-label { flex: 1; font-size: 0.72rem; color: var(--text2); }
+  .entry-type-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .entry-actions { display: flex; gap: 5px; flex-shrink: 0; }
+  .entry-btn {
+    padding: 3px 8px; border-radius: 5px; font-size: 0.6rem; font-weight: 600;
+    cursor: pointer; border: 1px solid; transition: all 0.15s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .entry-btn-archive { background: transparent; color: var(--accent2); border-color: var(--accent2); }
+  .entry-btn-archive:hover { background: rgba(126,184,247,0.12); }
+  .entry-btn-delete { background: transparent; color: var(--danger); border-color: var(--danger); }
+  .entry-btn-delete:hover { background: rgba(242,107,107,0.12); }
+  .entry-btn-restore { background: transparent; color: var(--success); border-color: var(--success); }
+  .entry-btn-restore:hover { background: rgba(82,201,122,0.12); }
+
+  /* algo box */
+  .algo-box {
+    font-size: 0.72rem; color: var(--text2); line-height: 1.8;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--surface2); padding: 12px 14px;
+    border-radius: 8px; border: 1px solid var(--border);
+  }
+  .algo-box .highlight { color: var(--accent); }
+
+  /* ─── SETTINGS PANEL ─── */
+  .settings-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 900;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .settings-overlay.open { opacity: 1; pointer-events: all; }
+
+  .settings-panel {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: var(--surface);
+    border-left: none;
+    z-index: 901;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    overflow: hidden;
+  }
+  .settings-panel.open { transform: translateX(0); }
+
+  .settings-header {
+    padding: 18px calc(50% - 380px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .settings-title {
+    font-size: 0.95rem; font-weight: 700; color: var(--text);
+  }
+  .settings-close {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 0.85rem; color: var(--muted);
+    transition: all 0.15s;
+  }
+  .settings-close:hover { border-color: var(--danger); color: var(--danger); }
+
+  .settings-tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    padding: 0 calc(50% - 380px);
+  }
+  .settings-tab {
+    flex: 1; padding: 10px 6px; text-align: center;
+    font-size: 0.67rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s; font-family: 'JetBrains Mono', monospace;
+  }
+  .settings-tab:hover { color: var(--text); }
+  .settings-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .settings-body {
+    flex: 1; overflow-y: auto; padding: 18px 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .settings-section { margin-bottom: 24px; }
+  .settings-section-title {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid rgba(37,45,66,0.5);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-info { flex: 1; padding-right: 12px; }
+  .settings-row-label { font-size: 0.78rem; font-weight: 500; color: var(--text); }
+  .settings-row-desc { font-size: 0.64rem; color: var(--muted); margin-top: 2px; }
+
+  /* Toggle switch */
+  .toggle { position: relative; width: 38px; height: 21px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--border); border-radius: 21px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: #fff; left: 3px; top: 3px;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(17px); }
+
+  /* Color picker row */
+  .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .swatch {
+    width: 28px; height: 28px; border-radius: 50%;
+    cursor: pointer; border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.selected { border-color: #fff; transform: scale(1.1); }
+
+  /* Settings select */
+  .settings-select {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 10px;
+    color: var(--text); font-family: 'Outfit', sans-serif;
+    font-size: 0.78rem; outline: none; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .settings-select:focus { border-color: var(--accent); }
+
+  /* Settings input */
+  .settings-input {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 10px; width: 100%;
+    color: var(--text); font-family: 'Outfit', sans-serif;
+    font-size: 0.78rem; outline: none; margin-top: 6px;
+    transition: border-color 0.15s;
+  }
+  .settings-input:focus { border-color: var(--accent); }
+
+  /* Range slider in settings */
+  .settings-range-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .settings-range-row input[type=range] { flex: 1; }
+  .settings-range-val {
+    font-size: 0.72rem; font-weight: 600; min-width: 32px; text-align: right;
+    color: var(--accent); font-family: 'JetBrains Mono', monospace;
+  }
+
+  .settings-footer {
+    padding: 14px calc(50% - 380px); border-top: 1px solid var(--border);
+    display: flex; gap: 8px; flex-shrink: 0;
+  }
+  .settings-save {
+    flex: 1; background: var(--accent); color: #fff;
+    border: none; border-radius: 9px; padding: 10px;
+    font-family: 'Outfit', sans-serif; font-size: 0.82rem; font-weight: 700;
+    cursor: pointer; transition: filter 0.15s;
+  }
+  .settings-save:hover { filter: brightness(1.1); }
+  .settings-reset {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 9px; padding: 10px 14px;
+    font-family: 'Outfit', sans-serif; font-size: 0.78rem;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .settings-reset:hover { border-color: var(--danger); color: var(--danger); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .profile-avatar-edit {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
+    padding: 12px; background: var(--surface2); border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .avatar-lg {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #ff9a6c);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1rem; color: #fff; flex-shrink: 0;
+  }
+  .notif-preview {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; margin-top: 8px;
+    font-size: 0.7rem; color: var(--text2); display: flex; gap: 8px; align-items: flex-start;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="loginScreen">
+  <div class="login-left">
+    <div class="login-bg-art"></div>
+    <div class="login-box">
+      <div class="login-logo">Work<span>Study</span>Pro</div>
+      <div class="login-tagline">// conflict & load monitoring system</div>
+
+      <label class="login-label">Student ID / Email</label>
+      <input class="login-input" type="text" placeholder="e.g. 2021-00123 or jelzy@school.edu" id="loginId">
+
+      <label class="login-label">Password</label>
+      <input class="login-input" type="password" placeholder="••••••••" id="loginPass">
+
+      <div class="login-row">
+        <label class="login-check">
+          <input type="checkbox" style="accent-color:var(--accent)"> Remember me
+        </label>
+        <span class="login-forgot">Forgot password?</span>
+      </div>
+
+      <button class="btn-login" onclick="doLogin()">Sign In</button>
+
+      <div class="login-or">or</div>
+
+      <button class="btn-demo" onclick="doLogin()">🚀 Try Demo Account</button>
+
+      <div class="login-footer">
+        Don't have an account? <a>Request access from your adviser.</a><br>
+        WorkStudyPro v1.0 — IT Capstone Project
+      </div>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-right-bg"></div>
+    <div class="login-preview">
+      <div class="preview-label">// Live preview — your dashboard</div>
+      <div class="preview-card">
+        <div class="preview-stat-row">
+          <div class="preview-stat">
+            <div class="preview-stat-val" style="color:var(--danger)">2</div>
+            <div class="preview-stat-lbl">Conflicts</div>
+          </div>
+          <div class="preview-stat">
+            <div class="preview-stat-val" style="color:var(--accent)">78</div>
+            <div class="preview-stat-lbl">Load Score</div>
+          </div>
+          <div class="preview-stat">
+            <div class="preview-stat-val" style="color:var(--accent2)">42h</div>
+            <div class="preview-stat-lbl">This Week</div>
+          </div>
+          <div class="preview-stat">
+            <div class="preview-stat-val" style="color:var(--accent3)">5</div>
+            <div class="preview-stat-lbl">Tasks</div>
+          </div>
+        </div>
+        <div class="preview-bar-row">
+          <div class="preview-bar-label"><span>Class Hours</span><span>18/25h</span></div>
+          <div class="preview-track"><div class="preview-fill" style="width:72%;background:var(--accent2)"></div></div>
+        </div>
+        <div class="preview-bar-row">
+          <div class="preview-bar-label"><span>Work Hours</span><span>24/30h</span></div>
+          <div class="preview-track"><div class="preview-fill" style="width:80%;background:var(--accent)"></div></div>
+        </div>
+        <div class="preview-bar-row" style="margin-bottom:12px">
+          <div class="preview-bar-label"><span>Free Time</span><span>20h left</span></div>
+          <div class="preview-track"><div class="preview-fill" style="width:28%;background:var(--danger)"></div></div>
+        </div>
+        <div class="preview-alert">
+          ⚡ Schedule conflict detected — Thursday, April 17
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app">
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo-area">
+    <div class="logo-text">Work<span>Study</span>Pro</div>
+    <div class="logo-sub">Load & Conflict Monitor</div>
+  </div>
+  <div class="user-badge">
+    <div class="avatar">JD</div>
+    <div class="user-info">
+      <div class="user-name">Jelzy De Castro</div>
+      <div class="user-role">Working Student</div>
+    </div>
+    <div class="user-status"></div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)">
+      <span class="icon">🏠</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('schedule',this)">
+      <span class="icon">📅</span> My Schedule
+    </div>
+    <div class="nav-item" onclick="showPage('tasks',this)">
+      <span class="icon">📋</span> Task Priority
+    </div>
+    <div class="nav-item" onclick="showPage('conflicts',this)">
+      <span class="icon">⚡</span> Conflict Alerts
+      <span class="nav-badge">2</span>
+    </div>
+    <div class="nav-label">Manage</div>
+    <div class="nav-item" onclick="showPage('input',this)">
+      <span class="icon">➕</span> Add Entry
+    </div>
+    <div class="nav-item" onclick="showPage('admin',this)">
+      <span class="icon">🛡️</span> Admin Panel
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-btn" onclick="doLogout()">🚪 <span>Sign out</span></div>
+    <div class="sidebar-footer-btn" onclick="openSettings()">⚙️ <span>Settings</span></div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="topbarTitle">Dashboard</div>
+      <div class="page-sub" id="topbarSub">Week of April 14–20, 2026</div>
+    </div>
+    <div class="topbar-right">
+      <div class="badge-row">
+        <span class="badge badge-red">⚡ 2 Conflicts</span>
+        <span class="badge badge-orange">Load: HIGH</span>
+      </div>
+      <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- Stats Row -->
+      <div class="grid4 mb16">
+        <div class="stat-card" style="--card-accent:var(--accent2)">
+          <div class="stat-icon">📚</div>
+          <div class="stat-label">Class Hours</div>
+          <div class="stat-value" style="color:var(--accent2)">18</div>
+          <div class="stat-sub">hrs/week · 5 subjects</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--accent)">
+          <div class="stat-icon">💼</div>
+          <div class="stat-label">Work Hours</div>
+          <div class="stat-value" style="color:var(--accent)">24</div>
+          <div class="stat-sub">hrs/week · 6 days</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--danger)">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-label">Active Conflicts</div>
+          <div class="stat-value" style="color:var(--danger)" id="dash-conflicts">2</div>
+          <div class="stat-sub">This week detected</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--accent3)">
+          <div class="stat-icon">📋</div>
+          <div class="stat-label">Tasks Pending</div>
+          <div class="stat-value" style="color:var(--accent3)" id="dash-tasks">5</div>
+          <div class="stat-sub">3 high priority</div>
+        </div>
+      </div>
+
+      <div class="grid2 mb16">
+        <!-- Load Gauge + Bars -->
+        <div class="card">
+          <div class="card-title">Weekly Load Score</div>
+          <div class="gauge-wrap">
+            <svg class="gauge-svg" viewBox="0 0 160 95">
+              <defs>
+                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#52c97a"/>
+                  <stop offset="50%" stop-color="#f5c842"/>
+                  <stop offset="100%" stop-color="#f26b6b"/>
+                </linearGradient>
+              </defs>
+              <path d="M15,85 A65,65 0 0,1 145,85" fill="none" stroke="#252d42" stroke-width="12" stroke-linecap="round"/>
+              <path d="M15,85 A65,65 0 0,1 145,85" fill="none" stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="204" stroke-dashoffset="40"/>
+              <text x="80" y="78" text-anchor="middle" fill="#dce4f0" font-family="JetBrains Mono" font-size="22" font-weight="800">78</text>
+              <text x="80" y="92" text-anchor="middle" fill="#f26b6b" font-family="Outfit" font-size="9" font-weight="700">HIGH RISK</text>
+              <text x="15" y="100" text-anchor="middle" fill="#546280" font-family="JetBrains Mono" font-size="7">LOW</text>
+              <text x="145" y="100" text-anchor="middle" fill="#546280" font-family="JetBrains Mono" font-size="7">HIGH</text>
+            </svg>
+            <div style="font-size:0.67rem;color:var(--muted);margin-top:4px">Total: 42 hrs/week · Est. study: 8 hrs</div>
+          </div>
+          <div class="divider" style="margin:10px 0"></div>
+          <div class="progress-row">
+            <div class="progress-label"><span>Class Hours</span><span>18 / 25 hrs</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:72%; background: var(--accent2);"></div></div>
+          </div>
+          <div class="progress-row">
+            <div class="progress-label"><span>Work Hours</span><span>24 / 30 hrs</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:80%; background: var(--accent);"></div></div>
+          </div>
+          <div class="progress-row" style="margin-bottom:0">
+            <div class="progress-label"><span>Free Time</span><span>20 hrs left</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:28%; background: var(--danger);"></div></div>
+          </div>
+        </div>
+
+        <!-- Top Priority Tasks -->
+        <div class="card">
+          <div class="card-title">Top Priority Tasks</div>
+          <div class="priority-item">
+            <div class="priority-rank rank-1">#1</div>
+            <div class="priority-info">
+              <div class="priority-task">Capstone Chapter 2 Draft</div>
+              <div class="priority-meta">Due Apr 17 · CONFLICT on due date · Wt. 40%</div>
+            </div>
+            <div class="priority-score">98.4</div>
+          </div>
+          <div class="priority-item">
+            <div class="priority-rank rank-2">#2</div>
+            <div class="priority-info">
+              <div class="priority-task">IAS Midterm Exam</div>
+              <div class="priority-meta">Due Apr 18 · Work shift 4 hrs same day</div>
+            </div>
+            <div class="priority-score">87.1</div>
+          </div>
+          <div class="priority-item">
+            <div class="priority-rank rank-3">#3</div>
+            <div class="priority-info">
+              <div class="priority-task">Programming Lab Activity</div>
+              <div class="priority-meta">Due Apr 19 · No conflicts detected</div>
+            </div>
+            <div class="priority-score">64.3</div>
+          </div>
+          <div class="priority-item">
+            <div class="priority-rank rank-other">#4</div>
+            <div class="priority-info">
+              <div class="priority-task">Networking Quiz</div>
+              <div class="priority-meta">Due Apr 21 · No conflicts detected</div>
+            </div>
+            <div class="priority-score">41.0</div>
+          </div>
+          <div class="priority-item">
+            <div class="priority-rank rank-other">#5</div>
+            <div class="priority-info">
+              <div class="priority-task">Technical Writing Essay</div>
+              <div class="priority-meta">Due Apr 25 · Low urgency</div>
+            </div>
+            <div class="priority-score">22.8</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHART: Daily Load Breakdown -->
+      <div class="card mb16">
+        <div class="section-header">
+          <div class="section-title">Daily Hour Distribution</div>
+          <div class="badge-row">
+            <span class="badge badge-blue">Class</span>
+            <span class="badge badge-orange">Work</span>
+            <span class="badge badge-red">Conflict Zones</span>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="loadChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Conflict Alerts Preview -->
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">⚡ Active Conflict Alerts</div>
+          <button class="btn btn-secondary" onclick="showPage('conflicts', document.querySelectorAll('.nav-item')[3])">View All</button>
+        </div>
+        <div class="alert alert-danger">
+          <div class="alert-icon">🔴</div>
+          <div>
+            <div class="alert-title">Schedule Overlap — Thursday, April 17</div>
+            <div class="alert-desc">Work shift (2PM–10PM) overlaps with Capstone Defense Preparation Session (3PM–5PM). Your capstone Chapter 2 draft is also due this day.</div>
+          </div>
+        </div>
+        <div class="alert alert-warn">
+          <div class="alert-icon">🟡</div>
+          <div>
+            <div class="alert-title">Heavy Load Warning — Friday, April 18</div>
+            <div class="alert-desc">IAS Midterm exam scheduled + 4-hour work shift. Combined load exceeds recommended daily limit by 2.5 hours.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCHEDULE ══ -->
+    <div class="page" id="page-schedule">
+      <div class="mb16">
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div>Class</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Work Shift</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div>Conflict Zone</div>
+        </div>
+      </div>
+      <div class="card mb16">
+        <div class="card-title">Weekly Schedule — April 14–20, 2026</div>
+        <div class="week-grid">
+          <div class="week-cell week-header">TIME</div>
+          <div class="week-cell week-header">MON</div>
+          <div class="week-cell week-header">TUE</div>
+          <div class="week-cell week-header">WED</div>
+          <div class="week-cell week-header">THU</div>
+          <div class="week-cell week-header">FRI</div>
+          <div class="week-cell week-header">SAT</div>
+          <div class="week-cell week-header">SUN</div>
+          <div class="week-cell week-time">7AM</div>
+          <div class="week-cell"></div><div class="week-cell"></div><div class="week-cell"></div><div class="week-cell"></div><div class="week-cell"></div><div class="week-cell"></div><div class="week-cell"></div>
+          <div class="week-cell week-time">8AM</div>
+          <div class="week-cell"><div class="sched-class">IAS Lec</div></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-class">IAS Lec</div></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-class">IAS Lab</div></div>
+          <div class="week-cell"></div><div class="week-cell"></div>
+          <div class="week-cell week-time">9AM</div>
+          <div class="week-cell"><div class="sched-class">Capstone</div></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-class">Capstone</div></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div><div class="week-cell"></div>
+          <div class="week-cell week-time">10AM</div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-class">Prog.</div></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-class">Prog.</div></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div><div class="week-cell"></div>
+          <div class="week-cell week-time">11AM</div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-class">Netw.</div></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-class">Netw.</div></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div><div class="week-cell"></div>
+          <div class="week-cell week-time">12PM</div>
+          <div class="week-cell"><div class="sched-class">TechWrit</div></div>
+          <div class="week-cell"></div><div class="week-cell"></div><div class="week-cell"></div><div class="week-cell"></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div><div class="week-cell"></div>
+          <div class="week-cell week-time">1PM</div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"></div>
+          <div class="week-cell"></div><div class="week-cell"></div>
+          <div class="week-cell week-time">2PM</div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"></div><div class="week-cell"></div>
+          <div class="week-cell week-time">3PM</div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-conflict">⚡ CONFLICT</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"></div><div class="week-cell"></div>
+          <div class="week-cell week-time">4PM</div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-conflict">⚡ CONFLICT</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"></div><div class="week-cell"></div>
+          <div class="week-cell week-time">5PM</div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"><div class="sched-work">Work</div></div>
+          <div class="week-cell"></div><div class="week-cell"></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Class Schedule</div>
+          <table>
+            <thead><tr><th>Subject</th><th>Day</th><th>Time</th><th>Hrs</th></tr></thead>
+            <tbody>
+              <tr><td>Integrated Application Systems</td><td>Mon/Wed/Fri</td><td>8–9AM</td><td>3</td></tr>
+              <tr><td>Capstone Project</td><td>Mon/Wed</td><td>9–10:30AM</td><td>3</td></tr>
+              <tr><td>Computer Programming</td><td>Tue/Thu</td><td>10–11:30AM</td><td>3</td></tr>
+              <tr><td>Networking Fundamentals</td><td>Tue/Thu</td><td>11AM–12PM</td><td>4</td></tr>
+              <tr><td>Technical Writing</td><td>Mon</td><td>12–1PM</td><td>1</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">Work Schedule</div>
+          <table>
+            <thead><tr><th>Day</th><th>Shift</th><th>Hrs</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Monday</td><td>1PM–7PM</td><td>6</td><td><span class="badge badge-green">OK</span></td></tr>
+              <tr><td>Tuesday</td><td>1PM–7PM</td><td>6</td><td><span class="badge badge-green">OK</span></td></tr>
+              <tr><td>Wednesday</td><td>1PM–7PM</td><td>6</td><td><span class="badge badge-green">OK</span></td></tr>
+              <tr><td>Thursday</td><td>2PM–10PM</td><td>8</td><td><span class="badge badge-red">CONFLICT</span></td></tr>
+              <tr><td>Friday</td><td>2PM–6PM</td><td>4</td><td><span class="badge badge-yellow">CAUTION</span></td></tr>
+              <tr><td>Saturday</td><td>9AM–1PM</td><td>4</td><td><span class="badge badge-green">OK</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TASK PRIORITY ══ -->
+    <div class="page" id="page-tasks">
+      <div class="card mb16">
+        <div class="card-title">⚙️ Weighted Scoring Algorithm</div>
+        <div class="algo-box">
+          Priority Score = (Deadline Weight × 0.45) + (Conflict Flag × 0.30) + (Work Hours on Due Date × 0.25)<br>
+          <span class="highlight">↳ Normalized to 0–100 scale · Auto-ranked every session</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">Automated Priority List</div>
+          <div class="flex gap8">
+            <span class="badge badge-orange">5 Tasks</span>
+            <span class="badge badge-red">3 High Priority</span>
+          </div>
+        </div>
+        <div id="priorityList"></div>
+      </div>
+    </div>
+
+    <!-- ══ CONFLICTS ══ -->
+    <div class="page" id="page-conflicts">
+      <div class="grid2 mb16">
+        <div class="card">
+          <div class="card-title">Conflict Summary</div>
+          <div class="grid2" style="gap:10px">
+            <div class="admin-stat"><div class="admin-stat-val risk-high">1</div><div class="admin-stat-lbl">Critical</div></div>
+            <div class="admin-stat"><div class="admin-stat-val risk-mod">1</div><div class="admin-stat-lbl">Warning</div></div>
+            <div class="admin-stat"><div class="admin-stat-val risk-low">4</div><div class="admin-stat-lbl">Clear Days</div></div>
+            <div class="admin-stat"><div class="admin-stat-val" style="color:var(--accent2)">2</div><div class="admin-stat-lbl">At Risk</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Load Risk Classification</div>
+          <div style="font-size:0.72rem; line-height:2.2; color:var(--muted)">
+            <div><span class="badge badge-green" style="margin-right:8px">LOW</span>0–40 hrs/week combined</div>
+            <div><span class="badge badge-yellow" style="margin-right:8px">MOD</span>41–55 hrs/week combined</div>
+            <div><span class="badge badge-red" style="margin-right:8px">HIGH</span>56+ hrs/week combined</div>
+          </div>
+          <div class="divider" style="margin:10px 0"></div>
+          <div style="font-size:0.72rem; color:var(--muted)">Your current total: <strong style="color:var(--danger)">42 hrs + 8 est. study = HIGH RISK</strong></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">Detected Conflicts — This Week</div>
+        </div>
+        <div class="alert alert-danger">
+          <div class="alert-icon">🔴</div>
+          <div style="flex:1">
+            <div class="alert-title">CRITICAL — Thursday, April 17</div>
+            <div class="alert-desc">
+              <strong>Overlap detected:</strong> Work shift (2PM–10PM) vs. Capstone Defense Prep Session (3PM–5PM)<br>
+              <strong>Additional flag:</strong> Chapter 2 draft due same day · Grade weight: 40%<br>
+              <strong>Recommendation:</strong> Request shift adjustment or schedule rescheduling with adviser.
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-warn">
+          <div class="alert-icon">🟡</div>
+          <div style="flex:1">
+            <div class="alert-title">WARNING — Friday, April 18</div>
+            <div class="alert-desc">
+              <strong>Load exceeded:</strong> IAS Midterm + 4-hour work shift combined<br>
+              <strong>Over by:</strong> 2.5 hours above recommended daily limit<br>
+              <strong>Recommendation:</strong> Prepare for midterm the day before to reduce load on Friday.
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-info">
+          <div class="alert-icon">🔵</div>
+          <div>
+            <div class="alert-title">INFO — Saturday has no academic conflicts</div>
+            <div class="alert-desc">Work shift ends at 1PM. Recommend using afternoon for capstone review.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ INPUT ══ -->
+    <div class="page" id="page-input">
+      <div class="grid2 mb16">
+        <div class="card">
+          <div class="card-title">📚 Add Class Schedule</div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Subject Name</label>
+              <input type="text" id="c-subject" placeholder="e.g. Capstone Project">
+            </div>
+            <div class="form-group">
+              <label>Room</label>
+              <input type="text" id="c-room" placeholder="e.g. Room 301">
+            </div>
+            <div class="form-group">
+              <label>Day(s)</label>
+              <select id="c-days" multiple style="height:80px">
+                <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                <option>Thursday</option><option>Friday</option><option>Saturday</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Start Time</label>
+              <input type="time" id="c-start" value="08:00">
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" id="c-end" value="09:00">
+            </div>
+            <div class="form-group full">
+              <button class="btn btn-primary" onclick="addSchedule('class')" style="width:100%">➕ Add Class</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💼 Add Work Shift</div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Employer / Job</label>
+              <input type="text" id="w-job" placeholder="e.g. 7-Eleven Cashier">
+            </div>
+            <div class="form-group">
+              <label>Day</label>
+              <select id="w-day">
+                <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Location</label>
+              <input type="text" id="w-loc" placeholder="e.g. Imus Branch">
+            </div>
+            <div class="form-group">
+              <label>Start Time</label>
+              <input type="time" id="w-start" value="14:00">
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" id="w-end" value="22:00">
+            </div>
+            <div class="form-group full">
+              <button class="btn btn-primary" onclick="addSchedule('work')" style="width:100%">➕ Add Shift</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb16">
+        <div class="card-title">📋 Add Academic Task / Requirement</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Task / Requirement Name</label>
+            <input type="text" id="t-name" placeholder="e.g. Capstone Chapter 2 Draft">
+          </div>
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" id="t-subject" placeholder="e.g. Capstone Project">
+          </div>
+          <div class="form-group">
+            <label>Due Date</label>
+            <input type="date" id="t-due">
+          </div>
+          <div class="form-group">
+            <label>Grade Weight (%)</label>
+            <input type="number" id="t-weight" placeholder="e.g. 40" min="0" max="100">
+          </div>
+          <div class="form-group">
+            <label>Task Type</label>
+            <select id="t-type">
+              <option>Major Exam</option>
+              <option>Project / Deliverable</option>
+              <option>Quiz</option>
+              <option>Laboratory Activity</option>
+              <option>Essay / Paper</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group full" style="display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="addTask()" style="flex:1">➕ Add Task & Calculate Priority</button>
+            <button class="btn btn-secondary" onclick="clearTaskForm()">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">📝 Recent Entries</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge badge-blue" id="entry-count-badge">0 active</span>
+            <button class="btn btn-secondary" onclick="showArchive()" id="archiveViewBtn">📦 Archive</button>
+            <button class="btn btn-danger" onclick="clearEntries()">🗑 Clear All</button>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <button class="entry-filter active" onclick="filterEntries('all',this)">All</button>
+          <button class="entry-filter" onclick="filterEntries('class',this)">📚 Class</button>
+          <button class="entry-filter" onclick="filterEntries('work',this)">💼 Work</button>
+          <button class="entry-filter" onclick="filterEntries('task',this)">📋 Task</button>
+        </div>
+
+        <!-- Active entries list -->
+        <div id="entriesLog" style="font-size:0.72rem;color:var(--muted)">No entries yet. Add a schedule or task above.</div>
+
+        <!-- Archive panel -->
+        <div id="archivePanel" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-family:'JetBrains Mono',monospace;">📦 Archived Entries</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-secondary" onclick="restoreAllArchived()" style="font-size:0.65rem;padding:4px 10px;">↩ Restore All</button>
+              <button class="btn btn-danger" onclick="purgeArchive()" style="font-size:0.65rem;padding:4px 10px;">🗑 Purge</button>
+              <button class="btn btn-secondary" onclick="hideArchive()" style="font-size:0.65rem;padding:4px 10px;">✕ Close</button>
+            </div>
+          </div>
+          <div id="archiveLog" style="font-size:0.72rem;color:var(--muted)">Archive is empty.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ADMIN ══ -->
+    <div class="page" id="page-admin">
+      <div class="card mb16">
+        <div class="card-title">🛡️ System Administration</div>
+        <div class="grid4">
+          <div class="admin-stat"><div class="admin-stat-val">12</div><div class="admin-stat-lbl">Total Users</div></div>
+          <div class="admin-stat"><div class="admin-stat-val risk-high">4</div><div class="admin-stat-lbl">High Risk</div></div>
+          <div class="admin-stat"><div class="admin-stat-val risk-mod">5</div><div class="admin-stat-lbl">Moderate</div></div>
+          <div class="admin-stat"><div class="admin-stat-val risk-low">3</div><div class="admin-stat-lbl">Low Risk</div></div>
+        </div>
+      </div>
+
+      <div class="grid2 mb16">
+        <div class="card">
+          <div class="card-title">Risk Threshold Configuration</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Low Risk Max (hrs/wk)</label>
+              <input type="number" value="40" id="thresh-low">
+            </div>
+            <div class="form-group">
+              <label>Moderate Risk Max (hrs/wk)</label>
+              <input type="number" value="55" id="thresh-mod">
+            </div>
+            <div class="form-group full">
+              <button class="btn btn-primary" onclick="saveThresholds()" style="width:100%">💾 Save Thresholds</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Algorithm Weights</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Deadline Weight</label>
+              <input type="number" value="45" id="wt-deadline">
+            </div>
+            <div class="form-group">
+              <label>Conflict Flag Weight</label>
+              <input type="number" value="30" id="wt-conflict">
+            </div>
+            <div class="form-group">
+              <label>Work Hours Weight</label>
+              <input type="number" value="25" id="wt-work">
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" onclick="saveWeights()" style="width:100%;margin-top:22px">💾 Save Weights</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Registered Users</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Class Hrs</th><th>Work Hrs</th><th>Load Score</th><th>Risk Level</th><th>Conflicts</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Jelzy De Castro</td><td>18</td><td>24</td>
+                <td><span class="font-mono">78</span></td>
+                <td><span class="badge badge-red">High</span></td>
+                <td>2</td>
+                <td><button class="btn btn-secondary" style="padding:3px 9px;font-size:0.63rem">View</button></td>
+              </tr>
+              <tr>
+                <td>Andrea Anagon</td><td>18</td><td>20</td>
+                <td><span class="font-mono">62</span></td>
+                <td><span class="badge badge-yellow">Moderate</span></td>
+                <td>1</td>
+                <td><button class="btn btn-secondary" style="padding:3px 9px;font-size:0.63rem">View</button></td>
+              </tr>
+              <tr>
+                <td>Jerel Ariza</td><td>18</td><td>32</td>
+                <td><span class="font-mono">85</span></td>
+                <td><span class="badge badge-red">High</span></td>
+                <td>3</td>
+                <td><button class="btn btn-secondary" style="padding:3px 9px;font-size:0.63rem">View</button></td>
+              </tr>
+              <tr>
+                <td>Cherry De Lim</td><td>18</td><td>12</td>
+                <td><span class="font-mono">38</span></td>
+                <td><span class="badge badge-green">Low</span></td>
+                <td>0</td>
+                <td><button class="btn btn-secondary" style="padding:3px 9px;font-size:0.63rem">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- SETTINGS OVERLAY & PANEL -->
+<div class="settings-overlay" id="settingsOverlay" onclick="closeSettings()"></div>
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-header">
+    <div class="settings-title">⚙️ Settings</div>
+    <div class="settings-close" onclick="closeSettings()">✕</div>
+  </div>
+
+  <div class="settings-tabs">
+    <div class="settings-tab active" onclick="switchSettingsTab('profile',this)">Profile</div>
+    <div class="settings-tab" onclick="switchSettingsTab('appearance',this)">Appearance</div>
+    <div class="settings-tab" onclick="switchSettingsTab('notifications',this)">Alerts</div>
+    <div class="settings-tab" onclick="switchSettingsTab('system',this)">System</div>
+  </div>
+
+  <div class="settings-body">
+
+    <!-- PROFILE TAB -->
+    <div class="tab-content active" id="stab-profile">
+      <div class="settings-section">
+        <div class="settings-section-title">Account Info</div>
+        <div class="profile-avatar-edit">
+          <div class="avatar-lg" id="avatarPreview">JD</div>
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text)">Jelzy De Castro</div>
+            <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">Working Student · ID: 2021-00123</div>
+            <div style="font-size:0.62rem;color:var(--accent);margin-top:6px;cursor:pointer">✏️ Change avatar</div>
+          </div>
+        </div>
+        <label style="font-size:0.68rem;color:var(--text2);display:block;margin-bottom:4px">Full Name</label>
+        <input class="settings-input" type="text" id="pf-name" value="Jelzy De Castro">
+        <label style="font-size:0.68rem;color:var(--text2);display:block;margin-top:10px;margin-bottom:4px">Student ID / Email</label>
+        <input class="settings-input" type="text" id="pf-id" value="2021-00123">
+        <label style="font-size:0.68rem;color:var(--text2);display:block;margin-top:10px;margin-bottom:4px">Role</label>
+        <select class="settings-select" id="pf-role" style="width:100%">
+          <option selected>Working Student</option>
+          <option>Full-time Student</option>
+          <option>Part-time Student</option>
+        </select>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Academic Info</div>
+        <label style="font-size:0.68rem;color:var(--text2);display:block;margin-bottom:4px">Program / Course</label>
+        <input class="settings-input" type="text" id="pf-course" value="BS Information Technology">
+        <label style="font-size:0.68rem;color:var(--text2);display:block;margin-top:10px;margin-bottom:4px">Year Level</label>
+        <select class="settings-select" id="pf-year" style="width:100%">
+          <option>1st Year</option>
+          <option>2nd Year</option>
+          <option>3rd Year</option>
+          <option selected>4th Year</option>
+        </select>
+
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Security</div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Change Password</div>
+            <div class="settings-row-desc">Update your login credentials</div>
+          </div>
+          <button class="settings-select" style="cursor:pointer;font-size:0.7rem">Update →</button>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Two-Factor Auth</div>
+            <div class="settings-row-desc">Add extra security to your account</div>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPEARANCE TAB -->
+    <div class="tab-content" id="stab-appearance">
+      <div class="settings-section">
+        <div class="settings-section-title">Theme</div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Dark Mode</div>
+            <div class="settings-row-desc">Toggle dark/light interface</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked id="toggle-dark" onchange="toggleDarkMode(this)"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Compact Layout</div>
+            <div class="settings-row-desc">Reduce spacing for more content</div>
+          </div>
+          <label class="toggle"><input type="checkbox" onchange="toggleCompact(this)"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Sidebar Collapsed</div>
+            <div class="settings-row-desc">Auto-hide sidebar on scroll</div>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Accent Color</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:8px">Pick your interface highlight color</div>
+        <div class="color-swatches" id="colorSwatches">
+          <div class="swatch selected" style="background:#ff6b47" data-color="#ff6b47" data-color2="rgba(255,107,71,0.07)" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#7eb8f7" data-color="#7eb8f7" data-color2="rgba(126,184,247,0.07)" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#52c97a" data-color="#52c97a" data-color2="rgba(82,201,122,0.07)" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#f5c842" data-color="#f5c842" data-color2="rgba(245,200,66,0.07)" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#b57bee" data-color="#b57bee" data-color2="rgba(181,123,238,0.07)" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#f26b6b" data-color="#f26b6b" data-color2="rgba(242,107,107,0.07)" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#4ecdc4" data-color="#4ecdc4" data-color2="rgba(78,205,196,0.07)" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#ff9f43" data-color="#ff9f43" data-color2="rgba(255,159,67,0.07)" onclick="setAccent(this)"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- NOTIFICATIONS TAB -->
+    <div class="tab-content" id="stab-notifications">
+      <div class="settings-section">
+        <div class="settings-section-title">Alert Preferences</div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Conflict Alerts</div>
+            <div class="settings-row-desc">Notify when schedule overlaps detected</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">High Load Warnings</div>
+            <div class="settings-row-desc">Alert when weekly hours exceed threshold</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Task Due Reminders</div>
+            <div class="settings-row-desc">Remind before task deadlines</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Priority Score Changes</div>
+            <div class="settings-row-desc">Alert when task rankings shift</div>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Reminder Timing</div>
+        <label style="font-size:0.68rem;color:var(--text2);display:block;margin-bottom:6px">Remind me before deadlines</label>
+        <select class="settings-select" style="width:100%">
+          <option>1 day before</option>
+          <option selected>2 days before</option>
+          <option>3 days before</option>
+          <option>1 week before</option>
+        </select>
+        <div class="settings-row" style="margin-top:12px">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Sound Alerts</div>
+            <div class="settings-row-desc">Play sound for critical conflicts</div>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Browser Notifications</div>
+            <div class="settings-row-desc">Show system-level notifications</div>
+          </div>
+          <label class="toggle"><input type="checkbox" onchange="requestNotifPerms(this)"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Alert Preview</div>
+        <div class="notif-preview">⚡ <span><strong style="color:var(--danger)">CONFLICT</strong> — Work shift overlaps Capstone session on Thu, Apr 17</span></div>
+        <div class="notif-preview" style="margin-top:6px">📋 <span><strong style="color:var(--accent3)">REMINDER</strong> — IAS Midterm Exam due in 2 days (Apr 18)</span></div>
+      </div>
+    </div>
+
+    <!-- SYSTEM TAB -->
+    <div class="tab-content" id="stab-system">
+      <div class="settings-section">
+        <div class="settings-section-title">Data & Privacy</div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Auto-save Entries</div>
+            <div class="settings-row-desc">Automatically save schedule changes</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Analytics</div>
+            <div class="settings-row-desc">Share anonymous usage data</div>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Export Data</div>
+            <div class="settings-row-desc">Download your schedule as CSV</div>
+          </div>
+          <button class="settings-select" style="cursor:pointer;font-size:0.7rem" onclick="toast('Export started — check downloads.','success');closeSettings()">Export →</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Display Preferences</div>
+        <label style="font-size:0.68rem;color:var(--text2);display:block;margin-bottom:6px">Date Format</label>
+        <select class="settings-select" style="width:100%">
+          <option selected>MMM DD, YYYY (Apr 17, 2026)</option>
+          <option>MM/DD/YYYY</option>
+          <option>DD/MM/YYYY</option>
+          <option>YYYY-MM-DD</option>
+        </select>
+        <label style="font-size:0.68rem;color:var(--text2);display:block;margin-top:10px;margin-bottom:6px">Time Format</label>
+        <select class="settings-select" style="width:100%">
+          <option selected>12-hour (1PM–7PM)</option>
+          <option>24-hour (13:00–19:00)</option>
+        </select>
+        <label style="font-size:0.68rem;color:var(--text2);display:block;margin-top:10px;margin-bottom:6px">Week Starts On</label>
+        <select class="settings-select" style="width:100%">
+          <option>Sunday</option>
+          <option selected>Monday</option>
+        </select>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">About</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--text);margin-bottom:6px">WorkStudyPro v1.0</div>
+          <div style="font-size:0.66rem;color:var(--muted);line-height:1.7;font-family:'JetBrains Mono',monospace">
+            // Conflict & Load Monitoring System<br>
+            // IT Capstone Project — 2026<br>
+            // Build: v1.0.0-stable
+          </div>
+        </div>
+        <div class="settings-row" style="margin-top:8px">
+          <div class="settings-row-info">
+            <div class="settings-row-label" style="color:var(--danger)">Reset All Settings</div>
+            <div class="settings-row-desc">Restore defaults — cannot be undone</div>
+          </div>
+          <button class="settings-select" style="cursor:pointer;font-size:0.7rem;color:var(--danger);border-color:var(--danger)" onclick="resetSettings()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /settings-body -->
+
+  <div class="settings-footer">
+    <button class="settings-save" onclick="saveSettings()">💾 Save Changes</button>
+    <button class="settings-reset" onclick="closeSettings()">Cancel</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ─── LOGIN ───
+function doLogin() {
+  document.getElementById('loginScreen').style.animation = 'fadeOut 0.35s ease forwards';
+  setTimeout(() => {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initChart();
+    renderPriority();
+  }, 350);
+}
+
+function doLogout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.cssText = 'display:flex;animation:none;';
+}
+
+const style = document.createElement('style');
+style.textContent = '@keyframes fadeOut { to { opacity:0; transform:scale(0.98); } }';
+document.head.appendChild(style);
+
+// ─── CHART.JS ───
+function initChart() {
+  const ctx = document.getElementById('loadChart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      datasets: [
+        {
+          label: 'Class Hours',
+          data: [4, 3, 4, 3, 3, 0, 0],
+          backgroundColor: 'rgba(126,184,247,0.55)',
+          borderColor: 'rgba(126,184,247,0.9)',
+          borderWidth: 1.5,
+          borderRadius: 5,
+        },
+        {
+          label: 'Work Hours',
+          data: [6, 6, 6, 8, 4, 4, 0],
+          backgroundColor: 'rgba(255,107,71,0.5)',
+          borderColor: 'rgba(255,107,71,0.85)',
+          borderWidth: 1.5,
+          borderRadius: 5,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: '#1c2030',
+          borderColor: '#252d42',
+          borderWidth: 1,
+          titleColor: '#dce4f0',
+          bodyColor: '#a0aec0',
+          padding: 10,
+          callbacks: {
+            afterBody(ctx) {
+              const dayIdx = ctx[0].dataIndex;
+              const classH = [4,3,4,3,3,0,0][dayIdx];
+              const workH = [6,6,6,8,4,4,0][dayIdx];
+              const total = classH + workH;
+              const isConflict = dayIdx === 3;
+              return isConflict ? ['Total: ' + total + 'h', '⚡ CONFLICT DAY'] : ['Total: ' + total + 'h'];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { color: 'rgba(37,45,66,0.6)' },
+          ticks: { color: '#546280', font: { family: 'JetBrains Mono', size: 10 } }
+        },
+        y: {
+          stacked: true,
+          grid: { color: 'rgba(37,45,66,0.6)' },
+          ticks: { color: '#546280', font: { family: 'JetBrains Mono', size: 10 }, callback: v => v + 'h' },
+          max: 12
+        }
+      }
+    }
+  });
+}
+
+// ─── STATE ───
+const pages = {
+  dashboard: { title: 'Dashboard',        sub: 'Week of April 14–20, 2026' },
+  schedule:  { title: 'My Schedule',      sub: 'Academic & Work Schedule View' },
+  tasks:     { title: 'Task Priority',    sub: 'Weighted Algorithm Results' },
+  conflicts: { title: 'Conflict Alerts',  sub: 'Automated Conflict Detection' },
+  input:     { title: 'Add Schedule / Task', sub: 'Input your schedule and requirements' },
+  admin:     { title: 'Admin Panel',      sub: 'System Management & Configuration' },
+};
+
+let entries = [];
+let tasks = [
+  { name:'Capstone Chapter 2 Draft', subject:'Capstone Project', due:'Apr 17', weight:40, type:'Project / Deliverable', conflict:true, workHours:8, score:98.4 },
+  { name:'IAS Midterm Exam', subject:'IAS', due:'Apr 18', weight:30, type:'Major Exam', conflict:false, workHours:4, score:87.1 },
+  { name:'Programming Lab Activity', subject:'Computer Programming', due:'Apr 19', weight:15, type:'Laboratory Activity', conflict:false, workHours:0, score:64.3 },
+  { name:'Networking Quiz', subject:'Networking', due:'Apr 21', weight:10, type:'Quiz', conflict:false, workHours:0, score:41.0 },
+  { name:'Technical Writing Essay', subject:'Technical Writing', due:'Apr 25', weight:20, type:'Essay / Paper', conflict:false, workHours:0, score:22.8 },
+];
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  const info = pages[id];
+  document.getElementById('topbarTitle').textContent = info.title;
+  document.getElementById('topbarSub').textContent = info.sub;
+}
+
+function renderPriority() {
+  const colors = ['rank-1','rank-2','rank-3','rank-other','rank-other'];
+  const urgency = ['HIGH','HIGH','HIGH','MEDIUM','LOW'];
+  const uColors = ['badge-red','badge-red','badge-yellow','badge-blue','badge-green'];
+  let html = '';
+  tasks.forEach((t, i) => {
+    html += `
+    <div class="priority-item">
+      <div class="priority-rank ${colors[i]}">#${i+1}</div>
+      <div class="priority-info">
+        <div class="priority-task">${t.name}</div>
+        <div class="priority-meta">
+          ${t.subject} · Due ${t.due} · Weight ${t.weight}%
+          ${t.conflict ? ' · <span style="color:var(--danger)">⚡ CONFLICT DAY</span>' : ''}
+          · Work: ${t.workHours}h on due date
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="badge ${uColors[i]}">${urgency[i]}</span>
+        <div class="priority-score">${t.score}</div>
+      </div>
+    </div>`;
+  });
+  const el = document.getElementById('priorityList');
+  if (el) el.innerHTML = html;
+}
+
+function addSchedule(type) {
+  if (type === 'class') {
+    const subject = document.getElementById('c-subject').value.trim();
+    const start = document.getElementById('c-start').value;
+    const end = document.getElementById('c-end').value;
+    const days = Array.from(document.getElementById('c-days').selectedOptions).map(o=>o.value);
+    if (!subject || !start || !end || days.length === 0) { toast('Please fill in all class fields.', 'error'); return; }
+    entries.push({ type:'class', label:`📚 ${subject} | ${days.join('/')} ${start}–${end}` });
+    toast(`Class "${subject}" added!`, 'success');
+    document.getElementById('c-subject').value = '';
+  } else {
+    const job = document.getElementById('w-job').value.trim();
+    const day = document.getElementById('w-day').value;
+    const start = document.getElementById('w-start').value;
+    const end = document.getElementById('w-end').value;
+    if (!job || !start || !end) { toast('Please fill in all work shift fields.', 'error'); return; }
+    entries.push({ type:'work', label:`💼 ${job} | ${day} ${start}–${end}` });
+    toast(`Work shift added! Checking for conflicts...`, 'warning');
+    setTimeout(() => toast('⚡ Potential conflict detected on that day. Check Conflicts tab.', 'error'), 1200);
+    document.getElementById('w-job').value = '';
+  }
+  renderEntries();
+}
+
+function addTask() {
+  const name = document.getElementById('t-name').value.trim();
+  const subject = document.getElementById('t-subject').value.trim();
+  const due = document.getElementById('t-due').value;
+  const weight = document.getElementById('t-weight').value;
+  const type = document.getElementById('t-type').value;
+  if (!name || !subject || !due || !weight) { toast('Please complete all task fields.', 'error'); return; }
+  const daysUntil = Math.max(1, Math.ceil((new Date(due) - new Date()) / 86400000));
+  const deadlineScore = Math.min(100, (30 / daysUntil) * 100);
+  const conflictScore = daysUntil <= 3 ? 100 : 0;
+  const score = (deadlineScore * 0.45 + conflictScore * 0.30 + 50 * 0.25).toFixed(1);
+  tasks.push({ name, subject, due: new Date(due).toLocaleDateString('en-US',{month:'short',day:'numeric'}), weight:Number(weight), type, conflict: conflictScore > 0, workHours: 0, score: Number(score) });
+  tasks.sort((a,b) => b.score - a.score);
+  entries.push({ type:'task', label:`📋 ${name} | Due: ${due} | Score: ${score}` });
+  renderEntries();
+  renderPriority();
+  document.getElementById('t-name').value = '';
+  document.getElementById('t-subject').value = '';
+  document.getElementById('t-due').value = '';
+  document.getElementById('t-weight').value = '';
+  document.getElementById('dash-tasks').textContent = tasks.length;
+  toast(`Task added! Priority score: ${score}`, 'success');
+}
+
+function clearTaskForm() {
+  ['t-name','t-subject','t-due','t-weight'].forEach(id => document.getElementById(id).value = '');
+}
+
+// ─── ENTRIES: Archive / Delete / Filter ───
+let archived = [];
+let currentFilter = 'all';
+
+const typeColors = { class: '#7eb8f7', work: '#ff6b47', task: '#f5c842' };
+
+function renderEntries() {
+  const el = document.getElementById('entriesLog');
+  const badge = document.getElementById('entry-count-badge');
+  const filtered = currentFilter === 'all' ? entries : entries.filter(e => e.type === currentFilter);
+
+  if (badge) badge.textContent = entries.length + ' active';
+
+  if (!filtered.length) {
+    el.innerHTML = `<div style="padding:10px;font-size:0.72rem;color:var(--muted);text-align:center;">${entries.length ? 'No entries match this filter.' : 'No entries yet. Add a schedule or task above.'}</div>`;
+    return;
+  }
+
+  el.innerHTML = filtered.map((e, i) => {
+    const realIdx = entries.indexOf(e);
+    const dot = typeColors[e.type] || '#888';
+    return `
+    <div class="entry-item" id="entry-${realIdx}">
+      <div class="entry-type-dot" style="background:${dot}"></div>
+      <div class="entry-label">${e.label}</div>
+      <div class="entry-actions">
+        <button class="entry-btn entry-btn-archive" onclick="archiveEntry(${realIdx})" title="Archive">📦 Archive</button>
+        <button class="entry-btn entry-btn-delete" onclick="deleteEntry(${realIdx})" title="Delete">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function archiveEntry(idx) {
+  const entry = entries[idx];
+  if (!entry) return;
+  archived.push({ ...entry, archivedAt: new Date().toLocaleTimeString() });
+  entries.splice(idx, 1);
+  renderEntries();
+  renderArchive();
+  toast(`"${entry.label.split('|')[0].trim()}" archived.`, 'success');
+}
+
+function deleteEntry(idx) {
+  const entry = entries[idx];
+  if (!entry) return;
+  entries.splice(idx, 1);
+  renderEntries();
+  toast(`Entry deleted permanently.`, 'warning');
+}
+
+function clearEntries() {
+  if (!entries.length) { toast('No entries to clear.', 'warning'); return; }
+  entries = [];
+  renderEntries();
+  toast('All active entries cleared.', 'success');
+}
+
+function filterEntries(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.entry-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderEntries();
+}
+
+function renderArchive() {
+  const el = document.getElementById('archiveLog');
+  if (!el) return;
+  if (!archived.length) { el.innerHTML = '<div style="padding:10px;font-size:0.72rem;color:var(--muted);text-align:center;">Archive is empty.</div>'; return; }
+  el.innerHTML = archived.map((e, i) => {
+    const dot = typeColors[e.type] || '#888';
+    return `
+    <div class="entry-item" style="opacity:0.75;">
+      <div class="entry-type-dot" style="background:${dot}"></div>
+      <div class="entry-label">${e.label} <span style="font-size:0.58rem;color:var(--muted);margin-left:4px;">· archived ${e.archivedAt}</span></div>
+      <div class="entry-actions">
+        <button class="entry-btn entry-btn-restore" onclick="restoreEntry(${i})" title="Restore">↩ Restore</button>
+        <button class="entry-btn entry-btn-delete" onclick="purgeEntry(${i})" title="Delete permanently">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function restoreEntry(idx) {
+  const entry = archived[idx];
+  if (!entry) return;
+  entries.push({ type: entry.type, label: entry.label });
+  archived.splice(idx, 1);
+  renderEntries();
+  renderArchive();
+  toast(`Entry restored to active.`, 'success');
+}
+
+function purgeEntry(idx) {
+  archived.splice(idx, 1);
+  renderArchive();
+  toast('Archived entry permanently deleted.', 'warning');
+}
+
+function showArchive() {
+  document.getElementById('archivePanel').style.display = 'block';
+  renderArchive();
+  document.getElementById('archiveViewBtn').textContent = '📦 Archive (' + archived.length + ')';
+}
+
+function hideArchive() {
+  document.getElementById('archivePanel').style.display = 'none';
+}
+
+function restoreAllArchived() {
+  if (!archived.length) { toast('Nothing in archive.', 'warning'); return; }
+  archived.forEach(e => entries.push({ type: e.type, label: e.label }));
+  archived = [];
+  renderEntries();
+  renderArchive();
+  toast('All archived entries restored!', 'success');
+}
+
+function purgeArchive() {
+  if (!archived.length) { toast('Archive is already empty.', 'warning'); return; }
+  archived = [];
+  renderArchive();
+  document.getElementById('archiveViewBtn').textContent = '📦 Archive';
+  toast('Archive purged permanently.', 'warning');
+}
+function saveThresholds() { toast('Risk thresholds saved.', 'success'); }
+function saveWeights() {
+  const d = document.getElementById('wt-deadline').value;
+  const c = document.getElementById('wt-conflict').value;
+  const w = document.getElementById('wt-work').value;
+  if (+d + +c + +w !== 100) { toast('Weights must sum to 100%.', 'error'); return; }
+  toast('Algorithm weights updated!', 'success');
+}
+
+function toast(msg, type='success') {
+  const icons = { success:'✅', error:'❌', warning:'⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ─── SETTINGS ───
+function openSettings() {
+  document.getElementById('settingsOverlay').classList.add('open');
+  document.getElementById('settingsPanel').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+  document.getElementById('settingsPanel').classList.remove('open');
+}
+function switchSettingsTab(id, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('stab-' + id).classList.add('active');
+  el.classList.add('active');
+}
+function setAccent(el) {
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  const color = el.dataset.color;
+  const color2 = el.dataset.color2;
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--card-glow', color2);
+  toast('Accent color updated!', 'success');
+}
+function toggleDarkMode(cb) {
+  if (!cb.checked) {
+    document.documentElement.style.setProperty('--bg', '#f4f5f7');
+    document.documentElement.style.setProperty('--surface', '#ffffff');
+    document.documentElement.style.setProperty('--surface2', '#f0f2f5');
+    document.documentElement.style.setProperty('--surface3', '#e8eaf0');
+    document.documentElement.style.setProperty('--border', '#dde0e8');
+    document.documentElement.style.setProperty('--text', '#1a1d26');
+    document.documentElement.style.setProperty('--text2', '#4a5568');
+    document.documentElement.style.setProperty('--muted', '#8a94a6');
+    toast('Switched to light mode', 'success');
+  } else {
+    document.documentElement.style.setProperty('--bg', '#0d0f14');
+    document.documentElement.style.setProperty('--surface', '#14171f');
+    document.documentElement.style.setProperty('--surface2', '#1c2030');
+    document.documentElement.style.setProperty('--surface3', '#222840');
+    document.documentElement.style.setProperty('--border', '#252d42');
+    document.documentElement.style.setProperty('--text', '#dce4f0');
+    document.documentElement.style.setProperty('--text2', '#a0aec0');
+    document.documentElement.style.setProperty('--muted', '#546280');
+    toast('Switched to dark mode', 'success');
+  }
+}
+function toggleCompact(cb) {
+  document.querySelector('.content').style.padding = cb.checked ? '12px 16px' : '22px 26px';
+  toast(cb.checked ? 'Compact layout on' : 'Layout restored', 'success');
+}
+function requestNotifPerms(cb) {
+  if (cb.checked && 'Notification' in window) {
+    Notification.requestPermission().then(p => {
+      if (p !== 'granted') { cb.checked = false; toast('Notification permission denied.', 'error'); }
+      else toast('Browser notifications enabled!', 'success');
+    });
+  }
+}
+function saveSettings() {
+  const name = document.getElementById('pf-name').value;
+  if (name) {
+    const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('avatarPreview').textContent = initials;
+    document.querySelector('.avatar').textContent = initials;
+    document.querySelector('.user-name').textContent = name;
+  }
+  closeSettings();
+  toast('Settings saved successfully!', 'success');
+}
+function resetSettings() {
+  toast('Settings reset to defaults.', 'warning');
+  setTimeout(closeSettings, 800);
+}
+</script>
+</body>
+</html>

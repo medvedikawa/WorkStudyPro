@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ws_surface">
+
+    <!-- Scrollable Content Area -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomNavContainer"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="19dp">
+
+            <!-- 1. Header with Profile Initial -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Wednesday, Oct 14"
+                        android:textStyle="bold"
+                        android:textColor="@color/ws_text"
+                        android:textSize="11sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Today"
+                        android:textColor="@color/ws_text"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Profile Initials Badge -->
+                <TextView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:gravity="center"
+                    android:text="🔔"
+                    android:textColor="@color/ws_accent2"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- 2. Weekly At-A-Glance Day Chips -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="12dp">
+
+
+                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="Su\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="M\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="T\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_too" android:gravity="center" android:text="W\n⚡" android:textColor="#FF6B47" android:textSize="13sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_too" android:gravity="center" android:text="Th\n⚡" android:textColor="#FF6B47" android:textSize="13sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="F\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="Sa\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 4. High Risk Conflict Zone -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_too"
+                android:padding="14dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚡ CONFLICT ON WEDNESDAY"
+                    android:textColor="#F26B6B"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Shift 2:00 to 8:00 PM overlaps with Networking Lab"
+                    android:textColor="#F4A261"
+                    android:textSize="15sp"
+                    android:layout_marginBottom="10dp" />
+
+                <Button
+                    android:id="@+id/btnSuggestAction"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:text="💡 Review Conflict &amp; Shift Swap"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="#8B2628" />
+            </LinearLayout>
+
+            <!-- 3. Workload Summary Pill (From Teammate's UX) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_input"
+                android:padding="12dp"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⏱️"
+                    android:textSize="16sp"
+                    android:layout_marginEnd="10dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Moderate load"
+                        android:textColor="#F4A261"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="31 hrs of class and work this week"
+                        android:textColor="@color/ws_muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+
+
+            <!-- 5. "Focus on these first" Priority List (From Teammate's UX) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Focus on these first"
+                android:textColor="@color/ws_text"
+                android:textSize="19sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Task Item 1 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_input"
+                android:padding="12dp"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:background="#3D181B"
+                    android:gravity="center"
+                    android:text="1"
+                    android:textColor="#FF6B47"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Database ERD submission"
+                        android:textColor="@color/ws_text"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Due Wed, same day as your shift"
+                        android:textColor="@color/ws_muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Task Item 2 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_input"
+                android:padding="12dp"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:background="#3A301E"
+                    android:gravity="center"
+                    android:text="2"
+                    android:textColor="#F4A261"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Networking quiz review"
+                        android:textColor="@color/ws_text"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Quiz Fri, only 2 free evenings left"
+                        android:textColor="@color/ws_muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 6. Today's Schedule Timeline (Color-coded indicators)[cite: 2] -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Today's schedule"
+                android:textColor="@color/ws_text"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Schedule Card 1 (Class - Blue indicator) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_input"
+                android:layout_marginBottom="8dp">
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="match_parent"
+                    android:background="@color/ws_accent2" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="73dp"
+                        android:layout_height="wrap_content"
+                        android:text="8:00 AM - 10:00 AM"
+                        android:textColor="@color/ws_text"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Database Systems"
+                        android:textColor="@color/ws_text"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Schedule Card 2 (Work - Orange indicator) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_input"
+                android:layout_marginBottom="13dp">
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="match_parent"
+                    android:background="@color/ws_accent" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="73dp"
+                        android:layout_height="wrap_content"
+                        android:text="5:00 PM - 10:00 PM"
+                        android:textColor="@color/ws_text"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Work shift"
+                        android:textColor="@color/ws_text"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- 7. Activities () -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="To-do:"
+                android:textColor="@color/ws_text2"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- To-do Section Items -->
+
+            <!-- Task 1: 04 Performance Task 1 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_input"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp">
+
+                <!-- Coral/Accent Indicator Strip -->
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="28dp"
+                    android:background="@color/ws_accent"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="04 Performance Task 1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Network"
+                        android:textColor="#8C91A0"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Task 2: 03 Performance Task -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_input"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp">
+
+                <!-- Secondary Indicator Strip (e.g., Yellow/Orange or Accent) -->
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="28dp"
+                    android:background="#FFA726"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="03 Performance Task"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Game Dev"
+                        android:textColor="#8C91A0"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Task 3: 04 Laboratory Exercise -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_input"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp">
+
+                <!-- Indicator Strip -->
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="28dp"
+                    android:background="@color/ws_muted"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="04 Laboratory Exercise"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ITSM"
+                        android:textColor="#8C91A0"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 7. Bottom Navigation Bar with Floating Action Button[cite: 2] -->
+    <LinearLayout
+        android:id="@+id/bottomNavContainer"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:background="#14171F"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:elevation="8dp">
+
+        <TextView
+            android:id="@+id/btnToday"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="🐸\nToday"
+            android:textColor="@color/ws_accent"
+            android:textSize="15sp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/btnWeek"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="🐷\nWeek"
+            android:textColor="@color/ws_text"
+            android:textSize="15sp"
+            android:clickable="true"
+            android:focusable="true"/>
+
+        <!-- Central Scan Schedule Button -->
+        <!-- Central Scan Schedule Button (Perfect Circle & Larger Icon) -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/fabScanSchedule"
+                android:layout_width="54dp"
+                android:layout_height="54dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_accent_cirlce"
+                android:src="@drawable/scann"
+                app:tint="@color/ws_accent"
+                android:scaleType="centerInside"
+                android:padding="12dp"
+                android:contentDescription="Scan Schedule Camera" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/btnTasks"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="🐰\nTasks"
+            android:textColor="@color/ws_text"
+            android:textSize="15sp"
+            android:clickable="true"
+            android:focusable="true" />
+
+
+        <TextView
+            android:id="@+id/btnYou"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="🦈\nYou"
+            android:textColor="@color/ws_text"
+            android:textSize="15sp"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+</RelativeLayout>
