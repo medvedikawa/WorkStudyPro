@@ -17,6 +17,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.WSPro">
+        <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".LoadingActivity" android:exported="false" />
         <activity android:name=".WeekActivity" android:exported="false" />
         <activity android:name=".LoginActivity" android:exported="true">
@@ -26,6 +27,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".ProfileSetupActivity" android:exported="false" />
-        <activity android:name=".MainActivity" android:exported="false" />
+
     </application>
 </manifest>

@@ -33,7 +33,7 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        setContentView(R.layout.activity_layout);
+        setContentView(R.layout.activity_welcomepage);
 
         etLoginId = findViewById(R.id.etLoginId);
         etLoginPass = findViewById(R.id.etLoginPass);
