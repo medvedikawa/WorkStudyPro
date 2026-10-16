@@ -10,18 +10,11 @@
     android:layout_marginBottom="10dp">
 
     <!-- Day Input (e.g. M, W, F) -->
-    <EditText
-        android:id="@+id/etRowDay"
-        android:layout_width="55dp"
-        android:layout_height="48dp"
-        android:background="@drawable/bg_input"
-        android:gravity="center"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:hint="Day"
-        android:textColorHint="#505868"
-        android:layout_marginEnd="8dp" />
+    <Spinner
+        android:id="@+id/sDay"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:hint="Day"/>
 
     <!-- Start Time Input -->
     <EditText
@@ -33,9 +26,11 @@
         android:gravity="center"
         android:textColor="#FFFFFF"
         android:textSize="13sp"
-        android:hint="Start"
+        android:hint="Start Time"
         android:textColorHint="#505868"
-        android:layout_marginEnd="6dp" />
+        android:clickable="true"
+        android:focusable="false"
+        android:layout_marginEnd="8dp" />
 
     <!-- End Time Input -->
     <EditText
@@ -47,8 +42,10 @@
         android:gravity="center"
         android:textColor="#FFFFFF"
         android:textSize="13sp"
-        android:hint="End"
+        android:hint="End Time"
         android:textColorHint="#505868"
+        android:clickable="true"
+        android:focusable="false"
         android:layout_marginEnd="8dp" />
 
     <!-- Delete Button -->
