@@ -27,6 +27,7 @@ import com.google.android.material.button.MaterialButton;
 public class MainActivity extends AppCompatActivity {
 
     private static final String CHANNEL_ID = "work_study_conflicts";
+    private android.net.Uri photoUri;
 
     // Launcher to handle camera permission request
     private final ActivityResultLauncher<String> cameraPermissionLauncher = registerForActivityResult(
@@ -45,8 +46,14 @@ public class MainActivity extends AppCompatActivity {
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == RESULT_OK) {
-                    Toast.makeText(this, "Schedule captured! Extracting text...", Toast.LENGTH_LONG).show();
-                    // TODO: Pass image to OCR / Text Recognition engine here
+                    Toast.makeText(this, "Schedule captured! Opening editor...", Toast.LENGTH_SHORT).show();
+
+                    // Launch EditScheduleActivity instead of doing nothing
+                    Intent intent = new Intent(MainActivity.this, EditScheduleActivity.class);
+                    if (photoUri != null) {
+                        intent.putExtra("CAPTURED_IMAGE_URI", photoUri.toString());
+                    }
+                    startActivity(intent);
                 }
             }
     );
@@ -71,19 +78,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // 3. Initialize Bottom Navigation Bar Items (using your existing IDs: btnToday, btnWeek, etc.)
-        TextView navToday = findViewById(R.id.btnToday);
         TextView navWeek = findViewById(R.id.btnWeek);
         TextView navTasks = findViewById(R.id.btnTasks);
         TextView navYou = findViewById(R.id.btnYou);
 
-        if (navToday != null) {
-            navToday.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, WeekActivity.class);
-                startActivity(intent);
-                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
-
-            });
-        }
 
         if (navWeek != null) {
             navWeek.setOnClickListener(v -> {
@@ -130,6 +128,18 @@ public class MainActivity extends AppCompatActivity {
 
     private void openScheduleCamera() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        java.io.File photoFile = new java.io.File(getFilesDir(), "schedule_capture.jpg");
+        photoUri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                getPackageName() + ".fileProvider",
+                photoFile);
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+        cameraLauncher.launch(takePictureIntent);
+
+
+
+
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             cameraLauncher.launch(takePictureIntent);
         } else {
