@@ -135,10 +135,6 @@ public class MainActivity extends AppCompatActivity {
                 getPackageName() + ".fileProvider",
                 photoFile);
         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
-        cameraLauncher.launch(takePictureIntent);
-
-
-
 
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             cameraLauncher.launch(takePictureIntent);

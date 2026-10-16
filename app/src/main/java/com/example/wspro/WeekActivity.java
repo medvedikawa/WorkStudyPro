@@ -19,6 +19,7 @@ import com.google.android.material.button.MaterialButton;
 
 public class WeekActivity extends AppCompatActivity {
 
+    private android.net.Uri photoUri;
     private final ActivityResultLauncher<String> cameraPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
             isGranted -> {
@@ -33,8 +34,14 @@ public class WeekActivity extends AppCompatActivity {
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == RESULT_OK) {
-                    Toast.makeText(this, "Schedule captured! Extracting text...", Toast.LENGTH_LONG).show();
-                    // TODO: Pass image to OCR / Text Recognition engine here
+                    Toast.makeText(this, "Schedule captured! Opening editor...", Toast.LENGTH_SHORT).show();
+
+                    // Launch EditScheduleActivity instead of doing nothing
+                    Intent intent = new Intent(WeekActivity.this, EditScheduleActivity.class);
+                    if (photoUri != null) {
+                        intent.putExtra("CAPTURED_IMAGE_URI", photoUri.toString());
+                    }
+                    startActivity(intent);
                 }
             }
     );
@@ -59,7 +66,6 @@ public class WeekActivity extends AppCompatActivity {
 
         // 3. Initialize Bottom Navigation Bar Items
         TextView navToday = findViewById(R.id.navToday);
-        TextView navWeek = findViewById(R.id.navWeek);
         TextView navTasks = findViewById(R.id.navTasks);
         TextView navYou = findViewById(R.id.navYou);
 
@@ -71,11 +77,6 @@ public class WeekActivity extends AppCompatActivity {
             });
         }
 
-        if (navWeek != null) {
-            navWeek.setOnClickListener(v ->
-                    Toast.makeText(this, "Already viewing Week view", Toast.LENGTH_SHORT).show()
-            );
-        }
 
         if (navTasks != null) {
             navTasks.setOnClickListener(v ->
@@ -100,6 +101,18 @@ public class WeekActivity extends AppCompatActivity {
 
     private void openScheduleCamera() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        java.io.File photoFile = new java.io.File(getFilesDir(), "schedule_capture.jpg");
+        photoUri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                getPackageName() + ".fileProvider",
+                photoFile);
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+        cameraLauncher.launch(takePictureIntent);
+
+
+
+
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             cameraLauncher.launch(takePictureIntent);
         } else {
