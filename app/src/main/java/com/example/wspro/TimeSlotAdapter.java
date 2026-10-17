@@ -113,6 +113,7 @@ public class TimeSlotAdapter extends RecyclerView.Adapter<TimeSlotAdapter.ViewHo
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
+        EditText etSubject;
         Spinner spinnerDay;
         EditText etStart;
         EditText etEnd;
@@ -120,6 +121,7 @@ public class TimeSlotAdapter extends RecyclerView.Adapter<TimeSlotAdapter.ViewHo
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            etSubject = itemView.findViewById(R.id.etRowSubject);
             spinnerDay = itemView.findViewById(R.id.sDay);
             etStart = itemView.findViewById(R.id.etRowStart);
             etEnd = itemView.findViewById(R.id.etRowEnd);
