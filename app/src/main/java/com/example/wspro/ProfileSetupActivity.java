@@ -68,7 +68,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
             // Proceed to Dashboard/Main activity next
         });
 
-        // Initialize the return button
         // Initialize the return button in WeekActivity.java
         ImageButton btnReturnBack = findViewById(R.id.btnReturnBack);
         if (btnReturnBack != null) {

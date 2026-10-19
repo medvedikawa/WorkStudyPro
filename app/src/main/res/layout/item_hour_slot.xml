@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="12dp"
+    android:paddingHorizontal="8dp"
+    android:gravity="center_vertical">
+
+    <!-- Hour Label (e.g., 12 AM, 01 AM ... 11 PM) -->
+    <TextView
+        android:id="@+id/tvHourLabel"
+        android:layout_width="64dp"
+        android:layout_height="wrap_content"
+        android:text="12 AM"
+        android:textColor="#757575"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <!-- Container for schedules falling into this hour slot -->
+    <LinearLayout
+        android:id="@+id/layoutHourSchedules"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+        <!-- Dynamically populated or filled via adapter if a class/shift exists here -->
+    </LinearLayout>
+
+</LinearLayout>

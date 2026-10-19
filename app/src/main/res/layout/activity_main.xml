@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="19dp">
+            android:padding="16dp">
 
             <!-- 1. Header with Profile Initial -->
             <LinearLayout
@@ -32,6 +32,7 @@
                     android:layout_weight="1"
                     android:orientation="vertical">
                     <TextView
+                        android:id="@+id/tvDateHeader"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Wednesday, Oct 14"

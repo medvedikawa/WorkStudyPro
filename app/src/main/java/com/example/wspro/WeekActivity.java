@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,10 +15,21 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.wspro.adapters.HourTimelineAdapter;
 import com.google.android.material.button.MaterialButton;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WeekActivity extends AppCompatActivity {
+
+    private RecyclerView recyclerWeekSchedule;
+    private List<ScheduleItem> weeklyScheduleList;
+    private HourTimelineAdapter adapter;
+    private String selectedDay = "";
 
     private android.net.Uri photoUri;
     private final ActivityResultLauncher<String> cameraPermissionLauncher = registerForActivityResult(
@@ -49,14 +61,20 @@ public class WeekActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_week);
+        recyclerWeekSchedule = findViewById(R.id.recyclerWeekSchedule);
+        recyclerWeekSchedule.setLayoutManager(new LinearLayoutManager(this));
+
+        weeklyScheduleList = new ArrayList<>();
+        adapter = new HourTimelineAdapter(weeklyScheduleList);
+        recyclerWeekSchedule.setAdapter(adapter);
+
+        LinearLayout dayContainer = findViewById(R.id.layoutDayContainer);
+        DateScrollerHelper.setup(this, dayContainer, selectedDay -> {
+            loadSavedSchedules(selectedDay);
+        });
 
         // 1. Initialize Quick Action inside Wednesday's Conflict Card
-        Button btnWeekShiftSwap = findViewById(R.id.btnWeekShiftSwap);
-        if (btnWeekShiftSwap != null) {
-            btnWeekShiftSwap.setOnClickListener(v ->
-                    Toast.makeText(this, "Shift Swap Template generated!", Toast.LENGTH_LONG).show()
-            );
-        }
+
 
         // 2. Initialize Central FAB
         ImageButton fabScanSchedule = findViewById(R.id.fabScanSchedule);
@@ -91,6 +109,33 @@ public class WeekActivity extends AppCompatActivity {
         }
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (selectedDay != null && !selectedDay.isEmpty()) {
+            loadSavedSchedules(selectedDay);
+        }
+    }
+
+    private void loadSavedSchedules(String day){
+        this.selectedDay = day;
+        new Thread (() -> {
+            List<ScheduleItem> savedData = AppDatabase.getInstance(getApplicationContext())
+                    .scheduleDao()
+                    .getAllSchedules(day);
+
+            runOnUiThread(() -> {
+                weeklyScheduleList.clear();
+                weeklyScheduleList.addAll(savedData);
+
+                if (weeklyScheduleList.isEmpty()){
+                    Toast.makeText(this, "No schedules found for " + day, Toast.LENGTH_SHORT).show();
+                }
+                // adapter.notifyDataSetChanged(); // You'll need an adapter here
+            });
+            }).start();
+    }
     private void checkCameraPermissionAndScan() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             openScheduleCamera();

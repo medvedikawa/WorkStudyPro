@@ -31,13 +31,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Oct 12 – Oct 18"
-                        android:textColor="@color/ws_text"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -55,53 +49,27 @@
                     android:textSize="20sp" />
             </LinearLayout>
 
-            <!-- 1. Weekly Load Summary Card -->
-            <LinearLayout
+            <HorizontalScrollView
+                android:id="@+id/horizontalScrollDays"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_input"
-                android:padding="14dp"
-                android:layout_marginBottom="16dp">
+                android:scrollbars="none"
+                app:layout_constraintTop_toTopOf="parent">
 
+                <!-- Added android:id="@+id/layoutDaysContainer" so Java can populate it -->
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="6dp">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="WEEKLY WORKLOAD CAPACITY"
-                        android:textColor="@color/ws_text"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:letterSpacing="0.08" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="38 / 40 hrs"
-                        android:textColor="#F4A261"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <TextView
+                    android:id="@+id/layoutDayContainer"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="22h Classes • 16h Work Shifts • ⚡ 2 Conflicts Found"
-                    android:textColor="@color/ws_text"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="8dp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                <!-- Load Progress Indicator Bar -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="6dp"
-                    android:background="@drawable/bg_too" />
-            </LinearLayout>
+                    <!-- The 7-day chips will now be generated dynamically here -->
+
+                </LinearLayout>
+            </HorizontalScrollView>
+
+
 
             <TextView
                 android:layout_width="wrap_content"
@@ -112,211 +80,18 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="10dp" />
 
-            <!-- MONDAY CARD (Clear) -->
-            <LinearLayout
+            <!-- Dynamic Schedule List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerWeekSchedule"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_input"
-                android:padding="12dp"
-                android:layout_marginBottom="10dp">
+                android:layout_height="match_parent"
+                app:layout_constraintTop_toBottomOf="@+id/horizontalScrollDays"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:nestedScrollingEnabled="false"
+                android:clipToPadding="false"
+                android:layout_marginBottom="10dp" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="6dp">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Monday, Oct 12"
-                        android:textColor="@color/ws_text"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🟢 Clear"
-                        android:textColor="#2ECC71"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📘 08:00 AM – Database Systems Class\n💼 05:00 PM – Work Shift"
-                    android:textColor="@color/ws_text"
-                    android:textSize="12sp"
-                    android:lineSpacingExtra="3dp" />
-            </LinearLayout>
-
-            <!-- TUESDAY CARD (Heavy Load) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_input"
-                android:padding="12dp"
-                android:layout_marginBottom="10dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="6dp">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Tuesday, Oct 13"
-                        android:textColor="@color/ws_text"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🟡 Heavy Load (11 hrs)"
-                        android:textColor="#F4A261"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📘 09:00 AM – ITSM &amp; Web Dev Classes\n💼 04:00 PM – Extended Work Shift"
-                    android:textColor="@color/ws_text"
-                    android:textSize="12sp"
-                    android:lineSpacingExtra="3dp" />
-            </LinearLayout>
-
-            <!-- WEDNESDAY CARD (Conflict Day) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_too"
-                android:padding="12dp"
-                android:layout_marginBottom="10dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="6dp">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Wednesday, Oct 14"
-                        android:textColor="#FF6B47"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="⚡ 1 Conflict"
-                        android:textColor="#F26B6B"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⚡ Shift 02:00 PM – 08:00 PM overlaps with Networking Lab (03:00 PM – 05:00 PM)"
-                    android:textColor="#F4A261"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="8dp" />
-
-                <Button
-                    android:id="@+id/btnWeekShiftSwap"
-                    android:layout_width="match_parent"
-                    android:layout_height="32dp"
-                    android:text="💡 Request Shift Swap"
-                    android:textColor="#FFFFFF"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:backgroundTint="#8B2628" />
-            </LinearLayout>
-
-            <!-- THURSDAY CARD (Conflict Day) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_too"
-                android:padding="12dp"
-                android:layout_marginBottom="10dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="6dp">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Thursday, Oct 15"
-                        android:textColor="#FF6B47"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="⚡ 1 Conflict"
-                        android:textColor="#F26B6B"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⚡ Quiz Review overlaps with early Work Shift start"
-                    android:textColor="#F4A261"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <!-- FRIDAY CARD (Clear) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_input"
-                android:padding="12dp"
-                android:layout_marginBottom="10dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Friday, Oct 16"
-                        android:textColor="@color/ws_text"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🟢 Clear"
-                        android:textColor="#2ECC71"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
-
+            <!-- Static placeholders (Keeping them for reference/UI fallback if needed, or remove them) -->
         </LinearLayout>
     </ScrollView>
 

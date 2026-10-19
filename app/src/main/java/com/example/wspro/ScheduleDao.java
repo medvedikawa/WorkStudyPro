@@ -15,9 +15,9 @@ public interface ScheduleDao {
     @Insert
     void insert(ScheduleItem schedule);
 
-    @Query("SELECT * FROM schedule_table")
+    @Query("SELECT * FROM schedule_table WHERE day = :selectedDay ")
 
-    List<ScheduleItem> getAllSchedules();
+    List<ScheduleItem> getAllSchedules(String selectedDay);
 
     @Query("DELETE FROM schedule_table")
     void deleteAllSchedules();

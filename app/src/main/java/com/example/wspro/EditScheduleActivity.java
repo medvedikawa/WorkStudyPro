@@ -1,5 +1,6 @@
 package com.example.wspro;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
@@ -99,6 +100,9 @@ public class EditScheduleActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     Toast.makeText(this, "Schedule saved successfully", Toast.LENGTH_SHORT).show();
+
+                    Intent intent = new Intent(EditScheduleActivity.this, WeekActivity.class);
+                    startActivity(intent);
                     finish();
                 });
             }).start();
