@@ -2,6 +2,8 @@ package com.example.wspro;
 
 import android.app.TimePickerDialog;
 import android.content.Context;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,6 +40,29 @@ public class TimeSlotAdapter extends RecyclerView.Adapter<TimeSlotAdapter.ViewHo
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         TimeSlotItem item = timeSlots.get(position);
+
+        // 1. Remove existing listener to prevent recycling issues
+        if (holder.subjectWatcher != null) {
+            holder.etSubject.removeTextChangedListener(holder.subjectWatcher);
+        }
+
+        // 2. Bind Subject
+        holder.etSubject.setText(item.getSubject());
+
+        // 3. Add new listener
+        holder.subjectWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                item.setSubject(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        };
+        holder.etSubject.addTextChangedListener(holder.subjectWatcher);
 
         ArrayAdapter<CharSequence> spinnerAdapter = ArrayAdapter.createFromResource(
                 context,
@@ -118,6 +143,7 @@ public class TimeSlotAdapter extends RecyclerView.Adapter<TimeSlotAdapter.ViewHo
         EditText etStart;
         EditText etEnd;
         ImageView btnDelete;
+        TextWatcher subjectWatcher;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);

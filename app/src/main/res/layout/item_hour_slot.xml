@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingVertical="12dp"
+    android:minHeight="60dp"
+    android:paddingVertical="8dp"
     android:paddingHorizontal="8dp"
     android:gravity="center_vertical">
 
@@ -17,6 +18,13 @@
         android:textSize="13sp"
         android:textStyle="bold" />
 
+    <!-- Divider Line -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="8dp"
+        android:background="#E0E0E0" />
+
     <!-- Container for schedules falling into this hour slot -->
     <LinearLayout
         android:id="@+id/layoutHourSchedules"
@@ -24,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical">
-        <!-- Dynamically populated or filled via adapter if a class/shift exists here -->
+        <!-- Dynamically populated -->
     </LinearLayout>
 
 </LinearLayout>

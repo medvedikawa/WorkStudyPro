@@ -1,25 +1,17 @@
 package com.example.wspro;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.wspro.adapters.HourTimelineAdapter;
-import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,37 +22,21 @@ public class WeekActivity extends AppCompatActivity {
     private List<ScheduleItem> weeklyScheduleList;
     private HourTimelineAdapter adapter;
     private String selectedDay = "";
+    private ScanButtonHelper scanButtonHelper;
 
-    private android.net.Uri photoUri;
-    private final ActivityResultLauncher<String> cameraPermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestPermission(),
-            isGranted -> {
-                if (isGranted) {
-                    openScheduleCamera();
-                } else {
-                    Toast.makeText(this, "Camera permission is required to scan schedules.", Toast.LENGTH_SHORT).show();
-                }
-            }
-    );
-    private final ActivityResultLauncher<Intent> cameraLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    Toast.makeText(this, "Schedule captured! Opening editor...", Toast.LENGTH_SHORT).show();
-
-                    // Launch EditScheduleActivity instead of doing nothing
-                    Intent intent = new Intent(WeekActivity.this, EditScheduleActivity.class);
-                    if (photoUri != null) {
-                        intent.putExtra("CAPTURED_IMAGE_URI", photoUri.toString());
-                    }
-                    startActivity(intent);
-                }
-            }
-    );
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_week);
+        scanButtonHelper = new ScanButtonHelper(this);
+
+        // to clear the database
+        /**new Thread(() -> {
+            AppDatabase.getInstance(getApplicationContext())
+                    .scheduleDao()
+                    .deleteAllSchedules();
+        }).start();
+        **/
         recyclerWeekSchedule = findViewById(R.id.recyclerWeekSchedule);
         recyclerWeekSchedule.setLayoutManager(new LinearLayoutManager(this));
 
@@ -73,14 +49,10 @@ public class WeekActivity extends AppCompatActivity {
             loadSavedSchedules(selectedDay);
         });
 
-        // 1. Initialize Quick Action inside Wednesday's Conflict Card
-
 
         // 2. Initialize Central FAB
         ImageButton fabScanSchedule = findViewById(R.id.fabScanSchedule);
-        if (fabScanSchedule != null) {
-            fabScanSchedule.setOnClickListener(v -> checkCameraPermissionAndScan());
-        }
+        scanButtonHelper.attachToFab(fabScanSchedule);
 
         // 3. Initialize Bottom Navigation Bar Items
         TextView navToday = findViewById(R.id.navToday);
@@ -109,6 +81,26 @@ public class WeekActivity extends AppCompatActivity {
         }
     }
 
+    private void checkAndHighlightConflicts(List<ScheduleItem> daySchedules, String currentDay) {
+        if (daySchedules == null || daySchedules.size() < 2) return;
+
+        for (int i = 0; i < daySchedules.size(); i++) {
+            for (int j = i + 1; j < daySchedules.size(); j++) {
+                ScheduleItem event1 = daySchedules.get(i);
+                ScheduleItem event2 = daySchedules.get(j);
+
+                // Assuming ScheduleItem provides day, start time, and end time
+                boolean hasClash = ConflictChecker.hasConflict(
+                        currentDay, event1.getStartTime(), event1.getEndTime(),
+                        currentDay, event2.getStartTime(), event2.getEndTime()
+                );
+                if (hasClash) {
+                    // Trigger your warning banner or flag the conflicting items here
+                    String warning = "Conflict detected between " + event1.getSubject() + " and " + event2.getSubject();
+                }
+            }
+        }
+    }
 
     @Override
     protected void onResume() {
@@ -126,42 +118,13 @@ public class WeekActivity extends AppCompatActivity {
                     .getAllSchedules(day);
 
             runOnUiThread(() -> {
-                weeklyScheduleList.clear();
-                weeklyScheduleList.addAll(savedData);
 
-                if (weeklyScheduleList.isEmpty()){
+                adapter.updateData(savedData);
+                if (savedData.isEmpty()){
                     Toast.makeText(this, "No schedules found for " + day, Toast.LENGTH_SHORT).show();
                 }
                 // adapter.notifyDataSetChanged(); // You'll need an adapter here
             });
-            }).start();
-    }
-    private void checkCameraPermissionAndScan() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            openScheduleCamera();
-        } else {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
-        }
-    }
-
-    private void openScheduleCamera() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-        java.io.File photoFile = new java.io.File(getFilesDir(), "schedule_capture.jpg");
-        photoUri = androidx.core.content.FileProvider.getUriForFile(
-                this,
-                getPackageName() + ".fileProvider",
-                photoFile);
-        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
-        cameraLauncher.launch(takePictureIntent);
-
-
-
-
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            cameraLauncher.launch(takePictureIntent);
-        } else {
-            Toast.makeText(this, "No camera app found on device.", Toast.LENGTH_SHORT).show();
-        }
+        }).start();
     }
 }

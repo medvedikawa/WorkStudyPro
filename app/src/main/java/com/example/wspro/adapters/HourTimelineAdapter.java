@@ -5,25 +5,28 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.wspro.R;
 import com.example.wspro.ScheduleItem;
-
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HourTimelineAdapter extends RecyclerView.Adapter<HourTimelineAdapter.HourViewHolder> {
 
-    private List<ScheduleItem> daySchedules;
+    private List<ScheduleItem> scheduleItems;
 
-    public HourTimelineAdapter(List<ScheduleItem> daySchedules) {
-        this.daySchedules = daySchedules;
+    // Regex to strictly match scanned time format: e.g., "10:30 AM" or "2:00 PM"
+    private static final String TIME_REGEX = "^(1[0-2]|0?[1-9]):[0-5][0-9]\\s?(AM|PM|am|pm)$";
+    private static final Pattern timePattern = Pattern.compile(TIME_REGEX);
+
+    public HourTimelineAdapter(List<ScheduleItem> scheduleItems) {
+        this.scheduleItems = scheduleItems;
     }
 
     public void updateData(List<ScheduleItem> newSchedules) {
-        this.daySchedules = newSchedules;
+        this.scheduleItems = newSchedules;
         notifyDataSetChanged();
     }
 
@@ -36,67 +39,80 @@ public class HourTimelineAdapter extends RecyclerView.Adapter<HourTimelineAdapte
 
     @Override
     public void onBindViewHolder(@NonNull HourViewHolder holder, int position) {
-        // Generate hour string for 0 to 23 (12 AM to 11 PM)
         String hourLabel = formatHourLabel(position);
-        holder.tvHourLabel.setText(hourLabel);
+        holder.tvHour.setText(hourLabel);
 
-        // Clear previous views in the slot container
-        holder.layoutHourSchedules.removeAllViews();
+        holder.layoutEventContainer.removeAllViews();
 
-        // Check if any schedule matches this hour slot
-        for (ScheduleItem schedule : daySchedules) {
-            if (isScheduleInHour(schedule, position)) {
-                // Inflate a pill view for the class or work shift
-                View schedulePill = LayoutInflater.from(holder.itemView.getContext())
-                        .inflate(R.layout.item_schedule_pill, holder.layoutHourSchedules, false);
+        if (scheduleItems != null) {
+            for (ScheduleItem item : scheduleItems) {
+                // Only process if both Start and End times are valid scanned times
+                if (isValidTime(item.getStartTime()) && isValidTime(item.getEndTime())) {
+                    if (doesScheduleMatchHour(item, position)) {
+                        View pillView = LayoutInflater.from(holder.itemView.getContext())
+                                .inflate(R.layout.item_schedule_pill, holder.layoutEventContainer, false);
 
-                TextView tvTitle = schedulePill.findViewById(R.id.tvScheduleTitle);
-                String timeRange = schedule.getStartTime() + " - " + schedule.getEndTime();
-                tvTitle.setText(schedule.getSubject() + " (" + timeRange + ")");
+                        TextView tvTitle = pillView.findViewById(R.id.tvScheduleTitle);
+                        TextView tvTime = pillView.findViewById(R.id.tvScheduleTime);
 
-                // Style based on type (e.g., class vs work shift colors)
-                if (schedule.isWork()) {
-                    schedulePill.setBackgroundResource(R.drawable.bg_work_pill);
-                } else {
-                    schedulePill.setBackgroundResource(R.drawable.bg_class_pill);
+                        if (tvTitle != null) tvTitle.setText(item.getSubject());
+                        if (tvTime != null) tvTime.setText(item.getStartTime() + " - " + item.getEndTime());
+
+                        holder.layoutEventContainer.addView(pillView);
+                    }
                 }
-
-                holder.layoutHourSchedules.addView(schedulePill);
+                // If invalid, the loop continues and nothing is added to the container (remains empty)
             }
         }
     }
 
     @Override
     public int getItemCount() {
-        return 24; // 24 hours from 12 AM to 11 PM
+        return 24;
     }
 
-    private String formatHourLabel(int hour24) {
-        if (hour24 == 0) return "12 AM";
-        if (hour24 < 12) return hour24 + " AM";
-        if (hour24 == 12) return "12 PM";
-        return (hour24 - 12) + " PM";
+    /**
+     * Validates if the string matches a scanned time format.
+     * Returns true only if the text is a valid time (e.g. 12:00 PM).
+     */
+    private boolean isValidTime(String time) {
+        if (time == null || time.isEmpty()) return false;
+        Matcher matcher = timePattern.matcher(time.trim());
+        return matcher.matches();
     }
 
-    private boolean isScheduleInHour(ScheduleItem schedule, int hour24) {
+    private String formatHourLabel(int hour) {
+        if (hour == 0) return "12 AM";
+        if (hour < 12) return hour + " AM";
+        if (hour == 12) return "12 PM";
+        return (hour - 12) + " PM";
+    }
+
+    private boolean doesScheduleMatchHour(ScheduleItem item, int hourIndex) {
         try {
-            // schedule.getStartTime() is in "HH:mm" format (e.g., "08:00" or "14:30")
-            String startHourStr = schedule.getStartTime().split(":")[0];
-            int startHour = Integer.parseInt(startHourStr);
-            return startHour == hour24;
+            String startTime = item.getStartTime().trim().toUpperCase();
+            String[] tokens = startTime.split(" ");
+            String[] hm = tokens[0].split(":");
+            int hour = Integer.parseInt(hm[0]);
+            String period = tokens.length > 1 ? tokens[1] : "AM";
+
+            if (period.equals("PM") && hour != 12) hour += 12;
+            if (period.equals("AM") && hour == 12) hour = 0;
+
+            return hour == hourIndex;
         } catch (Exception e) {
             return false;
         }
     }
 
-    static class HourViewHolder extends RecyclerView.ViewHolder {
-        TextView tvHourLabel;
-        LinearLayout layoutHourSchedules;
+    public static class HourViewHolder extends RecyclerView.ViewHolder {
+        TextView tvHour;
+        LinearLayout layoutEventContainer;
 
         public HourViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvHourLabel = itemView.findViewById(R.id.tvHourLabel);
-            layoutHourSchedules = itemView.findViewById(R.id.layoutHourSchedules);
+            tvHour = itemView.findViewById(R.id.tvHourLabel);
+            layoutEventContainer = itemView.findViewById(R.id.layoutHourSchedules);
         }
     }
 }

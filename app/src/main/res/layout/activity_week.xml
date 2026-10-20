@@ -5,97 +5,67 @@
     android:layout_height="match_parent"
     android:background="@color/ws_surface">
 
-    <!-- Scrollable Weekly Content Area -->
-    <ScrollView
+    <!-- Header & Day Scroller (Fixed at Top) -->
+    <LinearLayout
+        android:id="@+id/topContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/bottomNavContainer"
-        android:fillViewport="true">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@color/ws_surface"
+        android:elevation="4dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <!-- Header -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Weekly Schedule"
-                        android:textColor="@color/ws_text"
-                        android:textSize="22sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:gravity="center"
-                    android:text="📅"
-                    android:textSize="20sp" />
-            </LinearLayout>
-
-            <HorizontalScrollView
-                android:id="@+id/horizontalScrollDays"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:scrollbars="none"
-                app:layout_constraintTop_toTopOf="parent">
-
-                <!-- Added android:id="@+id/layoutDaysContainer" so Java can populate it -->
-                <LinearLayout
-                    android:id="@+id/layoutDayContainer"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <!-- The 7-day chips will now be generated dynamically here -->
-
-                </LinearLayout>
-            </HorizontalScrollView>
-
-
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
 
             <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Weekly Schedule"
+                android:textColor="@color/ws_text"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:text="📅"
+                android:textSize="20sp" />
+        </LinearLayout>
+
+        <HorizontalScrollView
+            android:id="@+id/horizontalScrollDays"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/layoutDayContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Day-by-Day Breakdown"
-                android:textColor="@color/ws_text"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="10dp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <!-- Chips generated dynamically -->
+            </LinearLayout>
+        </HorizontalScrollView>
 
-            <!-- Dynamic Schedule List -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerWeekSchedule"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:layout_constraintTop_toBottomOf="@+id/horizontalScrollDays"
-                app:layout_constraintBottom_toBottomOf="parent"
-                android:nestedScrollingEnabled="false"
-                android:clipToPadding="false"
-                android:layout_marginBottom="10dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Day-by-Day Breakdown"
+            android:textColor="@color/ws_text"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
+    </LinearLayout>
 
-            <!-- Static placeholders (Keeping them for reference/UI fallback if needed, or remove them) -->
-        </LinearLayout>
-    </ScrollView>
-
-    <!-- Bottom Navigation Bar -->
+    <!-- Bottom Navigation Bar (Fixed at Bottom) -->
     <LinearLayout
         android:id="@+id/bottomNavContainer"
         android:layout_width="match_parent"
@@ -130,12 +100,10 @@
             android:clickable="true"
             android:focusable="true" />
 
-        <!-- Central Scan Schedule Button (Perfect Circle & Larger Icon) -->
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center">
+            android:layout_weight="1">
 
             <ImageButton
                 android:id="@+id/fabScanSchedule"
@@ -147,7 +115,7 @@
                 app:tint="@color/ws_accent"
                 android:scaleType="centerInside"
                 android:padding="12dp"
-                android:contentDescription="Scan Schedule Camera" />
+                android:contentDescription="Scan Schedule" />
         </FrameLayout>
 
         <TextView
@@ -174,5 +142,15 @@
             android:clickable="true"
             android:focusable="true" />
     </LinearLayout>
+
+    <!-- Scrollable Timeline -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerWeekSchedule"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/topContainer"
+        android:layout_above="@id/bottomNavContainer"
+        android:clipToPadding="false"
+        android:padding="8dp" />
 
 </RelativeLayout>

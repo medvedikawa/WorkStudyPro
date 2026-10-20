@@ -4,6 +4,7 @@
     android:layout_height="wrap_content"
     android:layout_marginVertical="2dp"
     android:padding="8dp"
+    android:orientation="vertical"
     android:background="@drawable/bg_class_pill">
 
     <TextView
@@ -13,5 +14,13 @@
         android:textColor="@color/ws_text"
         android:textSize="13sp"
         android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvScheduleTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/ws_text"
+        android:textSize="11sp"
+        android:alpha="0.7" />
 
 </LinearLayout>

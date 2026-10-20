@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,7 +38,6 @@ public class EditScheduleActivity extends AppCompatActivity {
         btnAddTimeSlot = findViewById(R.id.btnAddTimeSlot);
         btnSaveSchedule = findViewById(R.id.btnSaveSchedule);
         btnReturnBack = findViewById(R.id.btnReturnBack);
-
 
         if (btnReturnBack != null) {
             btnReturnBack.setOnClickListener(v -> finish());
@@ -95,28 +93,24 @@ public class EditScheduleActivity extends AppCompatActivity {
             }
             new Thread(() -> {
                 AppDatabase.getInstance(getApplicationContext())
-                    .scheduleDao()
-                    .insertAll(itemsToSave);
+                        .scheduleDao()
+                        .insertAll(itemsToSave);
 
                 runOnUiThread(() -> {
                     Toast.makeText(this, "Schedule saved successfully", Toast.LENGTH_SHORT).show();
-
-                    Intent intent = new Intent(EditScheduleActivity.this, WeekActivity.class);
-                    startActivity(intent);
-                    finish();
+                    finish(); // Automatically returns to WeekActivity and triggers onResume() refresh
                 });
             }).start();
         });
     }
+
     private void processImageWithMLKit(Uri imageUri) {
         try {
             InputImage image = InputImage.fromFilePath(this, imageUri);
             TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
             recognizer.process(image)
-                    .addOnSuccessListener(visionText -> {
-                        parseScannedText(visionText);
-                    })
+                    .addOnSuccessListener(this::parseScannedText)
                     .addOnFailureListener(e -> {
                         Toast.makeText(this, "Failed to read text: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         timeSlotList.add(new TimeSlotItem("", "", "", ""));
@@ -128,34 +122,35 @@ public class EditScheduleActivity extends AppCompatActivity {
     }
 
     private void parseScannedText(Text visionText) {
-        // Simple heuristic parser for demo & capstone workflow
-        // In practice, ML Kit extracts text blocks; we look for lines resembling days and times.
         boolean foundData = false;
-        String currentSubject = "";
+        String currentSubject = " Scanned Class"; // Default fallback subject
 
         for (Text.TextBlock block : visionText.getTextBlocks()) {
             for (Text.Line line : block.getLines()) {
-                String text = line.getText();
-
+                String text = line.getText().trim();
                 if (text.isEmpty()) continue;
 
-                if (text.toUpperCase().contains("AM") || text.toUpperCase().contains("PM") || text.contains("-")){
+                // Check if this line looks like it contains a time range
+                if (text.toUpperCase().contains("AM") || text.toUpperCase().contains("PM") || text.contains("-") || text.contains("–")) {
                     String detectDay = extractDay(text);
                     String[] times = extractTimeRange(text);
 
-                    String  startTime = times.length > 0 ? times[0] : "";
+                    String startTime = times.length > 0 ? times[0] : "";
                     String endTime = times.length > 1 ? times[1] : "";
 
-                    timeSlotList.add(new TimeSlotItem(currentSubject, detectDay, startTime, endTime));
-                    foundData = true;
-
-                } else { currentSubject = text;
+                    // Only add if we successfully extracted clean time strings
+                    if (!startTime.isEmpty() || !endTime.isEmpty()) {
+                        timeSlotList.add(new TimeSlotItem(currentSubject, detectDay, startTime, endTime));
+                        foundData = true;
+                    }
+                } else {
+                    // If it's not a timeline, treat it as the subject name for upcoming slots
+                    currentSubject = text;
                 }
             }
         }
 
         if (!foundData) {
-            // If OCR couldn't auto-detect structured rows, add a blank one for manual typing
             timeSlotList.add(new TimeSlotItem("", "", "", ""));
             Toast.makeText(this, "Please verify and adjust fields manually.", Toast.LENGTH_LONG).show();
         }
@@ -176,10 +171,22 @@ public class EditScheduleActivity extends AppCompatActivity {
     }
 
     private String[] extractTimeRange(String line) {
+        // Clean up the line to isolate time formats (e.g., 08:00 AM - 11:00 AM)
         String[] parts = line.split("[-–]|(?i)\\bto\\b");
         if (parts.length >= 2) {
-            return new String[]{parts[0].trim(), parts[1].trim()};
+            return new String[]{cleanTimeUnit(parts[0]), cleanTimeUnit(parts[1])};
         }
-        return new String[]{line.trim()};
+        return new String[]{cleanTimeUnit(line), ""};
     }
+
+private String cleanTimeUnit(String token) {
+    // Extracts standard time patterns like "8:00 AM" or "12:30PM" from messy OCR text
+    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d{1,2}[:.]\\d{2}\\s*(?i)[ap]m|\\d{1,2}\\s*(?i)[ap]m)", java.util.regex.Pattern.CASE_INSENSITIVE);
+    java.util.regex.Matcher matcher = pattern.matcher(token);
+    if (matcher.find()) {
+        return matcher.group(0).toUpperCase().trim();
+    }
+    return "";
+}
+
 }
