@@ -63,16 +63,15 @@ public class DateScrollerHelper {
                     View otherChip = daysContainer.getChildAt(j);
                     otherChip.setBackgroundResource(android.R.color.transparent);
                     otherChip.findViewById(R.id.viewSelectionDot).setVisibility(View.GONE);
-                    ((TextView) otherChip.findViewById(R.id.tvDayNumber)).setTextColor(Color.parseColor("#1E1E1E"));
+                    ((TextView) otherChip.findViewById(R.id.tvDayNumber))
+                            .setTextColor(ContextCompat.getColor(context, R.color.ws_muted));
                 }
-
                 chipView.setBackgroundResource(R.drawable.bg_day_chip_selected);
                 viewSelectionDot.setVisibility(View.VISIBLE);
                 tvDayNumber.setTextColor(Color.parseColor("#FFFFFF")); //this was the pink one
 
                 listener.onDaySelected(fullDayName);
             });
-
             daysContainer.addView(chipView);
             calendar.add(Calendar.DATE, 1);
         }

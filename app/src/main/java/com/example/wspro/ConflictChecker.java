@@ -7,22 +7,18 @@ public class ConflictChecker {
      * Example: "08:30" -> (8 * 60) + 30 = 510 minutes.
      */
     public static int timeToMinutes(String timeStr) {
+        if (timeStr == null || timeStr.isEmpty()) return 0;
         try {
-            timeStr = timeStr.trim().toUpperCase();
-            boolean isPM = timeStr.contains("PM");
-            boolean isAM = timeStr.contains("AM");
-
-            timeStr = timeStr.replaceAll("[^0-9:]", "");
-            String[] parts = timeStr.split(":");
-            int hours = Integer.parseInt(parts[0].trim());
-            int minutes = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
-
-            if (isPM && hours < 12) hours += 12;
-            if (isAM && hours == 12) hours = 0;
-            return (hours * 60) + minutes;
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault());
+            java.util.Date date = sdf.parse(timeStr.trim().toUpperCase());
+            if (date != null) {
+                java.util.Calendar cal = java.util.Calendar.getInstance();
+                cal.setTime(date);
+                return cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE);
+            }
         } catch (Exception e) {
-            return -1;
-        }
+            e.printStackTrace();
+        } return 0;
     }
 
     /**

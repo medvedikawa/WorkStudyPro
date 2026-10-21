@@ -24,7 +24,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String CHANNEL_ID = "work_study_conflicts";
+    protected static final String CHANNEL_ID = "work_study_conflicts";
     private ScanButtonHelper scanButtonHelper;
 
     // Launcher to handle camera permission request
@@ -121,11 +121,11 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "WorkStudy Conflict Notifications";
             String description = "Alerts for working student time clashes";
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            int importance = android.app.NotificationManager.IMPORTANCE_HIGH;
+            android.app.NotificationChannel channel = new android.app.NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
 
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            android.app.NotificationManager notificationManager = getSystemService(android.app.NotificationManager.class);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
             }

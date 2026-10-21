@@ -1,7 +1,10 @@
 package com.example.wspro;
 
+import static com.example.wspro.MainActivity.CHANNEL_ID;
+
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -34,6 +37,7 @@ public class EditScheduleActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_schedule);
 
+        createNotificationChannel();
         recyclerTimeSlots = findViewById(R.id.recyclerTimeSlots);
         btnAddTimeSlot = findViewById(R.id.btnAddTimeSlot);
         btnSaveSchedule = findViewById(R.id.btnSaveSchedule);
@@ -71,37 +75,89 @@ public class EditScheduleActivity extends AppCompatActivity {
                 return;
             }
 
-            List<ScheduleItem> itemsToSave = new ArrayList<>();
-            for (TimeSlotItem item : timeSlotList) {
-                if (item.getSubject() == null || item.getSubject().trim().isEmpty()) {
-                    Toast.makeText(this, "Please enter a subject for all time slots.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (item.getDay() == null || item.getDay().isEmpty() ||
-                        item.getStartTime() == null || item.getStartTime().isEmpty() ||
-                        item.getEndTime() == null || item.getEndTime().isEmpty()) {
-                    Toast.makeText(this, "Please complete all fields.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                itemsToSave.add(new ScheduleItem(
-                        item.getSubject().trim(),
-                        item.getDay(),
-                        item.getStartTime(),
-                        item.getEndTime(), false
-                ));
-            }
             new Thread(() -> {
-                AppDatabase.getInstance(getApplicationContext())
-                        .scheduleDao()
-                        .insertAll(itemsToSave);
+                AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+                boolean hasConflict = false;
+                String conflictingSubject = "";
 
+                // Check for conflicts to trigger the warning
+                for (TimeSlotItem item : timeSlotList) {
+                    List<ScheduleItem> existingSchedules = db.scheduleDao().getAllSchedules(item.getDay());
+
+                    for (ScheduleItem existing : existingSchedules) {
+                        boolean clash = ConflictChecker.hasConflict(
+                                item.getDay(), item.getStartTime(), item.getEndTime(),
+                                existing.getDay(), existing.getStartTime(), existing.getEndTime()
+                        );
+
+                        if (clash) {
+                            hasConflict = true;
+                            conflictingSubject = existing.getSubject();
+                            break;
+                        }
+                    }
+                    if (hasConflict) break;
+                }
+
+                // Always prepare and save the items, regardless of conflict status
+                List<ScheduleItem> itemsToSave = new ArrayList<>();
+                for (TimeSlotItem item : timeSlotList) {
+                    itemsToSave.add(new ScheduleItem(
+                            item.getSubject().trim(),
+                            item.getDay(),
+                            item.getStartTime(),
+                            item.getEndTime(), false
+                    ));
+                }
+                db.scheduleDao().insertAll(itemsToSave);
+
+                final boolean clashFound = hasConflict;
+                final String clashName = conflictingSubject;
+
+                // UI updates on the main thread
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Schedule saved successfully", Toast.LENGTH_SHORT).show();
-                    finish(); // Automatically returns to WeekActivity and triggers onResume() refresh
+                    if (clashFound) {
+                        sendConflictNotification(clashName);
+                        Toast.makeText(this, "Conflict detected with " + clashName + ". Saved successfully!", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(this, "Schedule saved successfully", Toast.LENGTH_SHORT).show();
+                    }
+                    finish();
                 });
             }).start();
         });
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "WorkStudy Conflict Notifications";
+            String description = "Alerts for working student time clashes";
+            int importance = android.app.NotificationManager.IMPORTANCE_HIGH;
+            android.app.NotificationChannel channel = new android.app.NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+
+            android.app.NotificationManager notificationManager = getSystemService(android.app.NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void sendConflictNotification(String conflictingSubject) {
+        android.app.NotificationManager notificationManager =
+                (android.app.NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+
+        // Build the notification
+        androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(this, "SCHEDULE_CONFLICT_CHANNEL")
+                .setSmallIcon(android.R.drawable.ic_dialog_alert) // Replace with your app's notification icon
+                .setContentTitle("Schedule Conflict Detected!")
+                .setContentText("Your new schedule overlaps with: " + conflictingSubject)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true);
+
+        if (notificationManager != null) {
+            notificationManager.notify((int) System.currentTimeMillis(), builder.build());
+        }
     }
 
     private void processImageWithMLKit(Uri imageUri) {

@@ -31,12 +31,12 @@ public class WeekActivity extends AppCompatActivity {
         scanButtonHelper = new ScanButtonHelper(this);
 
         // to clear the database
-        /**new Thread(() -> {
+        new Thread(() -> {
             AppDatabase.getInstance(getApplicationContext())
                     .scheduleDao()
                     .deleteAllSchedules();
         }).start();
-        **/
+
         recyclerWeekSchedule = findViewById(R.id.recyclerWeekSchedule);
         recyclerWeekSchedule.setLayoutManager(new LinearLayoutManager(this));
 
@@ -120,9 +120,9 @@ public class WeekActivity extends AppCompatActivity {
             runOnUiThread(() -> {
 
                 adapter.updateData(savedData);
-                if (savedData.isEmpty()){
+                /**if (savedData.isEmpty()){
                     Toast.makeText(this, "No schedules found for " + day, Toast.LENGTH_SHORT).show();
-                }
+                }**/
                 // adapter.notifyDataSetChanged(); // You'll need an adapter here
             });
         }).start();
