@@ -136,6 +136,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
+            todaysItems.sort((a, b) ->
+                    Integer.compare(ConflictChecker.timeToMinutes(a.getStartTime()), ConflictChecker.timeToMinutes(b.getStartTime()))
+                    );
             runOnUiThread(() -> {
                 LinearLayout container = findViewById(R.id.layoutTodaysScheduleContainer);
                 if (container == null) return;

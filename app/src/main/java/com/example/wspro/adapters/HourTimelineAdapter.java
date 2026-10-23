@@ -64,7 +64,7 @@ public class HourTimelineAdapter extends RecyclerView.Adapter<HourTimelineAdapte
                              }  else if ("Work".equalsIgnoreCase(category)){
                                 pillView.setBackgroundResource(R.drawable.bg_work_pill);
                             }  else {
-                                //pillView.setBackgroundResource(R.drawable.bg_other_pill);
+                                pillView.setBackgroundResource(R.drawable.bg_other_pill);
                             }
 
                         holder.layoutEventContainer.addView(pillView);

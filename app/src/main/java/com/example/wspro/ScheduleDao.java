@@ -19,7 +19,8 @@ public interface ScheduleDao {
 
     List<ScheduleItem> getAllSchedules(String selectedDay);
 
-
+    @Query("DELETE FROM schedule_table WHERE category = :category")
+    void deleteByCategory(String category);
     @Query("SELECT * FROM schedule_table")
     List<ScheduleItem> getAllSchedulesRaw();
 

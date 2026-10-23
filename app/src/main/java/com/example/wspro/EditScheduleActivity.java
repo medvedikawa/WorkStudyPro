@@ -133,6 +133,10 @@ public class EditScheduleActivity extends AppCompatActivity {
 
             new Thread(() -> {
                 AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+
+                if (targetCategory != null && !targetCategory.isEmpty()){
+                    db.scheduleDao().deleteByCategory(targetCategory);
+                }
                 boolean hasConflict = false;
                 String conflictingSubject = "";
 
