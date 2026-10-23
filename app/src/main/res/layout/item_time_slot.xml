@@ -24,10 +24,17 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
+        <!-- Category Container -->
+        <Spinner
+            android:id="@+id/spinnerCategory"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:hint="Work"/>
+
     <!-- Day Input (e.g. M, W, F) -->
     <Spinner
         android:id="@+id/sDay"
-        android:layout_width="80dp"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:hint="Day"/>
 

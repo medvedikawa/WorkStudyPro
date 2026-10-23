@@ -7,8 +7,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,7 +21,10 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
@@ -94,6 +99,85 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadTodaysSchedule();
+    }
+
+    private void loadTodaysSchedule() {
+        Calendar calendar = Calendar.getInstance();
+        // Get full name ("Friday"), short name ("Fri"), and day integer (1 = Sun, 6 = Fri)
+        String currentDayFull = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
+        String currentDayShort = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.getDefault());
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+
+        // Map day integer to common custom chip names
+        String[] dayCodes = {"", "Su", "M", "T", "W", "Th", "F", "Sa"};
+        String currentDayCode = (dayOfWeek >= 1 && dayOfWeek <= 7) ? dayCodes[dayOfWeek] : "";
+
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+            List<ScheduleItem> allSchedules = db.scheduleDao().getAllSchedulesRaw();
+            List<ScheduleItem> todaysItems = new ArrayList<>();
+
+            for (ScheduleItem item : allSchedules) {
+                String d = item.getDay();
+                if (d == null) continue;
+
+                d = d.trim();
+                boolean isMatch = d.equalsIgnoreCase(currentDayFull)
+                        || d.equalsIgnoreCase(currentDayShort)
+                        || d.equalsIgnoreCase(currentDayCode)
+                        || (currentDayFull != null && currentDayFull.toLowerCase().startsWith(d.toLowerCase()));
+
+                if (isMatch) {
+                    todaysItems.add(item);
+                }
+            }
+
+            runOnUiThread(() -> {
+                LinearLayout container = findViewById(R.id.layoutTodaysScheduleContainer);
+                if (container == null) return;
+
+                container.removeAllViews(); // Clear previous items
+
+                if (todaysItems.isEmpty()) {
+                    // Optional: Show empty state text so it doesn't look broken
+                    TextView emptyTv = new TextView(this);
+                    emptyTv.setText("No schedules found for today.");
+                    emptyTv.setTextColor(getResources().getColor(R.color.ws_muted));
+                    emptyTv.setPadding(16, 16, 16, 16);
+                    container.addView(emptyTv);
+                    return;
+                }
+
+                for (ScheduleItem item : todaysItems) {
+                    View cardView = getLayoutInflater().inflate(R.layout.item_today_card, container, false);
+
+                    TextView tvTime = cardView.findViewById(R.id.tvScheduleTime);
+                    TextView tvSubject = cardView.findViewById(R.id.tvScheduleSubject);
+                    View indicator = cardView.findViewById(R.id.viewIndicator);
+
+                    if (tvTime != null) tvTime.setText(item.getStartTime() + " - " + item.getEndTime());
+                    if (tvSubject != null) tvSubject.setText(item.getSubject());
+
+                    if (indicator != null) {
+                        String category = item.getCategory();
+                        if ("Work".equalsIgnoreCase(category)) {
+                            indicator.setBackgroundColor(getResources().getColor(R.color.ws_accent)); // Work color
+                        } else if ("Class".equalsIgnoreCase(category)) {
+                            indicator.setBackgroundColor(getResources().getColor(R.color.ws_accent2)); // Class color
+                        } else {
+                            indicator.setBackgroundColor(getResources().getColor(R.color.ws_other_default)); // Other color
+                        }
+                    }
+
+                    container.addView(cardView);
+                }
+            });
+        }).start();
+    }
     private void evaluateConflictEngine() {
         String suggestionMessage = "Wednesday Conflict: Your 2:00 PM – 8:00 PM Work shift overlaps with Networking Lab. " +
                 "Suggestion: Request a shift swap or notify your instructor.";

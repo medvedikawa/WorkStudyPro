@@ -19,6 +19,10 @@ public interface ScheduleDao {
 
     List<ScheduleItem> getAllSchedules(String selectedDay);
 
+
+    @Query("SELECT * FROM schedule_table")
+    List<ScheduleItem> getAllSchedulesRaw();
+
     @Query("DELETE FROM schedule_table")
     void deleteAllSchedules();
 }

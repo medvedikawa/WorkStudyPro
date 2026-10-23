@@ -18,7 +18,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add Schedule Image"
+        android:text="Add Schedule"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="@android:color/white"

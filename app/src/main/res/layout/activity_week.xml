@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:background="@color/ws_surface">
 
     <!-- Header & Day Scroller (Fixed at Top) -->
@@ -20,7 +21,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="1dp">
 
             <TextView
                 android:layout_width="0dp"
@@ -30,6 +31,19 @@
                 android:textColor="@color/ws_text"
                 android:textSize="22sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnEditCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:text="Edit"
+                android:textColor="@color/ws_accent"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:background="?attr/selectableItemBackground"
+                android:padding="6dp" />
 
             <TextView
                 android:layout_width="36dp"
@@ -55,14 +69,21 @@
             </LinearLayout>
         </HorizontalScrollView>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="Day-by-Day Breakdown"
             android:textColor="@color/ws_text"
             android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp" />
+            android:textStyle="bold"/>
+
+    </LinearLayout>
     </LinearLayout>
 
     <!-- Bottom Navigation Bar (Fixed at Bottom) -->

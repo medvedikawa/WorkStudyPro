@@ -31,11 +31,14 @@ public class EditScheduleActivity extends AppCompatActivity {
     private ImageButton btnReturnBack;
     private TimeSlotAdapter adapter;
     private List<TimeSlotItem> timeSlotList;
+    private String targetCategory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_schedule);
+
+        targetCategory = getIntent().getStringExtra("SELECTED_CATEGORY");
 
         createNotificationChannel();
         recyclerTimeSlots = findViewById(R.id.recyclerTimeSlots);
@@ -52,19 +55,51 @@ public class EditScheduleActivity extends AppCompatActivity {
         adapter = new TimeSlotAdapter(this, timeSlotList);
         recyclerTimeSlots.setAdapter(adapter);
 
-        // Check if an image Uri was passed from the camera/gallery capture
-        String imageUriString = getIntent().getStringExtra("CAPTURED_IMAGE_URI");
-        if (imageUriString != null) {
-            Uri imageUri = Uri.parse(imageUriString);
-            processImageWithMLKit(imageUri);
+        // Check if a category was passed to pre-load items from the database
+        if (targetCategory != null && !targetCategory.isEmpty()) {
+            new Thread(() -> {
+                AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+                List<ScheduleItem> rawList = db.scheduleDao().getAllSchedulesRaw();
+                List<TimeSlotItem> categoryItems = new ArrayList<>();
+
+                for (ScheduleItem item : rawList) {
+                    if (targetCategory.equalsIgnoreCase(item.getCategory())) {
+                        categoryItems.add(new TimeSlotItem(
+                                item.getSubject(),
+                                item.getDay(),
+                                item.getStartTime(),
+                                item.getEndTime(),
+                                item.getCategory()
+                        ));
+                    }
+                }
+
+                runOnUiThread(() -> {
+                    timeSlotList.clear();
+                    if (categoryItems.isEmpty()) {
+                        timeSlotList.add(new TimeSlotItem("", "", "", "", targetCategory));
+                    } else {
+                        timeSlotList.addAll(categoryItems);
+                    }
+                    adapter.notifyDataSetChanged();
+                });
+            }).start();
         } else {
-            // Fallback empty row if opened manually
-            timeSlotList.add(new TimeSlotItem("", "", "", ""));
-            adapter.notifyDataSetChanged();
+            // Check if an image Uri was passed from the camera/gallery capture
+            String imageUriString = getIntent().getStringExtra("CAPTURED_IMAGE_URI");
+            if (imageUriString != null) {
+                Uri imageUri = Uri.parse(imageUriString);
+                processImageWithMLKit(imageUri);
+            } else {
+                // Fallback empty row if opened manually
+                timeSlotList.add(new TimeSlotItem("", "", "", "", "Class"));
+                adapter.notifyDataSetChanged();
+            }
         }
 
         btnAddTimeSlot.setOnClickListener(v -> {
-            timeSlotList.add(new TimeSlotItem("", "", "", ""));
+            String defaultCat = targetCategory != null ? targetCategory : "Class";
+            timeSlotList.add(new TimeSlotItem("", "", "", "", defaultCat));
             adapter.notifyItemInserted(timeSlotList.size() - 1);
             recyclerTimeSlots.scrollToPosition(timeSlotList.size() - 1);
         });
@@ -75,13 +110,34 @@ public class EditScheduleActivity extends AppCompatActivity {
                 return;
             }
 
+            List<ScheduleItem> itemsToSave = new ArrayList<>();
+            for (TimeSlotItem item : timeSlotList) {
+                if (item.getDay() == null || item.getDay().isEmpty() ||
+                        item.getStartTime() == null || item.getStartTime().isEmpty() ||
+                        item.getEndTime() == null || item.getEndTime().isEmpty()) {
+                    Toast.makeText(this, "Please complete all fields.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String subject = item.getSubject().trim();
+                String category = item.getCategory() != null && !item.getCategory().isEmpty() ? item.getCategory() : "Class";
+
+                itemsToSave.add(new ScheduleItem(
+                        subject,
+                        item.getDay(),
+                        item.getStartTime(),
+                        item.getEndTime(),
+                        category
+                ));
+            }
+
             new Thread(() -> {
                 AppDatabase db = AppDatabase.getInstance(getApplicationContext());
                 boolean hasConflict = false;
                 String conflictingSubject = "";
 
                 // Check for conflicts to trigger the warning
-                for (TimeSlotItem item : timeSlotList) {
+                for (ScheduleItem item : itemsToSave) {
                     List<ScheduleItem> existingSchedules = db.scheduleDao().getAllSchedules(item.getDay());
 
                     for (ScheduleItem existing : existingSchedules) {
@@ -99,16 +155,6 @@ public class EditScheduleActivity extends AppCompatActivity {
                     if (hasConflict) break;
                 }
 
-                // Always prepare and save the items, regardless of conflict status
-                List<ScheduleItem> itemsToSave = new ArrayList<>();
-                for (TimeSlotItem item : timeSlotList) {
-                    itemsToSave.add(new ScheduleItem(
-                            item.getSubject().trim(),
-                            item.getDay(),
-                            item.getStartTime(),
-                            item.getEndTime(), false
-                    ));
-                }
                 db.scheduleDao().insertAll(itemsToSave);
 
                 final boolean clashFound = hasConflict;
@@ -147,9 +193,8 @@ public class EditScheduleActivity extends AppCompatActivity {
         android.app.NotificationManager notificationManager =
                 (android.app.NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
 
-        // Build the notification
         androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(this, "SCHEDULE_CONFLICT_CHANNEL")
-                .setSmallIcon(android.R.drawable.ic_dialog_alert) // Replace with your app's notification icon
+                .setSmallIcon(android.R.drawable.ic_dialog_alert)
                 .setContentTitle("Schedule Conflict Detected!")
                 .setContentText("Your new schedule overlaps with: " + conflictingSubject)
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
@@ -169,7 +214,8 @@ public class EditScheduleActivity extends AppCompatActivity {
                     .addOnSuccessListener(this::parseScannedText)
                     .addOnFailureListener(e -> {
                         Toast.makeText(this, "Failed to read text: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        timeSlotList.add(new TimeSlotItem("", "", "", ""));
+                        String defaultCat = targetCategory != null ? targetCategory : "Class";
+                        timeSlotList.add(new TimeSlotItem("", "", "", "", defaultCat));
                         adapter.notifyDataSetChanged();
                     });
         } catch (IOException e) {
@@ -179,14 +225,14 @@ public class EditScheduleActivity extends AppCompatActivity {
 
     private void parseScannedText(Text visionText) {
         boolean foundData = false;
-        String currentSubject = " Scanned Class"; // Default fallback subject
+        String currentSubject = "Scanned Class";
+        String defaultCat = targetCategory != null ? targetCategory : "Class";
 
         for (Text.TextBlock block : visionText.getTextBlocks()) {
             for (Text.Line line : block.getLines()) {
                 String text = line.getText().trim();
                 if (text.isEmpty()) continue;
 
-                // Check if this line looks like it contains a time range
                 if (text.toUpperCase().contains("AM") || text.toUpperCase().contains("PM") || text.contains("-") || text.contains("–")) {
                     String detectDay = extractDay(text);
                     String[] times = extractTimeRange(text);
@@ -194,20 +240,18 @@ public class EditScheduleActivity extends AppCompatActivity {
                     String startTime = times.length > 0 ? times[0] : "";
                     String endTime = times.length > 1 ? times[1] : "";
 
-                    // Only add if we successfully extracted clean time strings
                     if (!startTime.isEmpty() || !endTime.isEmpty()) {
-                        timeSlotList.add(new TimeSlotItem(currentSubject, detectDay, startTime, endTime));
+                        timeSlotList.add(new TimeSlotItem(currentSubject, detectDay, startTime, endTime, defaultCat));
                         foundData = true;
                     }
                 } else {
-                    // If it's not a timeline, treat it as the subject name for upcoming slots
                     currentSubject = text;
                 }
             }
         }
 
         if (!foundData) {
-            timeSlotList.add(new TimeSlotItem("", "", "", ""));
+            timeSlotList.add(new TimeSlotItem("", "", "", "", defaultCat));
             Toast.makeText(this, "Please verify and adjust fields manually.", Toast.LENGTH_LONG).show();
         }
 
@@ -216,18 +260,21 @@ public class EditScheduleActivity extends AppCompatActivity {
 
     private String extractDay(String line){
         String upper = line.toUpperCase();
-        if (upper.contains("M")) return "Mo";
-        if (upper.contains("T")) return "Tu";
-        if (upper.contains("W")) return "We";
-        if (upper.contains("Th")) return "Th";
-        if (upper.contains("F")) return "Fr";
-        if (upper.contains("Sa")) return "Sa";
-        if (upper.contains("Su")) return "Su";
+        if (upper.contains("TH")) return "Thursday";
+        if (upper.contains("TU")) return "Tuesday";
+        if (upper.contains("WE")) return "Wednesday";
+        if (upper.contains("MO")) return "Monday";
+        if (upper.contains("FR")) return "Friday";
+        if (upper.contains("SA")) return "Saturday";
+        if (upper.contains("SU")) return "Sunday";
+
+        if (upper.contains("W")) return "Wednesday";
+        if (upper.contains("F")) return "Friday";
+        if (upper.contains("M")) return "Monday";
         return "";
     }
 
     private String[] extractTimeRange(String line) {
-        // Clean up the line to isolate time formats (e.g., 08:00 AM - 11:00 AM)
         String[] parts = line.split("[-–]|(?i)\\bto\\b");
         if (parts.length >= 2) {
             return new String[]{cleanTimeUnit(parts[0]), cleanTimeUnit(parts[1])};
@@ -235,14 +282,12 @@ public class EditScheduleActivity extends AppCompatActivity {
         return new String[]{cleanTimeUnit(line), ""};
     }
 
-private String cleanTimeUnit(String token) {
-    // Extracts standard time patterns like "8:00 AM" or "12:30PM" from messy OCR text
-    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d{1,2}[:.]\\d{2}\\s*(?i)[ap]m|\\d{1,2}\\s*(?i)[ap]m)", java.util.regex.Pattern.CASE_INSENSITIVE);
-    java.util.regex.Matcher matcher = pattern.matcher(token);
-    if (matcher.find()) {
-        return matcher.group(0).toUpperCase().trim();
+    private String cleanTimeUnit(String token) {
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d{1,2}[:.]\\d{2}\\s*(?i)[ap]m|\\d{1,2}\\s*(?i)[ap]m)", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher matcher = pattern.matcher(token);
+        if (matcher.find()) {
+            return matcher.group(0).toUpperCase().trim();
+        }
+        return "";
     }
-    return "";
-}
-
 }

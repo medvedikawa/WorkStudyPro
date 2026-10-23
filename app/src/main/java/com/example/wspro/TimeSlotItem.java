@@ -5,12 +5,14 @@ public class TimeSlotItem {
     private String day;
     private String startTime;
     private String endTime;
+    private String category;
 
-    public TimeSlotItem(String subject, String day, String startTime, String endTime) {
+    public TimeSlotItem(String subject, String day, String startTime, String endTime, String category) {
         this.subject = subject;
         this.day = day;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.category = category;
     }
 
     public String getSubject(){return subject;}
@@ -23,4 +25,7 @@ public class TimeSlotItem {
 
     public String getEndTime() { return endTime; }
     public void setEndTime(String endTime) { this.endTime = endTime; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
 }

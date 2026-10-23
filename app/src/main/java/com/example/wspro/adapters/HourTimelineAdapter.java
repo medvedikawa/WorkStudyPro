@@ -58,6 +58,15 @@ public class HourTimelineAdapter extends RecyclerView.Adapter<HourTimelineAdapte
                         if (tvTitle != null) tvTitle.setText(item.getSubject());
                         if (tvTime != null) tvTime.setText(item.getStartTime() + " - " + item.getEndTime());
 
+                            String category = item.getCategory();
+                            if ("Class".equalsIgnoreCase(category)){
+                                pillView.setBackgroundResource(R.drawable.bg_class_pill);
+                             }  else if ("Work".equalsIgnoreCase(category)){
+                                pillView.setBackgroundResource(R.drawable.bg_work_pill);
+                            }  else {
+                                //pillView.setBackgroundResource(R.drawable.bg_other_pill);
+                            }
+
                         holder.layoutEventContainer.addView(pillView);
                     }
                 }

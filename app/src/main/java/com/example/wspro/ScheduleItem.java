@@ -12,14 +12,14 @@ public class ScheduleItem {
     private String day;       // e.g., "WED"
     private String startTime; // e.g., "14:00"
     private String endTime;   // e.g., "20:00"
-    private boolean isWork;   // true for work shift, false for class
+    private String category;   // Changed from boolean comment to: e.g., "Class", "Work", or "Other"
 
-    public ScheduleItem(String subject, String day, String startTime, String endTime, boolean isWork) {
+    public ScheduleItem(String subject, String day, String startTime, String endTime, String category) {
         this.subject = subject;
         this.day = day;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.isWork = isWork;
+        this.category = category;
     }
 
     public int getId() { return id; }
@@ -32,5 +32,7 @@ public class ScheduleItem {
     public void setStartTime(String startTime) { this.startTime = startTime; }
     public String getEndTime() { return endTime; }
     public void setEndTime(String endTime) { this.endTime = endTime; }
-    public boolean isWork() { return isWork; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    public boolean isWork() { return "Work".equalsIgnoreCase(category); }
 }

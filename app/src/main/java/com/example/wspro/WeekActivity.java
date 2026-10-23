@@ -2,6 +2,7 @@ package com.example.wspro;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -30,12 +31,17 @@ public class WeekActivity extends AppCompatActivity {
         setContentView(R.layout.activity_week);
         scanButtonHelper = new ScanButtonHelper(this);
 
+        TextView btnEditCategory = findViewById(R.id.btnEditCategory);
+        if (btnEditCategory != null) {
+            btnEditCategory.setOnClickListener(v -> showCategoryFilterDialog());
+        }
+
         // to clear the database
-        new Thread(() -> {
+      /**  new Thread(() -> {
             AppDatabase.getInstance(getApplicationContext())
                     .scheduleDao()
                     .deleteAllSchedules();
-        }).start();
+        }).start();**/
 
         recyclerWeekSchedule = findViewById(R.id.recyclerWeekSchedule);
         recyclerWeekSchedule.setLayoutManager(new LinearLayoutManager(this));
@@ -110,6 +116,48 @@ public class WeekActivity extends AppCompatActivity {
         }
     }
 
+    private void showCategoryFilterDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.layout_edit_category, null);
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        dialog.setContentView(dialogView);
+
+        // Option: Class
+        View optionClass = dialogView.findViewById(R.id.optionClass);
+        if (optionClass != null) {
+            optionClass.setOnClickListener(v -> {
+                openEditForCategory("Class");
+                dialog.dismiss();
+            });
+        }
+
+        // Option: Work
+        View optionWork = dialogView.findViewById(R.id.optionWork);
+        if (optionWork != null) {
+            optionWork.setOnClickListener(v -> {
+                openEditForCategory("Work");
+                dialog.dismiss();
+            });
+        }
+
+        // Option: Other
+        View optionOther = dialogView.findViewById(R.id.optionOther);
+        if (optionOther != null) {
+            optionOther.setOnClickListener(v -> {
+                openEditForCategory("Other");
+                dialog.dismiss();
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void openEditForCategory(String category) {
+        Intent intent = new Intent(WeekActivity.this, EditScheduleActivity.class);
+        intent.putExtra("SELECTED_CATEGORY", category);
+        startActivity(intent);
+    }
+
     private void loadSavedSchedules(String day){
         this.selectedDay = day;
         new Thread (() -> {
@@ -120,9 +168,6 @@ public class WeekActivity extends AppCompatActivity {
             runOnUiThread(() -> {
 
                 adapter.updateData(savedData);
-                /**if (savedData.isEmpty()){
-                    Toast.makeText(this, "No schedules found for " + day, Toast.LENGTH_SHORT).show();
-                }**/
                 // adapter.notifyDataSetChanged(); // You'll need an adapter here
             });
         }).start();
