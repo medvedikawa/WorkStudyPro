@@ -21,12 +21,13 @@
             app:tint="@color/ws_accent"
             android:contentDescription="Return back"
             android:scaleType="centerInside" />
+
         <!-- Title -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Create Your Profile"
-            android:paddingTop="1dp"
+            android:text="Create Your Account"
+            android:paddingTop="8dp"
             android:textColor="@color/ws_text"
             android:textSize="22sp"
             android:textStyle="bold"
@@ -35,37 +36,16 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Set up your working student profile to begin tracking."
+            android:text="Set up your working student profile to begin monitoring."
             android:textColor="@color/ws_muted"
             android:textSize="12sp"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="20dp" />
 
-        <!-- Avatar / Media Upload Container -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="@drawable/bg_input"
-            android:padding="20dp"
-            android:layout_marginBottom="24dp">
-
-
-            <Button
-                android:id="@+id/btnSelectAlbumMedia"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="📷\nChoose Photo"
-                android:textColor="@color/ws_accent2"
-                android:backgroundTint="@color/ws_surface2"
-                android:textSize="17sp" />
-        </LinearLayout>
-
-        <!-- Full Name Input -->
+        <!-- Name Input -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="FULL NAME"
+            android:text="NAME"
             android:textColor="@color/ws_text2"
             android:textSize="10sp"
             android:textStyle="bold"
@@ -76,13 +56,89 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_input"
-            android:hint="e.g. Jelzy De Castro"
+            android:hint="Enter your name"
             android:textColorHint="@color/ws_muted"
             android:textColor="@color/ws_text"
             android:textSize="14sp"
             android:padding="12dp"
             android:inputType="textPersonName"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="2dp" />
+
+        <TextView
+            android:id="@+id/tvNameError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/ws_error"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <!-- Email Input -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EMAIL ADDRESS"
+            android:textColor="@color/ws_text2"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etProfileEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="student@university.edu"
+            android:textColorHint="@color/ws_muted"
+            android:textColor="@color/ws_text"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:inputType="textEmailAddress"
+            android:layout_marginBottom="2dp" />
+
+        <TextView
+            android:id="@+id/tvEmailError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/ws_error"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <!-- Password Input -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PASSWORD (MIN 8 CHARACTERS • LETTERS, NUMBERS &amp; SYMBOL)"
+            android:textColor="@color/ws_text2"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etProfilePassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="•••••••••••"
+            android:textColorHint="@color/ws_muted"
+            android:textColor="@color/ws_text"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:inputType="textPassword"
+            android:layout_marginBottom="2dp" />
+
+        <TextView
+            android:id="@+id/tvPasswordError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/ws_error"
+            android:textSize="12sp"
+            android:visibility="gone" />
 
         <!-- Program / Course Input -->
         <TextView
@@ -105,19 +161,40 @@
             android:textSize="14sp"
             android:padding="12dp"
             android:inputType="text"
-            android:layout_marginBottom="32dp" />
+            android:layout_marginBottom="24dp" />
+
+        <!-- Avatar / Media Upload Container -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_input"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btnSelectAlbumMedia"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📷\nChoose Photo (Optional)"
+                android:textColor="@color/ws_accent2"
+                android:backgroundTint="@color/ws_surface2"
+                android:textSize="14sp" />
+        </LinearLayout>
 
         <!-- Complete Setup Button -->
         <Button
             android:id="@+id/btnCompleteSetup"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Save"
-            android:textColor="#FFFFFF"
+            android:text="Create Account &amp; Sign In"
+            android:textColor="@color/ws_on_brand"
             android:textSize="14sp"
             android:textStyle="bold"
             android:backgroundTint="@color/ws_accent"
-            android:padding="12dp" />
+            android:padding="14dp"
+            android:layout_marginBottom="24dp" />
 
     </LinearLayout>
 </ScrollView>

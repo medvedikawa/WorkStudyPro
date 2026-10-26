@@ -13,7 +13,7 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="16dp"
-        android:background="#40FFFFFF" />
+        android:background="@color/scan_handle" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -21,7 +21,7 @@
         android:text="Add Schedule Image"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:textColor="@android:color/white"
+        android:textColor="@color/ws_text"
         android:layout_marginBottom="16dp" />
 
     <LinearLayout
@@ -39,14 +39,14 @@
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_camera"
             android:layout_marginEnd="16dp"
-            app:tint="@android:color/white" />
+            app:tint="@color/ws_text" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Take Photo"
             android:textSize="16sp"
-            android:textColor="@android:color/white" />
+            android:textColor="@color/ws_text" />
     </LinearLayout>
 
     <LinearLayout
@@ -64,14 +64,14 @@
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_gallery"
             android:layout_marginEnd="16dp"
-            app:tint="@android:color/white" />
+            app:tint="@color/ws_text" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Choose from Gallery"
             android:textSize="16sp"
-            android:textColor="@android:color/white" />
+            android:textColor="@color/ws_text" />
     </LinearLayout>
 
 </LinearLayout>

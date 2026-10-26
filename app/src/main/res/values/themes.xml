@@ -1,8 +1,15 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.WSPro" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/ws_accent</item>
+        <item name="colorOnPrimary">@color/ws_on_brand</item>
+        <item name="colorSecondary">@color/ws_accent2</item>
+        <item name="colorOnSecondary">@color/ws_on_brand</item>
+        <item name="android:colorAccent">@color/ws_accent</item>
+        <item name="android:statusBarColor">@color/ws_bg</item>
+        <item name="android:navigationBarColor">@color/ws_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/ws_bg</item>
     </style>
 
     <style name="Theme.WSPro" parent="Base.Theme.WSPro" />

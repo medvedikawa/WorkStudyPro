@@ -1,542 +1,364 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ws_surface">
+    android:background="@color/background"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <!-- Scrollable Content Area -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/today_glow_height"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_today_glow"
+        android:clickable="false"
+        android:focusable="false" />
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/bottomNavContainer"
+        android:clipToPadding="false"
         android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingStart="@dimen/today_screen_horizontal"
+            android:paddingTop="@dimen/today_screen_top"
+            android:paddingEnd="@dimen/today_screen_horizontal"
+            android:paddingBottom="@dimen/today_screen_bottom">
 
-            <!-- 1. Header with Profile Initial -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_marginBottom="@dimen/today_header_gap"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:orientation="horizontal">
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
+
                     <TextView
                         android:id="@+id/tvDateHeader"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Wednesday, Oct 14"
-                        android:textStyle="bold"
-                        android:textColor="@color/ws_text"
-                        android:textSize="11sp" />
+                        android:textAppearance="@style/WS.Caption" />
+
                     <TextView
+                        android:id="@+id/tvWelcomeTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Today"
-                        android:textColor="@color/ws_text"
-                        android:textSize="22sp"
-                        android:textStyle="bold" />
+                        android:layout_marginTop="@dimen/today_header_text_gap"
+                        android:textAppearance="@style/WS.Title" />
                 </LinearLayout>
 
-                <!-- Profile Initials Badge -->
-                <TextView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:gravity="center"
-                    android:text="🔔"
-                    android:textColor="@color/ws_accent2"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                <FrameLayout
+                    android:layout_width="@dimen/today_notification_size"
+                    android:layout_height="@dimen/today_notification_size"
+                    android:background="@drawable/bg_today_notification">
+
+                    <ImageView
+                        android:id="@+id/btnQuickNotification"
+                        android:layout_width="@dimen/today_notification_icon_size"
+                        android:layout_height="@dimen/today_notification_icon_size"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/today_notification_content_description"
+                        android:src="@drawable/ic_today_notifications" />
+                </FrameLayout>
             </LinearLayout>
 
-            <!-- 2. Weekly At-A-Glance Day Chips -->
             <LinearLayout
+                android:id="@+id/layoutWorkloadCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginBottom="12dp">
-
-
-                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="Su\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="M\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="T\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_too" android:gravity="center" android:text="W\n⚡" android:textColor="#FF6B47" android:textSize="13sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_too" android:gravity="center" android:text="Th\n⚡" android:textColor="#FF6B47" android:textSize="13sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="F\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_input" android:gravity="center" android:text="Sa\n🟢" android:textColor="@color/ws_text" android:textSize="13sp"/>
-            </LinearLayout>
-
-            <!-- 4. High Risk Conflict Zone -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/today_card_gap"
+                android:background="@drawable/bg_today_card"
                 android:orientation="vertical"
-                android:background="@drawable/bg_too"
-                android:padding="14dp"
-                android:layout_marginBottom="16dp">
+                android:paddingStart="@dimen/today_card_horizontal_padding"
+                android:paddingTop="@dimen/today_card_vertical_padding"
+                android:paddingEnd="@dimen/today_card_horizontal_padding"
+                android:paddingBottom="@dimen/today_card_vertical_padding"
+                android:visibility="gone">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⚡ CONFLICT ON WEDNESDAY"
-                    android:textColor="#F26B6B"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp" />
-
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Shift 2:00 to 8:00 PM overlaps with Networking Lab"
-                    android:textColor="#F4A261"
-                    android:textSize="15sp"
-                    android:layout_marginBottom="10dp" />
+                    android:baselineAligned="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <Button
+                    <TextView
+                        android:id="@+id/tvWorkloadStatus"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <TextView
+                        android:id="@+id/tvWorkloadValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/WS.Value" />
+                </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/progressWeeklyLoad"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/today_load_progress_height"
+                    android:layout_marginTop="@dimen/today_load_progress_top"
+                    android:indeterminate="false"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/progress_today_load" />
+
+                <TextView
+                    android:id="@+id/tvWorkloadHours"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/today_load_caption_top"
+                    android:textAppearance="@style/WS.Caption" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutConflictCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/today_card_gap"
+                android:background="@drawable/bg_today_card"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/today_card_horizontal_padding"
+                android:paddingTop="@dimen/today_card_vertical_padding"
+                android:paddingEnd="@dimen/today_card_horizontal_padding"
+                android:paddingBottom="@dimen/today_card_vertical_padding"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvConflictHeading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/WS.CardTitle"
+                    android:textColor="@color/brand_raspberry" />
+
+                <TextView
+                    android:id="@+id/tvConflictDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/today_header_text_gap"
+                    android:textAppearance="@style/WS.Caption" />
+
+                <TextView
                     android:id="@+id/btnSuggestAction"
-                    android:layout_width="match_parent"
-                    android:layout_height="36dp"
-                    android:text="💡 Review Conflict &amp; Shift Swap"
-                    android:textColor="#FFFFFF"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:backgroundTint="#8B2628" />
-            </LinearLayout>
-
-            <!-- 3. Workload Summary Pill (From Teammate's UX) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_input"
-                android:padding="12dp"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="10dp">
-                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⏱️"
-                    android:textSize="16sp"
-                    android:layout_marginEnd="10dp" />
+                    android:layout_marginTop="@dimen/today_empty_button_gap"
+                    android:text="@string/today_review_conflict"
+                    android:textAppearance="@style/WS.Link" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cardFocusTasks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/today_card_gap"
+                android:background="@drawable/bg_today_card"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/today_card_horizontal_padding"
+                android:paddingTop="@dimen/today_card_vertical_padding"
+                android:paddingEnd="@dimen/today_card_horizontal_padding"
+                android:paddingBottom="@dimen/today_card_vertical_padding"
+                android:visibility="gone">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_marginBottom="@dimen/today_section_header_bottom"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
                     <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/today_focus_title"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <LinearLayout
+                        android:id="@+id/btnViewAllTasks"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Moderate load"
-                        android:textColor="#F4A261"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="31 hrs of class and work this week"
-                        android:textColor="@color/ws_muted"
-                        android:textSize="11sp" />
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/today_see_all"
+                            android:textAppearance="@style/WS.Link" />
+
+                        <ImageView
+                            android:layout_width="@dimen/today_link_icon_size"
+                            android:layout_height="@dimen/today_link_icon_size"
+                            android:layout_marginStart="@dimen/today_link_icon_gap"
+                            android:contentDescription="@string/today_arrow_content_description"
+                            android:src="@drawable/ic_today_arrow_forward" />
+                    </LinearLayout>
                 </LinearLayout>
-            </LinearLayout>
 
+                <LinearLayout
+                    android:id="@+id/containerPriorityTasks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
 
-
-            <!-- 5. "Focus on these first" Priority List (From Teammate's UX) -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Focus on these first"
-                android:textColor="@color/ws_text"
-                android:textSize="19sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
-
-            <!-- Task Item 1 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_input"
-                android:padding="12dp"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
-
-                <TextView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:background="#3D181B"
+                <LinearLayout
+                    android:id="@+id/layoutEmptyTasksPlaceholder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="1"
-                    android:textColor="#FF6B47"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="12dp" />
+                    android:minHeight="@dimen/today_empty_content_min_height"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/today_empty_tasks_title"
+                        android:textAppearance="@style/WS.Item" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/today_header_text_gap"
+                        android:text="@string/today_empty_tasks_body"
+                        android:textAppearance="@style/WS.Caption" />
+
+                    <LinearLayout
+                        android:id="@+id/btnHomeAddTask"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/today_empty_button_gap"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="@dimen/today_empty_add_icon_size"
+                            android:layout_height="@dimen/today_empty_add_icon_size"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_today_add" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/today_add_task"
+                            android:textAppearance="@style/WS.Link" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cardTodaySchedule"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_today_card"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/today_card_horizontal_padding"
+                android:paddingTop="@dimen/today_card_vertical_padding"
+                android:paddingEnd="@dimen/today_card_horizontal_padding"
+                android:paddingBottom="@dimen/today_card_vertical_padding"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_marginBottom="@dimen/today_section_header_bottom"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
                     <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/today_schedule_title"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <LinearLayout
+                        android:id="@+id/btnViewWeekSchedule"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Database ERD submission"
-                        android:textColor="@color/ws_text"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Due Wed, same day as your shift"
-                        android:textColor="@color/ws_muted"
-                        android:textSize="11sp" />
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/today_full_week"
+                            android:textAppearance="@style/WS.Link" />
+
+                        <ImageView
+                            android:layout_width="@dimen/today_link_icon_size"
+                            android:layout_height="@dimen/today_link_icon_size"
+                            android:layout_marginStart="@dimen/today_link_icon_gap"
+                            android:contentDescription="@string/today_arrow_content_description"
+                            android:src="@drawable/ic_today_arrow_forward" />
+                    </LinearLayout>
                 </LinearLayout>
-            </LinearLayout>
 
-            <!-- Task Item 2 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_input"
-                android:padding="12dp"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="10dp">
+                <LinearLayout
+                    android:id="@+id/containerTodaySchedule"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
 
-                <TextView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:background="#3A301E"
+                <LinearLayout
+                    android:id="@+id/layoutEmptySchedulePlaceholder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="2"
-                    android:textColor="#F4A261"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="12dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Networking quiz review"
-                        android:textColor="@color/ws_text"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Quiz Fri, only 2 free evenings left"
-                        android:textColor="@color/ws_muted"
-                        android:textSize="11sp" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- 6. Today's Schedule Timeline (Color-coded indicators)[cite: 2] -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Today's schedule"
-                android:textColor="@color/ws_text"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
-
-            <!-- Schedule Card 1 (Class - Blue indicator) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_input"
-                android:layout_marginBottom="8dp">
-
-                <View
-                    android:layout_width="4dp"
-                    android:layout_height="match_parent"
-                    android:background="@color/ws_accent2" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="12dp"
-                    android:gravity="center_vertical">
-                    <TextView
-                        android:layout_width="73dp"
-                        android:layout_height="wrap_content"
-                        android:text="8:00 AM - 10:00 AM"
-                        android:textColor="@color/ws_text"
-                        android:textSize="12sp"
-                        android:fontFamily="monospace" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Database Systems"
-                        android:textColor="@color/ws_text"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Schedule Card 2 (Work - Orange indicator) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_input"
-                android:layout_marginBottom="13dp">
-
-                <View
-                    android:layout_width="4dp"
-                    android:layout_height="match_parent"
-                    android:background="@color/ws_accent" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="12dp"
-                    android:gravity="center_vertical">
-                    <TextView
-                        android:layout_width="73dp"
-                        android:layout_height="wrap_content"
-                        android:text="5:00 PM - 10:00 PM"
-                        android:textColor="@color/ws_text"
-                        android:textSize="12sp"
-                        android:fontFamily="monospace" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Work shift"
-                        android:textColor="@color/ws_text"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- 7. Activities () -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="To-do:"
-                android:textColor="@color/ws_text2"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
-
-            <!-- To-do Section Items -->
-
-            <!-- Task 1: 04 Performance Task 1 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_input"
-                android:gravity="center_vertical"
-                android:padding="12dp"
-                android:layout_marginBottom="8dp">
-
-                <!-- Coral/Accent Indicator Strip -->
-                <View
-                    android:layout_width="4dp"
-                    android:layout_height="28dp"
-                    android:background="@color/ws_accent"
-                    android:layout_marginEnd="12dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:minHeight="@dimen/today_empty_content_min_height"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="04 Performance Task 1"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:text="@string/today_empty_schedule_title"
+                        android:textAppearance="@style/WS.Item" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Network"
-                        android:textColor="#8C91A0"
-                        android:textSize="12sp" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Task 2: 03 Performance Task -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_input"
-                android:gravity="center_vertical"
-                android:padding="12dp"
-                android:layout_marginBottom="8dp">
-
-                <!-- Secondary Indicator Strip (e.g., Yellow/Orange or Accent) -->
-                <View
-                    android:layout_width="4dp"
-                    android:layout_height="28dp"
-                    android:background="#FFA726"
-                    android:layout_marginEnd="12dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                        android:layout_marginTop="@dimen/today_header_text_gap"
+                        android:text="@string/today_empty_schedule_body"
+                        android:textAppearance="@style/WS.Caption" />
 
                     <TextView
+                        android:id="@+id/btnHomeAddSchedule"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="03 Performance Task"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Game Dev"
-                        android:textColor="#8C91A0"
-                        android:textSize="12sp" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Task 3: 04 Laboratory Exercise -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_input"
-                android:gravity="center_vertical"
-                android:padding="12dp"
-                android:layout_marginBottom="8dp">
-
-                <!-- Indicator Strip -->
-                <View
-                    android:layout_width="4dp"
-                    android:layout_height="28dp"
-                    android:background="@color/ws_muted"
-                    android:layout_marginEnd="12dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="04 Laboratory Exercise"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="ITSM"
-                        android:textColor="#8C91A0"
-                        android:textSize="12sp" />
+                        android:layout_marginTop="@dimen/today_empty_button_gap"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="@string/today_scan_schedule"
+                        android:textAppearance="@style/WS.Link" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
 
-    <!-- 7. Bottom Navigation Bar with Floating Action Button[cite: 2] -->
-    <LinearLayout
-        android:id="@+id/bottomNavContainer"
+    <include
+        layout="@layout/layout_bottom_nav"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:background="#14171F"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:elevation="8dp">
-
-        <TextView
-            android:id="@+id/btnToday"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="🐸\nToday"
-            android:textColor="@color/ws_accent"
-            android:textSize="15sp"
-            android:clickable="true"
-            android:focusable="true" />
-
-        <TextView
-            android:id="@+id/btnWeek"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="🐷\nWeek"
-            android:textColor="@color/ws_text"
-            android:textSize="15sp"
-            android:clickable="true"
-            android:focusable="true"/>
-
-        <!-- Central Scan Schedule Button -->
-        <!-- Central Scan Schedule Button (Perfect Circle & Larger Icon) -->
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center">
-
-            <ImageButton
-                android:id="@+id/fabScanSchedule"
-                android:layout_width="54dp"
-                android:layout_height="54dp"
-                android:layout_gravity="center"
-                android:background="@drawable/bg_accent_cirlce"
-                android:src="@drawable/scann"
-                app:tint="@color/ws_accent"
-                android:scaleType="centerInside"
-                android:padding="12dp"
-                android:contentDescription="Scan Schedule Camera" />
-        </FrameLayout>
-
-        <TextView
-            android:id="@+id/btnTasks"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="🐰\nTasks"
-            android:textColor="@color/ws_text"
-            android:textSize="15sp"
-            android:clickable="true"
-            android:focusable="true" />
-
-
-        <TextView
-            android:id="@+id/btnYou"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="🦈\nYou"
-            android:textColor="@color/ws_text"
-            android:textSize="15sp"
-            android:clickable="true"
-            android:focusable="true" />
-
-    </LinearLayout>
-</RelativeLayout>
+        android:layout_height="@dimen/today_nav_height"
+        android:layout_gravity="bottom" />
+</FrameLayout>

@@ -1,6 +1,7 @@
 package com.example.wspro;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -11,7 +12,6 @@ import android.widget.Toast;
 import androidx.activity.ComponentActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -42,35 +42,36 @@ public class ScanButtonHelper {
                 }
         );
 
-        // Register camera result launcher
+        // Register camera result launcher -> Opens Crop & Rotate Screen
         this.cameraLauncher = activity.registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == ComponentActivity.RESULT_OK) {
-                        Toast.makeText(activity, "Schedule captured! Opening editor...", Toast.LENGTH_SHORT).show();
-
-                        Intent intent = new Intent(activity, EditScheduleActivity.class);
-                        if (photoUri != null) {
-                            intent.putExtra("CAPTURED_IMAGE_URI", photoUri.toString());
+                        Uri uri = getOrCreatePhotoUri();
+                        if (uri != null) {
+                            openCropRotateScreen(uri);
+                        } else {
+                            Toast.makeText(activity, "Could not locate captured photo.", Toast.LENGTH_SHORT).show();
                         }
-                        activity.startActivity(intent);
                     }
                 }
         );
 
-        // Register gallery picker launcher
+        // Register gallery picker launcher -> Opens Crop & Rotate Screen
         this.galleryLauncher = activity.registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        Toast.makeText(activity, "Image selected! Opening editor...", Toast.LENGTH_SHORT).show();
-
-                        Intent intent = new Intent(activity, EditScheduleActivity.class);
-                        intent.putExtra("CAPTURED_IMAGE_URI", uri.toString());
-                        activity.startActivity(intent);
+                        openCropRotateScreen(uri);
                     }
                 }
         );
+    }
+
+    private void openCropRotateScreen(Uri uri) {
+        Intent intent = new Intent(activity, CropRotateActivity.class);
+        intent.putExtra("RAW_IMAGE_URI", uri.toString());
+        activity.startActivity(intent);
     }
 
     public void attachToFab(ImageButton fabScanSchedule) {
@@ -116,13 +117,34 @@ public class ScanButtonHelper {
                 activity.getPackageName() + ".fileProvider",
                 photoFile);
 
-        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+        // Save URI to SharedPreferences so if orientation changes, it is safely preserved
+        activity.getSharedPreferences("ScanPrefs", Context.MODE_PRIVATE)
+                .edit()
+                .putString("last_photo_uri", photoUri.toString())
+                .apply();
 
-        if (takePictureIntent.resolveActivity(activity.getPackageManager()) != null) {
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+        takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+        try {
             cameraLauncher.launch(takePictureIntent);
-        } else {
-            Toast.makeText(activity, "No camera app found on device.", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(activity, "Camera not available: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private Uri getOrCreatePhotoUri() {
+        if (photoUri != null) return photoUri;
+        String saved = activity.getSharedPreferences("ScanPrefs", Context.MODE_PRIVATE)
+                .getString("last_photo_uri", null);
+        if (saved != null) {
+            return Uri.parse(saved);
+        }
+        File photoFile = new File(activity.getFilesDir(), "schedule_capture.jpg");
+        if (photoFile.exists()) {
+            return FileProvider.getUriForFile(activity, activity.getPackageName() + ".fileProvider", photoFile);
+        }
+        return null;
     }
 
     private void openGalleryPicker() {

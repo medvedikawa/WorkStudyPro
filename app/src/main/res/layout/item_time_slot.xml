@@ -5,75 +5,258 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/bg_card"
-    android:padding="8dp"
-    android:layout_marginBottom="10dp">
+    android:padding="12dp"
+    android:layout_marginBottom="12dp">
 
+    <!-- Top Row: Type Selector (School Class vs Work Shift) + Delete -->
+    <LinearLayout
+        android:id="@+id/layoutTypeSelector"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/btnTypeSchool"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎓 Class"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/ws_on_brand"
+            android:background="@drawable/bg_toggle_selected"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginEnd="6dp" />
+
+        <TextView
+            android:id="@+id/btnTypeWork"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💼 Work"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/ws_muted"
+            android:background="@drawable/bg_toggle_unselected"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Delete Button -->
+        <ImageView
+            android:id="@+id/btnDeleteSlot"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_delete"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Delete Slot"
+            app:tint="@color/ws_accent" />
+    </LinearLayout>
+
+    <!-- Subject or Shift Name -->
     <EditText
         android:id="@+id/etRowSubject"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Subject"
-        android:textSize="19sp"
+        android:hint="Subject or Shift Name (e.g. IT 301 or Barista)"
+        android:textSize="16sp"
+        android:textColor="@color/ws_on_brand"
         android:textColorHint="@color/ws_muted"
-        android:layout_marginBottom="6dp"
-        />
+        android:background="@drawable/bg_input"
+        android:padding="10dp"
+        android:layout_marginBottom="8dp" />
 
+    <TextView
+        android:id="@+id/tvSubjectError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/ws_accent"
+        android:textSize="12sp"
+        android:visibility="gone"
+        android:layout_marginBottom="6dp" />
+
+    <!-- Day, Start Time, End Time -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
 
-    <!-- Day Input (e.g. M, W, F) -->
-    <Spinner
-        android:id="@+id/sDay"
-        android:layout_width="80dp"
+        <!-- Day Input Spinner -->
+        <Spinner
+            android:id="@+id/sDay"
+            android:layout_width="95dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_input"
+            android:padding="4dp"
+            android:layout_marginEnd="6dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="6dp">
+
+            <EditText
+                android:id="@+id/etRowStart"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_input"
+                android:gravity="center"
+                android:textColor="@color/ws_text"
+                android:textSize="14sp"
+                android:hint="Start"
+                android:textColorHint="@color/ws_muted"
+                android:clickable="true"
+                android:focusable="false"
+                android:inputType="none" />
+
+            <TextView
+                android:id="@+id/tvStartError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ws_accent"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/etRowEnd"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_input"
+                android:gravity="center"
+                android:textColor="@color/ws_text"
+                android:textSize="14sp"
+                android:hint="End"
+                android:textColorHint="@color/ws_muted"
+                android:clickable="true"
+                android:focusable="false"
+                android:inputType="none" />
+
+            <TextView
+                android:id="@+id/tvEndError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ws_accent"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Color Tag Palette Row -->
+    <LinearLayout
+        android:id="@+id/layoutColorPalette"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Day"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="2dp">
 
-    <!-- Start Time Input -->
-    <EditText
-        android:id="@+id/etRowStart"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_weight="1"
-        android:background="@drawable/bg_input"
-        android:gravity="center"
-        android:textColor="#FFFFFF"
-        android:textSize="19sp"
-        android:hint="Start Time"
-        android:textColorHint="#505868"
-        android:clickable="true"
-        android:focusable="false"
-        android:inputType="none"
-        android:layout_marginEnd="8dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎨 Color:"
+            android:textColor="@color/ws_muted"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp" />
 
-    <!-- End Time Input -->
-    <EditText
-        android:id="@+id/etRowEnd"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_weight="1"
-        android:background="@drawable/bg_input"
-        android:gravity="center"
-        android:textColor="#FFFFFF"
-        android:textSize="19sp"
-        android:hint="End Time"
-        android:textColorHint="#505868"
-        android:clickable="true"
-        android:focusable="false"
-        android:inputType="none"
-        android:layout_marginEnd="8dp" />
+        <!-- 6 Modern Color Circles -->
+        <FrameLayout
+            android:id="@+id/wrapperColor1"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="6dp">
+            <View
+                android:id="@+id/viewColor1"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_color_circle" />
+        </FrameLayout>
 
-    <!-- Delete Button -->
-    <ImageView
-        android:id="@+id/btnDeleteSlot"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@android:drawable/ic_menu_delete"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Delete Slot"
-        app:tint="#FF6B47" />
+        <FrameLayout
+            android:id="@+id/wrapperColor2"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="6dp">
+            <View
+                android:id="@+id/viewColor2"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_color_circle" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/wrapperColor3"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="6dp">
+            <View
+                android:id="@+id/viewColor3"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_color_circle" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/wrapperColor4"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="6dp">
+            <View
+                android:id="@+id/viewColor4"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_color_circle" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/wrapperColor5"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="6dp">
+            <View
+                android:id="@+id/viewColor5"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_color_circle" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/wrapperColor6"
+            android:layout_width="32dp"
+            android:layout_height="32dp">
+            <View
+                android:id="@+id/viewColor6"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_color_circle" />
+        </FrameLayout>
+
     </LinearLayout>
 
 </LinearLayout>

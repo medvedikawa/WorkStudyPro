@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/today_row_vertical_padding">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/today_row_divider_height"
+        android:background="@color/hairline" />
+
+    <LinearLayout
+        android:id="@+id/todayTaskRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/today_row_vertical_padding"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvTodayTaskRank"
+            android:layout_width="@dimen/today_task_rank_size"
+            android:layout_height="@dimen/today_task_rank_size"
+            android:layout_marginEnd="@dimen/today_row_horizontal_gap"
+            android:gravity="center"
+            android:textAppearance="@style/WS.Rank"
+            android:textColor="@color/text_secondary" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvTodayTaskTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/WS.Item" />
+
+            <TextView
+                android:id="@+id/tvTodayTaskDue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/today_task_title_due_gap"
+                android:textAppearance="@style/WS.Caption" />
+
+            <TextView
+                android:id="@+id/tvTodayTaskCollision"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/today_task_chip_top"
+                android:background="@drawable/bg_today_collision_chip"
+                android:paddingHorizontal="@dimen/today_task_chip_horizontal_padding"
+                android:paddingVertical="@dimen/today_task_chip_vertical_padding"
+                android:text="@string/today_work_shift_that_day"
+                android:textAppearance="@style/WS.Micro"
+                android:textColor="@color/brand_raspberry"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -135,7 +135,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Log In"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/ws_on_brand"
             android:textSize="14sp"
             android:textStyle="bold"
             android:backgroundTint="@color/ws_accent"

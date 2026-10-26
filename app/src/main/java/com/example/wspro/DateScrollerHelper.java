@@ -16,7 +16,7 @@ import java.util.Locale;
 public class DateScrollerHelper {
 
     public interface OnDaySelectedListener {
-        void onDaySelected(String dayName);
+        void onDaySelected(String dayCode);
     }
 
     public static void setup(Context context, LinearLayout daysContainer, OnDaySelectedListener listener) {
@@ -36,6 +36,7 @@ public class DateScrollerHelper {
             String dayNumStr = dayNumFormat.format(currentDate);
             String dayNameStr = dayNameFormat.format(currentDate);
             String fullDayName = fullDateFormat.format(currentDate);
+            final String dayCode = dayNameStr.toUpperCase().trim(); // e.g. "MON", "TUE", "WED"
 
             View chipView = LayoutInflater.from(context).inflate(R.layout.item_day_chip, daysContainer, false);
 
@@ -50,8 +51,8 @@ public class DateScrollerHelper {
             if (isToday) {
                 chipView.setBackgroundResource(R.drawable.bg_day_chip_selected);
                 viewSelectionDot.setVisibility(View.VISIBLE);
-                tvDayNumber.setTextColor(Color.parseColor("#FFFFFF")); //this is white
-                listener.onDaySelected(fullDayName);
+                tvDayNumber.setTextColor(ContextCompat.getColor(context, R.color.ws_on_brand));
+                listener.onDaySelected(dayCode);
             } else {
                 chipView.setBackgroundResource(android.R.color.transparent);
                 viewSelectionDot.setVisibility(View.GONE);
@@ -68,9 +69,9 @@ public class DateScrollerHelper {
                 }
                 chipView.setBackgroundResource(R.drawable.bg_day_chip_selected);
                 viewSelectionDot.setVisibility(View.VISIBLE);
-                tvDayNumber.setTextColor(Color.parseColor("#FFFFFF")); //this was the pink one
+                tvDayNumber.setTextColor(ContextCompat.getColor(context, R.color.ws_on_brand));
 
-                listener.onDaySelected(fullDayName);
+                listener.onDaySelected(dayCode);
             });
             daysContainer.addView(chipView);
             calendar.add(Calendar.DATE, 1);

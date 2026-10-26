@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Academic Task"
+            android:textColor="@color/ws_text"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Prioritized automatically against your work shifts."
+            android:textColor="@color/ws_muted"
+            android:textSize="12sp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Title Input -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ASSIGNMENT TITLE"
+            android:textColor="@color/ws_text2"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.06"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etAssignmentTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="e.g. Chapter 4 System Architecture ERD"
+            android:textColorHint="@color/ws_muted"
+            android:textColor="@color/ws_text"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:inputType="textCapSentences"
+            android:layout_marginBottom="14dp" />
+
+        <!-- Subject Input -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="COURSE / SUBJECT"
+            android:textColor="@color/ws_text2"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.06"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etAssignmentSubject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="e.g. Database Systems"
+            android:textColorHint="@color/ws_muted"
+            android:textColor="@color/ws_text"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:inputType="textCapWords"
+            android:layout_marginBottom="14dp" />
+
+        <!-- Category Selector -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TASK CATEGORY (FOR WEIGHTED GWA IMPACT)"
+            android:textColor="@color/ws_text2"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.06"
+            android:layout_marginBottom="8dp" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/chipTaskPerformance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📝 Task Performance"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/ws_on_brand"
+                    android:background="@drawable/bg_toggle_selected"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/chipGroupWork"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="👥 Group Work"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/ws_muted"
+                    android:background="@drawable/bg_toggle_unselected"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/chipLaboratory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🧪 Laboratory"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/ws_muted"
+                    android:background="@drawable/bg_toggle_unselected"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/chipAssignment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📖 Assignment"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/ws_muted"
+                    android:background="@drawable/bg_toggle_unselected"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- Due Date (Calendar Pick) & Time (Clock Pick) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+
+            <!-- Calendar Picker Button -->
+            <LinearLayout
+                android:id="@+id/btnPickDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:background="@drawable/bg_input"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📅 DUE DATE"
+                    android:textColor="@color/ws_text2"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSelectedDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Select Date"
+                    android:textColor="@color/ws_accent"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- Clock Picker Button -->
+            <LinearLayout
+                android:id="@+id/btnPickTime"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:background="@drawable/bg_input"
+                android:padding="12dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⏰ DUE TIME"
+                    android:textColor="@color/ws_text2"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSelectedTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="11:59 PM"
+                    android:textColor="@color/ws_accent"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Save Button -->
+        <Button
+            android:id="@+id/btnSaveAssignment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save &amp; Prioritize Task"
+            android:textColor="@color/ws_on_brand"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/ws_accent"
+            android:padding="14dp"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnCancelAssignment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:textColor="@color/ws_muted"
+            android:textSize="13sp"
+            android:backgroundTint="@android:color/transparent" />
+
+    </LinearLayout>
+</ScrollView>

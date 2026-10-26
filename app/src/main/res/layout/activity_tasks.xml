@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ws_surface"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <!-- Top Bar -->
+    <LinearLayout
+        android:id="@+id/tasksHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="@color/ws_bg">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="0dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Priority Task Manager"
+                android:textColor="@color/ws_text"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvTaskSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sorted dynamically by workload &amp; deadlines"
+                android:textColor="@color/ws_muted"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Add Task Action Button in Header -->
+        <Button
+            android:id="@+id/btnAddNewTaskHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="+ Add"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/ws_on_brand"
+            android:backgroundTint="@color/ws_accent"
+            android:paddingHorizontal="14dp" />
+    </LinearLayout>
+
+    <!-- Main Content Area -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerTasks"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/tasksHeader"
+        android:layout_above="@id/bottomNavContainer"
+        android:padding="16dp"
+        android:clipToPadding="false" />
+
+    <!-- Empty State View -->
+    <LinearLayout
+        android:id="@+id/layoutEmptyTasks"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tasks_empty_title"
+            android:textColor="@color/ws_text"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tasks_empty_body"
+            android:textColor="@color/ws_muted"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:layout_marginBottom="18dp" />
+
+        <Button
+            android:id="@+id/btnEmptyAddTask"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tasks_add_first"
+            android:textColor="@color/ws_on_brand"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/ws_accent"
+            android:paddingHorizontal="20dp" />
+    </LinearLayout>
+
+    <include
+        layout="@layout/layout_bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/today_nav_height"
+        android:layout_alignParentBottom="true" />
+
+</RelativeLayout>

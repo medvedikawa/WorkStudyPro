@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.wspro">
 
+    <!-- Network permissions for Supabase API calls -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <!-- Permissions for local notifications & media picker profile creation -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -11,17 +15,25 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 
     <application
-
-
+        android:name=".WorkStudyProApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="WSPro"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.WSPro">
-        <activity android:name=".MainActivity" android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:theme="@style/Theme.WSPro.Today" />
+        <activity android:name=".ProfileActivity" android:exported="false" />
+        <activity android:name=".SettingsActivity" android:exported="false" />
         <activity android:name=".LoadingActivity" android:exported="false" />
         <activity android:name=".WeekActivity" android:exported="false" />
+        <activity android:name=".TasksActivity" android:exported="false" />
+        <activity android:name=".CropRotateActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" />
         <activity android:name=".LoginActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,7 +41,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".ProfileSetupActivity" android:exported="false" />
-        <activity android:name=".EditScheduleActivity" android:exported="false" />
+        <activity android:name=".EditScheduleActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

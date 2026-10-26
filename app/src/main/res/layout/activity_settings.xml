@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ws_surface"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <ImageButton
+            android:id="@+id/btnSettingsBack"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:scaleType="centerInside"
+            android:src="@drawable/back_arrow"
+            app:tint="@color/ws_accent" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="20dp"
+            android:text="Settings"
+            android:textColor="@color/ws_text"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Appearance"
+            android:textColor="@color/ws_text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerAppearance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/bg_input"
+            android:padding="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:labelFor="@id/etWeeklyHoursLimit"
+            android:text="Weekly hours limit"
+            android:textColor="@color/ws_text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Set the weekly schedule hours used for your load warning."
+            android:textColor="@color/ws_muted"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/bg_input"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <EditText
+                android:id="@+id/etWeeklyHoursLimit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:contentDescription="Weekly hours limit in hours"
+                android:inputType="number"
+                android:maxLength="3"
+                android:textColor="@color/ws_text"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="hours"
+                android:textColor="@color/ws_text2"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btnSaveWeeklyLimit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/ws_accent"
+                android:minWidth="0dp"
+                android:text="Save"
+                android:textColor="@color/ws_on_brand" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="Alerts"
+            android:textColor="@color/ws_text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchConflictAlerts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="8dp"
+            android:text="Schedule conflict alerts"
+            android:textColor="@color/ws_text2" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchCollisionAlerts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="8dp"
+            android:text="Work-shift deadline alerts"
+            android:textColor="@color/ws_text2" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchBurnoutAlerts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="8dp"
+            android:text="High workload alerts"
+            android:textColor="@color/ws_text2" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="6dp"
+            android:text="Last synced"
+            android:textColor="@color/ws_text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvLastSynced"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/ws_muted"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btnSyncNow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/ws_accent"
+            android:text="Sync now"
+            android:textColor="@color/ws_on_brand" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Items removed on this device are hidden here but are not deleted from your online data."
+            android:textColor="@color/ws_muted"
+            android:textSize="12sp" />
+    </LinearLayout>
+</ScrollView>

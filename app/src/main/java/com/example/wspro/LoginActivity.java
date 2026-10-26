@@ -1,34 +1,32 @@
 package com.example.wspro;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.InputType;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etLoginId, etLoginPass;
     private CheckBox cbRemember;
-    private SharedPreferences sharedPreferences;
-
-    private static final String PREF_NAME = "WorkStudyPrefs";
-    private static final String KEY_IS_LOGGED_IN = "is_logged_in";
+    private Button btnLogin;
+    private SupabaseClient supabaseClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. Check if "Remember me" was previously checked — auto-skip login if true
-        sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
-        boolean isLoggedIn = sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false);
+        supabaseClient = SupabaseClient.getInstance(this);
 
-        if (isLoggedIn) {
+        // 1. Auto-skip login if session exists in client
+        if (supabaseClient.isLoggedIn()) {
             navigateToDashboard();
             return;
         }
@@ -38,7 +36,7 @@ public class LoginActivity extends AppCompatActivity {
         etLoginId = findViewById(R.id.etLoginId);
         etLoginPass = findViewById(R.id.etLoginPass);
         cbRemember = findViewById(R.id.cbRemember);
-        Button btnLogin = findViewById(R.id.btnLogin);
+        btnLogin = findViewById(R.id.btnLogin);
         Button btnCreateAccountNav = findViewById(R.id.btnCreateAccountNav);
         Button btnDemo = findViewById(R.id.btnDemo);
         TextView tvForgot = findViewById(R.id.tvForgot);
@@ -46,7 +44,7 @@ public class LoginActivity extends AppCompatActivity {
         // 2. Handle Sign In Click
         btnLogin.setOnClickListener(v -> handleLogin());
 
-        // 3. Handle "Create an account" Button Click -> Leads to Profile Setup
+        // 3. Handle "Create an account" Button Click -> Leads to Profile Setup / Registration
         btnCreateAccountNav.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, ProfileSetupActivity.class);
             startActivity(intent);
@@ -55,42 +53,81 @@ public class LoginActivity extends AppCompatActivity {
         // 4. Handle Demo Account Quick Access
         btnDemo.setOnClickListener(v -> {
             Toast.makeText(this, "Logging in with Demo Account...", Toast.LENGTH_SHORT).show();
-            saveSessionAndNavigate();
+            supabaseClient.saveSession("demo_token", "demo_user_id", "demo@student.edu", "Demo Student", "BS Computer Science");
+            navigateToDashboard();
         });
 
-        tvForgot.setOnClickListener(v ->
-                Toast.makeText(this, "Password recovery link sent to your registered email.", Toast.LENGTH_LONG).show()
-        );
+        // 5. Handle Forgot Password
+        tvForgot.setOnClickListener(v -> {
+            EditText etEmail = new EditText(this);
+            etEmail.setHint("Enter your registered email");
+            etEmail.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS | InputType.TYPE_CLASS_TEXT);
+            int padding = (int) (16 * getResources().getDisplayMetrics().density);
+            etEmail.setPadding(padding, padding, padding, padding);
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Reset Password")
+                    .setMessage("Enter your registered email address to receive password reset instructions.")
+                    .setView(etEmail)
+                    .setPositiveButton("Send Reset Link", (dialog, which) -> {
+                        String email = etEmail.getText().toString().trim();
+                        if (email.isEmpty()) {
+                            Toast.makeText(LoginActivity.this, "Please enter your email.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        Toast.makeText(LoginActivity.this, "Sending reset link...", Toast.LENGTH_SHORT).show();
+                        supabaseClient.resetPassword(email, new SupabaseClient.AuthCallback() {
+                            @Override
+                            public void onSuccess(String userId, String userEmail, String accessToken) {
+                                Toast.makeText(LoginActivity.this, "Password reset instructions sent to " + email, Toast.LENGTH_LONG).show();
+                            }
+
+                            @Override
+                            public void onError(String errorMessage) {
+                                Toast.makeText(LoginActivity.this, "Failed to send reset link: " + errorMessage, Toast.LENGTH_LONG).show();
+                            }
+                        });
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
     }
 
     private void handleLogin() {
-        String idOrEmail = etLoginId.getText().toString().trim();
+        String email = etLoginId.getText().toString().trim();
         String password = etLoginPass.getText().toString().trim();
 
-        if (idOrEmail.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Please fill in all fields.", Toast.LENGTH_SHORT).show();
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Please fill in both email and password.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Authentication logic simulation (connects to your local or capstone user data)
-        Toast.makeText(this, "Welcome back, " + idOrEmail + "!", Toast.LENGTH_SHORT).show();
-        saveSessionAndNavigate();
-    }
+        btnLogin.setEnabled(false);
+        btnLogin.setText("Signing In...");
+        Toast.makeText(this, "Signing in...", Toast.LENGTH_SHORT).show();
 
-    private void saveSessionAndNavigate() {
-        // If "Remember me" is checked, save session state locally
-        if (cbRemember != null && cbRemember.isChecked()) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean(KEY_IS_LOGGED_IN, true);
-            editor.apply();
-        }
+        supabaseClient.signIn(email, password, new SupabaseClient.AuthCallback() {
+            @Override
+            public void onSuccess(String userId, String userEmail, String accessToken) {
+                btnLogin.setEnabled(true);
+                btnLogin.setText("Log In");
+                Toast.makeText(LoginActivity.this, "Welcome back!", Toast.LENGTH_SHORT).show();
+                navigateToDashboard();
+            }
 
-        navigateToDashboard();
+            @Override
+            public void onError(String errorMessage) {
+                btnLogin.setEnabled(true);
+                btnLogin.setText("Log In");
+                Toast.makeText(LoginActivity.this, "Login failed: " + errorMessage, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void navigateToDashboard() {
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        finish(); // Close LoginActivity so the user can't press back into it
+        finish();
     }
 }

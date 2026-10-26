@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/today_row_vertical_padding">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/today_row_divider_height"
+        android:background="@color/hairline" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/today_row_vertical_padding"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <View
+            android:id="@+id/todayScheduleBar"
+            android:layout_width="@dimen/today_schedule_bar_width"
+            android:layout_height="@dimen/today_schedule_row_height"
+            android:background="@drawable/bg_today_schedule_bar" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/today_row_horizontal_gap"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvTodayScheduleTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/WS.Item" />
+
+            <TextView
+                android:id="@+id/tvTodayScheduleDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/today_task_title_due_gap"
+                android:textAppearance="@style/WS.Caption" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

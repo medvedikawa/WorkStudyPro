@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottomNavContainer"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/today_nav_height"
+    android:baselineAligned="false"
+    android:background="@drawable/bg_today_nav"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:elevation="@dimen/today_nav_elevation"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/today_nav_horizontal_padding"
+    android:paddingTop="@dimen/today_nav_top_padding"
+    android:paddingEnd="@dimen/today_nav_horizontal_padding"
+    android:paddingBottom="@dimen/today_nav_bottom_padding">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="bottom|center_horizontal"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/navIconToday"
+            android:layout_width="@dimen/today_nav_icon_size"
+            android:layout_height="@dimen/today_nav_icon_size"
+            android:src="@drawable/ic_today_home"
+            android:contentDescription="@null"
+            app:tint="@color/text_muted" />
+
+        <TextView
+            android:id="@+id/btnToday"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/today_nav_icon_label_gap"
+            android:text="@string/today_tab_today"
+            android:textAppearance="@style/WS.Micro" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="bottom|center_horizontal"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/navIconWeek"
+            android:layout_width="@dimen/today_nav_icon_size"
+            android:layout_height="@dimen/today_nav_icon_size"
+            android:src="@drawable/ic_today_calendar_month"
+            android:contentDescription="@null"
+            app:tint="@color/text_muted" />
+
+        <TextView
+            android:id="@+id/btnWeek"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/today_nav_icon_label_gap"
+            android:text="@string/today_tab_week"
+            android:textAppearance="@style/WS.Micro" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <ImageButton
+            android:id="@+id/fabScanSchedule"
+            android:layout_width="@dimen/today_scan_size"
+            android:layout_height="@dimen/today_scan_size"
+            android:layout_gravity="top|center_horizontal"
+            android:background="@drawable/bg_today_scan"
+            android:contentDescription="@string/today_scan_content_description"
+            android:elevation="@dimen/today_nav_elevation"
+            android:padding="@dimen/today_zero_padding"
+            android:src="@drawable/ic_today_add"
+            android:translationY="@dimen/today_scan_translation" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="bottom|center_horizontal"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/navIconTasks"
+            android:layout_width="@dimen/today_nav_icon_size"
+            android:layout_height="@dimen/today_nav_icon_size"
+            android:src="@drawable/ic_today_task_alt"
+            android:contentDescription="@null"
+            app:tint="@color/text_muted" />
+
+        <TextView
+            android:id="@+id/btnTasks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/today_nav_icon_label_gap"
+            android:text="@string/today_tab_tasks"
+            android:textAppearance="@style/WS.Micro" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="bottom|center_horizontal"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/navIconYou"
+            android:layout_width="@dimen/today_nav_icon_size"
+            android:layout_height="@dimen/today_nav_icon_size"
+            android:src="@drawable/ic_today_person"
+            android:contentDescription="@null"
+            app:tint="@color/text_muted" />
+
+        <TextView
+            android:id="@+id/btnYou"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/today_nav_icon_label_gap"
+            android:text="@string/today_tab_you"
+            android:textAppearance="@style/WS.Micro" />
+    </LinearLayout>
+</LinearLayout>

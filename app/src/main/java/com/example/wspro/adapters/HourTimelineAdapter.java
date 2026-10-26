@@ -1,5 +1,7 @@
 package com.example.wspro.adapters;
 
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,13 +57,32 @@ public class HourTimelineAdapter extends RecyclerView.Adapter<HourTimelineAdapte
                         TextView tvTitle = pillView.findViewById(R.id.tvScheduleTitle);
                         TextView tvTime = pillView.findViewById(R.id.tvScheduleTime);
 
-                        if (tvTitle != null) tvTitle.setText(item.getSubject());
-                        if (tvTime != null) tvTime.setText(item.getStartTime() + " - " + item.getEndTime());
+                        if (tvTitle != null) {
+                            tvTitle.setText(item.getSubject());
+                            tvTitle.setTextColor(androidx.core.content.ContextCompat.getColor(
+                                    holder.itemView.getContext(), item.isWork()
+                                            ? R.color.schedule_work_on : R.color.schedule_school_on));
+                        }
+                        if (tvTime != null) {
+                            tvTime.setText(item.getStartTime() + " - " + item.getEndTime());
+                            tvTime.setTextColor(androidx.core.content.ContextCompat.getColor(
+                                    holder.itemView.getContext(), item.isWork()
+                                            ? R.color.schedule_work_on : R.color.schedule_school_on));
+                        }
+
+                        int parsedColor = androidx.core.content.ContextCompat.getColor(
+                                holder.itemView.getContext(),
+                                item.isWork() ? R.color.schedule_work : R.color.schedule_school);
+
+                        GradientDrawable bg = new GradientDrawable();
+                        bg.setShape(GradientDrawable.RECTANGLE);
+                        bg.setCornerRadius(16f);
+                        bg.setColor(parsedColor);
+                        pillView.setBackground(bg);
 
                         holder.layoutEventContainer.addView(pillView);
                     }
                 }
-                // If invalid, the loop continues and nothing is added to the container (remains empty)
             }
         }
     }

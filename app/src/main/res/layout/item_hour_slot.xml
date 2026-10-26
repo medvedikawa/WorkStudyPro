@@ -14,7 +14,7 @@
         android:layout_width="64dp"
         android:layout_height="wrap_content"
         android:text="12 AM"
-        android:textColor="#757575"
+        android:textColor="@color/item_hour_text"
         android:textSize="13sp"
         android:textStyle="bold" />
 
@@ -23,7 +23,7 @@
         android:layout_width="1dp"
         android:layout_height="match_parent"
         android:layout_marginHorizontal="8dp"
-        android:background="#E0E0E0" />
+        android:background="@color/item_hour_track" />
 
     <!-- Container for schedules falling into this hour slot -->
     <LinearLayout

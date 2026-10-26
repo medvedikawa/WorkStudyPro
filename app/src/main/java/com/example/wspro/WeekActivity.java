@@ -2,11 +2,12 @@ package com.example.wspro;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -30,13 +31,6 @@ public class WeekActivity extends AppCompatActivity {
         setContentView(R.layout.activity_week);
         scanButtonHelper = new ScanButtonHelper(this);
 
-        // to clear the database
-        new Thread(() -> {
-            AppDatabase.getInstance(getApplicationContext())
-                    .scheduleDao()
-                    .deleteAllSchedules();
-        }).start();
-
         recyclerWeekSchedule = findViewById(R.id.recyclerWeekSchedule);
         recyclerWeekSchedule.setLayoutManager(new LinearLayoutManager(this));
 
@@ -45,40 +39,39 @@ public class WeekActivity extends AppCompatActivity {
         recyclerWeekSchedule.setAdapter(adapter);
 
         LinearLayout dayContainer = findViewById(R.id.layoutDayContainer);
-        DateScrollerHelper.setup(this, dayContainer, selectedDay -> {
-            loadSavedSchedules(selectedDay);
+        DateScrollerHelper.setup(this, dayContainer, dayCode -> {
+            loadSavedSchedules(dayCode);
         });
 
+        TextView btnEditWeekSchedule = findViewById(R.id.btnEditWeekSchedule);
+        btnEditWeekSchedule.setOnClickListener(v -> showScheduleCategoryChooser());
 
-        // 2. Initialize Central FAB
-        ImageButton fabScanSchedule = findViewById(R.id.fabScanSchedule);
-        scanButtonHelper.attachToFab(fabScanSchedule);
+        BottomNavHelper.setup(this, BottomNavHelper.Tab.WEEK, scanButtonHelper);
+    }
 
-        // 3. Initialize Bottom Navigation Bar Items
-        TextView navToday = findViewById(R.id.navToday);
-        TextView navTasks = findViewById(R.id.navTasks);
-        TextView navYou = findViewById(R.id.navYou);
+    private void showScheduleCategoryChooser() {
+        View chooser = getLayoutInflater().inflate(R.layout.dialog_schedule_category, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(chooser)
+                .setNegativeButton("Cancel", null)
+                .create();
 
-        if (navToday != null) {
-            navToday.setOnClickListener(v -> {
-                Intent intent = new Intent(WeekActivity.this, MainActivity.class);
-                startActivity(intent);
-                overridePendingTransition(R.anim.fade_in, R.anim.fade_out); // Close WeekActivity to smoothly return to Today
-            });
-        }
+        chooser.findViewById(R.id.btnEditSchoolSchedule).setOnClickListener(v -> {
+            dialog.dismiss();
+            launchScheduleEditor(false);
+        });
+        chooser.findViewById(R.id.btnEditWorkSchedule).setOnClickListener(v -> {
+            dialog.dismiss();
+            launchScheduleEditor(true);
+        });
+        dialog.show();
+    }
 
-
-        if (navTasks != null) {
-            navTasks.setOnClickListener(v ->
-                    Toast.makeText(this, "Opening Tasks...", Toast.LENGTH_SHORT).show()
-            );
-        }
-
-        if (navYou != null) {
-            navYou.setOnClickListener(v ->
-                    Toast.makeText(this, "Opening Profile...", Toast.LENGTH_SHORT).show()
-            );
-        }
+    private void launchScheduleEditor(boolean isWork) {
+        Intent intent = new Intent(this, EditScheduleActivity.class);
+        intent.putExtra(EditScheduleActivity.EXTRA_EDIT_MODE, true);
+        intent.putExtra(EditScheduleActivity.EXTRA_CATEGORY, isWork ? "work" : "school");
+        startActivity(intent);
     }
 
     private void checkAndHighlightConflicts(List<ScheduleItem> daySchedules, String currentDay) {
@@ -89,13 +82,11 @@ public class WeekActivity extends AppCompatActivity {
                 ScheduleItem event1 = daySchedules.get(i);
                 ScheduleItem event2 = daySchedules.get(j);
 
-                // Assuming ScheduleItem provides day, start time, and end time
                 boolean hasClash = ConflictChecker.hasConflict(
                         currentDay, event1.getStartTime(), event1.getEndTime(),
                         currentDay, event2.getStartTime(), event2.getEndTime()
                 );
                 if (hasClash) {
-                    // Trigger your warning banner or flag the conflicting items here
                     String warning = "Conflict detected between " + event1.getSubject() + " and " + event2.getSubject();
                 }
             }
@@ -110,21 +101,38 @@ public class WeekActivity extends AppCompatActivity {
         }
     }
 
-    private void loadSavedSchedules(String day){
-        this.selectedDay = day;
-        new Thread (() -> {
+    private void loadSavedSchedules(String day) {
+        this.selectedDay = EditScheduleActivity.normalizeDay(day);
+        new Thread(() -> {
             List<ScheduleItem> savedData = AppDatabase.getInstance(getApplicationContext())
                     .scheduleDao()
-                    .getAllSchedules(day);
+                    .getAllSchedules(this.selectedDay);
 
-            runOnUiThread(() -> {
+            runOnUiThread(() -> adapter.updateData(savedData));
 
-                adapter.updateData(savedData);
-                /**if (savedData.isEmpty()){
-                    Toast.makeText(this, "No schedules found for " + day, Toast.LENGTH_SHORT).show();
-                }**/
-                // adapter.notifyDataSetChanged(); // You'll need an adapter here
-            });
+            // If local Room DB is empty, try fetching from Supabase cloud
+            if (savedData.isEmpty() && SupabaseClient.getInstance(getApplicationContext()).isLoggedIn()) {
+                SupabaseClient.getInstance(getApplicationContext()).fetchSchedulesFromCloud(new SupabaseClient.DataCallback<List<ScheduleItem>>() {
+                    @Override
+                    public void onSuccess(List<ScheduleItem> cloudItems) {
+                        if (cloudItems != null && !cloudItems.isEmpty()) {
+                            new Thread(() -> {
+                                LocalDataRepository.insertCloudSchedules(
+                                        AppDatabase.getInstance(getApplicationContext()), cloudItems);
+                                List<ScheduleItem> refreshed = AppDatabase.getInstance(getApplicationContext())
+                                        .scheduleDao()
+                                        .getAllSchedules(selectedDay);
+                                runOnUiThread(() -> adapter.updateData(refreshed));
+                            }).start();
+                        }
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        // Silent fallback
+                    }
+                });
+            }
         }).start();
     }
 }
