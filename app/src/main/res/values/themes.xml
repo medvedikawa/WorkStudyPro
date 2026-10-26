@@ -12,5 +12,6 @@
         <item name="android:windowBackground">@color/ws_bg</item>
     </style>
 
+
     <style name="Theme.WSPro" parent="Base.Theme.WSPro" />
 </resources>

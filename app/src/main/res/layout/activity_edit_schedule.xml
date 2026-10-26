@@ -5,6 +5,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/ws_bg"
     android:orientation="vertical"
+    android:fitsSystemWindows="true"
     android:padding="20dp">
 
     <ImageButton

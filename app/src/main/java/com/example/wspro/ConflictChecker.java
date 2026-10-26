@@ -39,13 +39,25 @@ public class ConflictChecker {
         int startMinB = timeToMinutes(startB);
         int endMinB = timeToMinutes(endB);
 
-        if (startMinA == -1 || endMinA == -1 || startMinB == -1 || endMinB == -1) {
-            return false;
-        }
-
         // Two intervals overlap if Event A starts before Event B ends,
         // and Event B starts before Event A ends.
-        return (startMinA < endMinB) && (startMinB < endMinA);
-
+        return Math.max(startMinA, startMinB) < Math.min(endMinA, endMinB);
     }
-}
+
+    public static boolean isTooClose(String dayA, String startA, String endA,
+                                     String dayB, String startB, String endB, int bufferMinutes){
+        if (!dayA.equalsIgnoreCase(dayB)) {return false;}
+
+        if (hasConflict(dayA, startA, endA, dayB, startB, endB)) return false;
+
+        int startMinA = timeToMinutes(startA);
+        int endMinA = timeToMinutes(endA);
+        int startMinB = timeToMinutes(startB);
+        int endMinB = timeToMinutes(endB);
+
+        int gap1 = startMinB - endMinA;
+        int gap2 = startMinA - endMinB;
+
+        return (gap1 > 0 && gap1 <= bufferMinutes) || (gap2 > 0 && gap2 <= bufferMinutes);
+        }
+    }
