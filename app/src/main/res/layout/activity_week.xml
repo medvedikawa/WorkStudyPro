@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ws_surface"
+    android:background="@color/surface"
     android:clipChildren="false"
     android:clipToPadding="false">
 
@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp"
-        android:background="@color/ws_surface"
+        android:background="@color/surface"
         android:elevation="4dp">
 
         <LinearLayout
@@ -28,7 +28,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Weekly Schedule"
-                android:textColor="@color/ws_text"
+                android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
@@ -67,7 +67,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Day-by-Day Breakdown"
-            android:textColor="@color/ws_text"
+            android:textColor="@color/text_primary"
             android:textSize="14sp"
             android:textStyle="bold"
             android:layout_marginTop="16dp" />
@@ -79,9 +79,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/topContainer"
-        android:layout_above="@id/bottomNavContainer"
         android:clipToPadding="false"
-        android:padding="8dp" />
+        android:paddingStart="8dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="96dp" />
 
     <include
         layout="@layout/layout_bottom_nav"

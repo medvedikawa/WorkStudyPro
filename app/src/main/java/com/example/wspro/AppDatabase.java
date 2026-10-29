@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-@Database(entities = {ScheduleItem.class, AssignmentItem.class, SyncChange.class}, version = 4, exportSchema = false)
+@Database(entities = {ScheduleItem.class, AssignmentItem.class, SyncChange.class}, version = 5, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final Migration MIGRATION_3_4 = new Migration(3, 4) {
@@ -23,9 +23,17 @@ public abstract class AppDatabase extends RoomDatabase {
             database.execSQL("CREATE TABLE IF NOT EXISTS pending_sync_changes ("
                     + "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
                     + "entityType TEXT NOT NULL, localId INTEGER NOT NULL, "
-                    + "operation TEXT NOT NULL, queuedAt INTEGER NOT NULL)");
+                    + "operation TEXT NOT NULL, queuedAt INTEGER NOT NULL, "
+                    + "isOffline INTEGER NOT NULL DEFAULT 0)");
             database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_pending_sync_changes_entityType_localId "
                     + "ON pending_sync_changes(entityType, localId)");
+        }
+    };
+
+    private static final Migration MIGRATION_4_5 = new Migration(4, 5) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE pending_sync_changes ADD COLUMN isOffline INTEGER NOT NULL DEFAULT 0");
         }
     };
 
@@ -41,7 +49,8 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "work_study_pro_db")
-                            .addMigrations(MIGRATION_3_4)
+                            .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }

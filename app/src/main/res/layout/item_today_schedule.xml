@@ -17,16 +17,38 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
+        <!-- Left Column 62dp wide with start time over end time -->
+        <LinearLayout
+            android:layout_width="62dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvTodayScheduleStart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/WS.ScheduleStart" />
+
+            <TextView
+                android:id="@+id/tvTodayScheduleEnd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/WS.ScheduleEnd" />
+        </LinearLayout>
+
+        <!-- 3dp Colored Bar with 10dp gaps on either side -->
         <View
             android:id="@+id/todayScheduleBar"
-            android:layout_width="@dimen/today_schedule_bar_width"
-            android:layout_height="@dimen/today_schedule_row_height"
+            android:layout_width="3dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
             android:background="@drawable/bg_today_schedule_bar" />
 
+        <!-- Title over Category ("Class" or "Work") -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/today_row_horizontal_gap"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -37,10 +59,10 @@
                 android:textAppearance="@style/WS.Item" />
 
             <TextView
-                android:id="@+id/tvTodayScheduleDetails"
+                android:id="@+id/tvTodayScheduleCategory"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/today_task_title_due_gap"
+                android:layout_marginTop="2dp"
                 android:textAppearance="@style/WS.Caption" />
         </LinearLayout>
     </LinearLayout>

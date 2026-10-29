@@ -1,5 +1,6 @@
 package com.example.wspro;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -27,8 +28,14 @@ public interface AssignmentDao {
     @Query("SELECT * FROM assignment_table WHERE isDeleted = 0 ORDER BY isCompleted ASC, dueTimestamp ASC")
     List<AssignmentItem> getAllAssignments();
 
+    @Query("SELECT * FROM assignment_table WHERE isDeleted = 0 ORDER BY isCompleted ASC, dueTimestamp ASC")
+    LiveData<List<AssignmentItem>> getAllAssignmentsLiveData();
+
     @Query("SELECT * FROM assignment_table WHERE isDeleted = 0 AND isCompleted = 0 ORDER BY dueTimestamp ASC")
     List<AssignmentItem> getPendingAssignments();
+
+    @Query("SELECT * FROM assignment_table WHERE isDeleted = 0 AND isCompleted = 0 ORDER BY dueTimestamp ASC")
+    LiveData<List<AssignmentItem>> getPendingAssignmentsLiveData();
 
     @Query("SELECT * FROM assignment_table")
     List<AssignmentItem> getAllIncludingDeleted();

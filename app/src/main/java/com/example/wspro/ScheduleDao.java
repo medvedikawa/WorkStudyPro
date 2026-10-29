@@ -1,5 +1,6 @@
 package com.example.wspro;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
@@ -23,8 +24,14 @@ public interface ScheduleDao {
     @Query("SELECT * FROM schedule_table WHERE day = :selectedDay AND isDeleted = 0")
     List<ScheduleItem> getAllSchedules(String selectedDay);
 
+    @Query("SELECT * FROM schedule_table WHERE day = :selectedDay AND isDeleted = 0")
+    LiveData<List<ScheduleItem>> getAllSchedulesLiveData(String selectedDay);
+
     @Query("SELECT * FROM schedule_table WHERE isDeleted = 0")
     List<ScheduleItem> getAll();
+
+    @Query("SELECT * FROM schedule_table WHERE isDeleted = 0")
+    LiveData<List<ScheduleItem>> getAllLiveData();
 
     @Query("SELECT * FROM schedule_table WHERE isWork = :isWork AND isDeleted = 0 "
             + "ORDER BY CASE day WHEN 'MON' THEN 1 WHEN 'TUE' THEN 2 WHEN 'WED' THEN 3 "

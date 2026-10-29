@@ -11,7 +11,7 @@
         android:id="@+id/tvScheduleTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/ws_text"
+        android:textColor="@color/text_primary"
         android:textSize="13sp"
         android:textStyle="bold" />
 
@@ -19,8 +19,7 @@
         android:id="@+id/tvScheduleTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/ws_text"
-        android:textSize="11sp"
-        android:alpha="0.7" />
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp" />
 
 </LinearLayout>

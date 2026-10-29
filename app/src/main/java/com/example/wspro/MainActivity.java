@@ -1,6 +1,7 @@
 package com.example.wspro;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.os.Build;
@@ -38,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvDateHeader;
     private TextView tvWelcomeTitle;
     private TextView tvWorkloadStatus;
-    private TextView tvWorkloadValue;
     private TextView tvWorkloadHours;
     private ProgressBar progressWeeklyLoad;
     private LinearLayout layoutWorkloadCard;
@@ -52,7 +52,9 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout cardTodaySchedule;
     private LinearLayout containerTodaySchedule;
     private LinearLayout layoutEmptySchedulePlaceholder;
-    private boolean loadInProgress;
+
+    private List<ScheduleItem> cachedSchedules = new ArrayList<>();
+    private List<AssignmentItem> cachedAssignments = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
         tvDateHeader = findViewById(R.id.tvDateHeader);
         tvWelcomeTitle = findViewById(R.id.tvWelcomeTitle);
         tvWorkloadStatus = findViewById(R.id.tvWorkloadStatus);
-        tvWorkloadValue = findViewById(R.id.tvWorkloadValue);
         tvWorkloadHours = findViewById(R.id.tvWorkloadHours);
         progressWeeklyLoad = findViewById(R.id.progressWeeklyLoad);
         layoutWorkloadCard = findViewById(R.id.layoutWorkloadCard);
@@ -90,12 +91,27 @@ public class MainActivity extends AppCompatActivity {
         createNotificationChannel();
         BottomNavHelper.setup(this, BottomNavHelper.Tab.TODAY, new ScanButtonHelper(this));
         requestNotificationPermission();
+
+        setupReactiveObservers();
+    }
+
+    private void setupReactiveObservers() {
+        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+        db.scheduleDao().getAllLiveData().observe(this, schedules -> {
+            cachedSchedules = schedules != null ? schedules : new ArrayList<>();
+            renderDashboard(cachedSchedules, cachedAssignments);
+        });
+        db.assignmentDao().getPendingAssignmentsLiveData().observe(this, assignments -> {
+            cachedAssignments = assignments != null ? assignments : new ArrayList<>();
+            renderDashboard(cachedSchedules, cachedAssignments);
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadDashboardData();
+        renderHeader();
+        renderDashboard(cachedSchedules, cachedAssignments);
     }
 
     private void renderHeader() {
@@ -131,29 +147,8 @@ public class MainActivity extends AppCompatActivity {
         BottomNavHelper.navigateTo(this, BottomNavHelper.Tab.TODAY, BottomNavHelper.Tab.TASKS);
     }
 
-    private void loadDashboardData() {
-        if (loadInProgress) return;
-        loadInProgress = true;
-        new Thread(() -> {
-            try {
-                AppDatabase db = AppDatabase.getInstance(getApplicationContext());
-                List<ScheduleItem> allSchedules = db.scheduleDao().getAll();
-                List<AssignmentItem> allAssignments = db.assignmentDao().getPendingAssignments();
-                runOnUiThread(() -> {
-                    loadInProgress = false;
-                    renderDashboard(allSchedules, allAssignments);
-                });
-            } catch (RuntimeException error) {
-                Log.e(TAG, "Unable to load the Today screen data.", error);
-                runOnUiThread(() -> {
-                    loadInProgress = false;
-                    Toast.makeText(this, R.string.today_loading_error, Toast.LENGTH_LONG).show();
-                });
-            }
-        }).start();
-    }
-
     private void renderDashboard(List<ScheduleItem> schedules, List<AssignmentItem> assignments) {
+        renderWeekStrip(schedules);
         computeWeeklyLoad(schedules);
         evaluateRealConflicts(schedules);
         renderTodaySchedule(schedules);
@@ -162,60 +157,138 @@ public class MainActivity extends AppCompatActivity {
         cardTodaySchedule.setVisibility(View.VISIBLE);
     }
 
+    private void renderWeekStrip(List<ScheduleItem> schedules) {
+        Calendar cal = Calendar.getInstance();
+        int todayYear = cal.get(Calendar.YEAR);
+        int todayDayOfYear = cal.get(Calendar.DAY_OF_YEAR);
+
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
+
+        String[] dayNames = {"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"};
+        String[] fullDays = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        String[] shortCodes = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+
+        int[] chipIds = {R.id.chipDay0, R.id.chipDay1, R.id.chipDay2, R.id.chipDay3, R.id.chipDay4, R.id.chipDay5, R.id.chipDay6};
+        int[] tvDayIds = {R.id.tvChipDay0, R.id.tvChipDay1, R.id.tvChipDay2, R.id.tvChipDay3, R.id.tvChipDay4, R.id.tvChipDay5, R.id.tvChipDay6};
+        int[] tvDateIds = {R.id.tvChipDate0, R.id.tvChipDate1, R.id.tvChipDate2, R.id.tvChipDate3, R.id.tvChipDate4, R.id.tvChipDate5, R.id.tvChipDate6};
+        int[] vDotIds = {R.id.vChipDot0, R.id.vChipDot1, R.id.vChipDot2, R.id.vChipDot3, R.id.vChipDot4, R.id.vChipDot5, R.id.vChipDot6};
+
+        for (int i = 0; i < 7; i++) {
+            View chipView = findViewById(chipIds[i]);
+            TextView tvDay = findViewById(tvDayIds[i]);
+            TextView tvDate = findViewById(tvDateIds[i]);
+            View vDot = findViewById(vDotIds[i]);
+
+            if (chipView == null || tvDay == null || tvDate == null || vDot == null) continue;
+
+            int dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
+            tvDay.setText(dayNames[i]);
+            tvDate.setText(String.valueOf(dayOfMonth));
+
+            boolean isToday = cal.get(Calendar.YEAR) == todayYear && cal.get(Calendar.DAY_OF_YEAR) == todayDayOfYear;
+
+            boolean hasSchedule = false;
+            if (schedules != null) {
+                String fullDayStr = fullDays[i].toLowerCase();
+                String shortCodeStr = shortCodes[i].toLowerCase();
+                for (ScheduleItem item : schedules) {
+                    if (item.getDay() != null) {
+                        String d = item.getDay().toLowerCase();
+                        if (d.contains(fullDayStr) || d.contains(shortCodeStr) || d.equals(String.valueOf(i))) {
+                            hasSchedule = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (isToday) {
+                chipView.setBackgroundResource(R.drawable.bg_calendar_chip_today);
+                tvDay.setTextColor(ContextCompat.getColor(this, R.color.on_brand));
+                tvDay.setTypeface(null, android.graphics.Typeface.BOLD);
+                tvDate.setTextColor(ContextCompat.getColor(this, R.color.on_brand));
+                tvDate.setTypeface(null, android.graphics.Typeface.BOLD);
+                if (hasSchedule) {
+                    vDot.setVisibility(View.VISIBLE);
+                    vDot.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.on_brand)));
+                } else {
+                    vDot.setVisibility(View.INVISIBLE);
+                }
+            } else {
+                chipView.setBackgroundResource(R.drawable.bg_calendar_chip_normal);
+                tvDay.setTextColor(ContextCompat.getColor(this, R.color.text_muted));
+                tvDay.setTypeface(null, android.graphics.Typeface.NORMAL);
+                tvDate.setTextColor(ContextCompat.getColor(this, R.color.text_primary));
+                tvDate.setTypeface(null, android.graphics.Typeface.BOLD);
+                if (hasSchedule) {
+                    vDot.setVisibility(View.VISIBLE);
+                    vDot.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.brand_purple)));
+                } else {
+                    vDot.setVisibility(View.INVISIBLE);
+                }
+            }
+
+            final String dayCodeToOpen = shortCodes[i];
+            chipView.setOnClickListener(v -> {
+                Intent intent = new Intent(this, WeekActivity.class);
+                intent.putExtra("SELECTED_DAY", dayCodeToOpen);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+            });
+
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+        }
+    }
+
     private void computeWeeklyLoad(List<ScheduleItem> schedules) {
         SupabaseClient client = SupabaseClient.getInstance(this);
-        int weeklyLimit = Math.max(1, client.getWeeklyHoursLimit());
-        double totalHours = 0;
-        double classHours = 0;
-        double workHours = 0;
+        LoadCalculator.LoadResult result = LoadCalculator.calculate(schedules, client.getWeeklyHoursLimit());
 
-        if (schedules != null) {
-            for (ScheduleItem item : schedules) {
-                int start = ConflictChecker.timeToMinutes(item.getStartTime());
-                int end = ConflictChecker.timeToMinutes(item.getEndTime());
-                if (end <= start) continue;
-                double hours = (end - start) / 60.0;
-                totalHours += hours;
-                if (item.isWork()) workHours += hours;
-                else classHours += hours;
-            }
+        TextView tvWorkloadNumber = findViewById(R.id.tvWorkloadNumber);
+        TextView tvWorkloadLimit = findViewById(R.id.tvWorkloadLimit);
+
+        if (tvWorkloadNumber != null) {
+            tvWorkloadNumber.setText(String.valueOf(result.getRoundedTotal()));
+        }
+        if (tvWorkloadLimit != null) {
+            tvWorkloadLimit.setText(getString(R.string.today_limit_hours, result.weeklyLimit));
         }
 
-        int roundedTotal = (int) Math.round(totalHours);
-        int roundedClass = (int) Math.round(classHours);
-        int roundedWork = (int) Math.round(workHours);
-        tvWorkloadValue.setText(getString(R.string.today_hours_of_limit, roundedTotal, weeklyLimit));
-
-        boolean isHigh = totalHours > weeklyLimit;
         int statusText;
         int fillColor;
-        if (isHigh) {
+        int bgDrawable;
+        if (result.isHigh()) {
             statusText = R.string.today_load_high;
             fillColor = R.color.brand_raspberry;
+            bgDrawable = R.drawable.bg_load_band_raspberry;
             if (client.isAlertBurnoutEnabled()) {
-                int overLimit = Math.max(1, (int) Math.round(totalHours - weeklyLimit));
-                tvWorkloadHours.setText(getString(R.string.today_over_limit, overLimit, weeklyLimit));
+                int overLimit = Math.max(1, (int) Math.round(result.totalHours - result.weeklyLimit));
+                tvWorkloadHours.setText(getString(R.string.today_over_limit, overLimit, result.weeklyLimit));
             } else {
                 tvWorkloadHours.setText(getString(
-                        R.string.today_class_work_hours, roundedClass, roundedWork));
+                        R.string.today_class_work_hours, result.getRoundedClass(), result.getRoundedWork()));
             }
-        } else if (totalHours < weeklyLimit * 0.75) {
+        } else if (result.band == LoadCalculator.LoadBand.LOW) {
             statusText = R.string.today_load_low;
             fillColor = R.color.brand_purple;
+            bgDrawable = R.drawable.bg_load_band_purple;
             tvWorkloadHours.setText(getString(
-                    R.string.today_class_work_hours, roundedClass, roundedWork));
+                    R.string.today_class_work_hours, result.getRoundedClass(), result.getRoundedWork()));
         } else {
             statusText = R.string.today_load_moderate;
             fillColor = R.color.brand_purple;
+            bgDrawable = R.drawable.bg_load_band_purple;
             tvWorkloadHours.setText(getString(
-                    R.string.today_class_work_hours, roundedClass, roundedWork));
+                    R.string.today_class_work_hours, result.getRoundedClass(), result.getRoundedWork()));
         }
 
         tvWorkloadStatus.setText(statusText);
         tvWorkloadStatus.setTextColor(ContextCompat.getColor(this, fillColor));
+        tvWorkloadStatus.setBackgroundResource(bgDrawable);
         progressWeeklyLoad.setProgressTintList(
                 ColorStateList.valueOf(ContextCompat.getColor(this, fillColor)));
-        int progress = (int) Math.round(Math.min(totalHours / weeklyLimit, 1.0) * 100.0);
+        int progress = (int) Math.round(Math.min(result.totalHours / result.weeklyLimit, 1.0) * 100.0);
         progressWeeklyLoad.setProgress(progress);
         layoutWorkloadCard.setVisibility(View.VISIBLE);
     }
@@ -293,12 +366,18 @@ public class MainActivity extends AppCompatActivity {
                     item.isWork() ? R.color.work : R.color.school);
             ViewCompat.setBackgroundTintList(bar, ColorStateList.valueOf(barColor));
 
+            TextView tvStart = row.findViewById(R.id.tvTodayScheduleStart);
+            TextView tvEnd = row.findViewById(R.id.tvTodayScheduleEnd);
+            if (tvStart != null) tvStart.setText(formatScheduleTime(item.getStartTime()));
+            if (tvEnd != null) tvEnd.setText(formatScheduleTime(item.getEndTime()));
+
             TextView title = row.findViewById(R.id.tvTodayScheduleTitle);
             title.setText(item.getSubject());
-            TextView details = row.findViewById(R.id.tvTodayScheduleDetails);
-            String timeRange = formatTimeRange(item.getStartTime(), item.getEndTime());
-            details.setText(getString(item.isWork()
-                    ? R.string.today_schedule_work : R.string.today_schedule_class, timeRange));
+
+            TextView category = row.findViewById(R.id.tvTodayScheduleCategory);
+            if (category != null) {
+                category.setText(item.isWork() ? "Work" : "Class");
+            }
             containerTodaySchedule.addView(row);
         }
     }
@@ -325,6 +404,8 @@ public class MainActivity extends AppCompatActivity {
 
             long dueTimestamp = resolveDueTimestamp(task);
             boolean overdue = dueTimestamp > 0 && dueTimestamp < System.currentTimeMillis();
+            long difference = dueTimestamp > 0 ? dueTimestamp - System.currentTimeMillis() : Long.MAX_VALUE;
+            boolean urgent = dueTimestamp > 0 && (difference < 24L * 60L * 60L * 1000L);
             boolean hasCollision = collisionAlerts && task.isHasWorkCollision();
 
             TextView rank = row.findViewById(R.id.tvTodayTaskRank);
@@ -339,9 +420,14 @@ public class MainActivity extends AppCompatActivity {
 
             TextView title = row.findViewById(R.id.tvTodayTaskTitle);
             title.setText(task.getTitle());
+
             TextView due = row.findViewById(R.id.tvTodayTaskDue);
             due.setText(getDueLabel(task, dueTimestamp));
-            if (overdue) due.setTextColor(ContextCompat.getColor(this, R.color.brand_raspberry));
+            if (urgent) {
+                due.setTextAppearance(R.style.WS_UrgentDue);
+            } else {
+                due.setTextAppearance(R.style.WS_Due);
+            }
 
             TextView collision = row.findViewById(R.id.tvTodayTaskCollision);
             collision.setVisibility(hasCollision ? View.VISIBLE : View.GONE);
@@ -362,7 +448,6 @@ public class MainActivity extends AppCompatActivity {
                 Date parsed = format.parse(date + " " + time);
                 if (parsed != null) return parsed.getTime();
             } catch (ParseException ignored) {
-                // Try the next format for older task records.
             }
         }
         return 0;
@@ -404,17 +489,6 @@ public class MainActivity extends AppCompatActivity {
                 new SimpleDateFormat("MMM d", Locale.getDefault()).format(new Date(dueTimestamp)));
     }
 
-    private String formatTimeRange(String start, String end) {
-        String formattedStart = formatScheduleTime(start);
-        String formattedEnd = formatScheduleTime(end);
-        String startPeriod = periodSuffix(formattedStart);
-        String endPeriod = periodSuffix(formattedEnd);
-        if (!startPeriod.isEmpty() && startPeriod.equals(endPeriod)) {
-            formattedStart = formattedStart.substring(0, formattedStart.length() - startPeriod.length()).trim();
-        }
-        return formattedStart + " - " + formattedEnd;
-    }
-
     private String formatScheduleTime(String value) {
         if (value == null) return "";
         String trimmed = value.trim();
@@ -428,17 +502,9 @@ public class MainActivity extends AppCompatActivity {
                     return new SimpleDateFormat("h:mm a", Locale.getDefault()).format(parsed);
                 }
             } catch (ParseException ignored) {
-                // Preserve time values that use a format not recognized here.
             }
         }
         return trimmed;
-    }
-
-    private String periodSuffix(String value) {
-        String upper = value.toUpperCase(Locale.ROOT);
-        if (upper.endsWith(" AM")) return "AM";
-        if (upper.endsWith(" PM")) return "PM";
-        return "";
     }
 
     private void sendPushNotification(String message) {
