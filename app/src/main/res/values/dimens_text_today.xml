@@ -1,9 +1,10 @@
 <resources>
-    <dimen name="ws_title_size">22sp</dimen>
+    <dimen name="ws_title_size">24sp</dimen>
     <dimen name="ws_card_title_size">15sp</dimen>
     <dimen name="ws_item_size">14sp</dimen>
     <dimen name="ws_value_size">13sp</dimen>
     <dimen name="ws_link_size">13sp</dimen>
     <dimen name="ws_caption_size">12sp</dimen>
     <dimen name="ws_micro_size">11sp</dimen>
+    <dimen name="ws_load_number_size">34sp</dimen>
 </resources>

@@ -45,6 +45,7 @@ public class ScheduleItem {
     public void setEndTime(String endTime) { this.endTime = endTime; }
     public boolean isWork() { return isWork; }
     public void setWork(boolean work) { isWork = work; }
+    public String getCategory() { return isWork ? "Work" : "Class"; }
     public String getColorHex() { return colorHex; }
     public void setColorHex(String colorHex) { this.colorHex = colorHex; }
     public String getCloudId() { return cloudId; }

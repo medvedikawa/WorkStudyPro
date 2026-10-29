@@ -96,6 +96,9 @@ public class CropImageView extends View {
         this.mOriginalBitmap = bitmap;
         this.mRotationDegrees = 0;
         updateRotatedBitmap();
+        if (getWidth() > 0 && getHeight() > 0) {
+            recalculateBounds(getWidth(), getHeight(), true);
+        }
         requestLayout();
         invalidate();
     }

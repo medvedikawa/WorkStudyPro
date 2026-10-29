@@ -41,6 +41,7 @@ public class SupabaseClient {
 
     private static final String PREFS_NAME = "WorkStudySupabasePrefs";
     private static final String KEY_ACCESS_TOKEN = "access_token";
+    private static final String KEY_REFRESH_TOKEN = "refresh_token";
     private static final String KEY_USER_ID = "user_id";
     private static final String KEY_USER_EMAIL = "user_email";
     private static final String KEY_USER_NAME = "user_name";
@@ -227,21 +228,29 @@ public class SupabaseClient {
         AppCompatDelegate.setDefaultNightMode(nightMode);
     }
 
-    public void saveSession(String accessToken, String userId, String email, String name, String course) {
-        prefs.edit()
+    public void saveSession(String accessToken, String refreshToken, String userId, String email, String name, String course) {
+        SharedPreferences.Editor editor = prefs.edit()
                 .putBoolean(KEY_IS_LOGGED_IN, true)
                 .putString(KEY_ACCESS_TOKEN, accessToken)
                 .putString(KEY_USER_ID, userId)
                 .putString(KEY_USER_EMAIL, email)
                 .putString(KEY_USER_NAME, name)
-                .putString(KEY_USER_COURSE, course)
-                .apply();
+                .putString(KEY_USER_COURSE, course);
+        if (refreshToken != null && !refreshToken.isEmpty()) {
+            editor.putString(KEY_REFRESH_TOKEN, refreshToken);
+        }
+        editor.apply();
+    }
+
+    public void saveSession(String accessToken, String userId, String email, String name, String course) {
+        saveSession(accessToken, null, userId, email, name, course);
     }
 
     public void clearSession() {
         prefs.edit()
                 .remove(KEY_IS_LOGGED_IN)
                 .remove(KEY_ACCESS_TOKEN)
+                .remove(KEY_REFRESH_TOKEN)
                 .remove(KEY_USER_ID)
                 .remove(KEY_USER_EMAIL)
                 .remove(KEY_USER_NAME)
@@ -288,6 +297,9 @@ public class SupabaseClient {
                         String accessToken = json.has("access_token") && !json.get("access_token").isJsonNull()
                                 ? json.get("access_token").getAsString() : "";
 
+                        String refreshToken = json.has("refresh_token") && !json.get("refresh_token").isJsonNull()
+                                ? json.get("refresh_token").getAsString() : null;
+
                         String userId = "";
                         String userEmail = email;
                         if (json.has("user") && json.get("user").isJsonObject()) {
@@ -299,10 +311,11 @@ public class SupabaseClient {
                         }
 
                         final String finalToken = accessToken;
+                        final String finalRefresh = refreshToken;
                         final String finalId = userId;
                         final String finalEmail = userEmail;
 
-                        saveSession(finalToken, finalId, finalEmail, name, course);
+                        saveSession(finalToken, finalRefresh, finalId, finalEmail, name, course);
                         postSuccess(callback, finalId, finalEmail, finalToken);
                     } catch (Exception e) {
                         postError(callback, "Couldn't finish creating your account. Please try again.");
@@ -341,6 +354,8 @@ public class SupabaseClient {
                     try {
                         JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
                         String accessToken = json.has("access_token") ? json.get("access_token").getAsString() : "";
+                        String refreshToken = json.has("refresh_token") && !json.get("refresh_token").isJsonNull()
+                                ? json.get("refresh_token").getAsString() : null;
 
                         String userId = "";
                         String userEmail = email;
@@ -361,12 +376,13 @@ public class SupabaseClient {
                         }
 
                         final String finalToken = accessToken;
+                        final String finalRefresh = refreshToken;
                         final String finalId = userId;
                         final String finalEmail = userEmail;
                         final String finalName = userName;
                         final String finalCourse = userCourse;
 
-                        saveSession(finalToken, finalId, finalEmail, finalName, finalCourse);
+                        saveSession(finalToken, finalRefresh, finalId, finalEmail, finalName, finalCourse);
                         postSuccess(callback, finalId, finalEmail, finalToken);
                     } catch (Exception e) {
                         postError(callback, "Couldn't sign you in right now. Please try again.");
@@ -441,6 +457,10 @@ public class SupabaseClient {
             if (callback != null) callback.onError("Please log in to sync your data.");
             return;
         }
+        if (isDemoSession()) {
+            if (callback != null) callback.onError("Cloud sync is not available for demo accounts.");
+            return;
+        }
 
         new Thread(() -> {
             try {
@@ -483,7 +503,7 @@ public class SupabaseClient {
         for (JsonElement element : remoteRows) {
             JsonObject row = element.getAsJsonObject();
             ScheduleItem remote = parseSchedule(row);
-            if (remote.getCloudId() == null) throw new IOException("Missing schedule identifier.");
+            if (remote.getCloudId() == null) continue;
 
             ScheduleItem local = db.scheduleDao().findByCloudId(remote.getCloudId());
             if (local == null) {
@@ -497,8 +517,10 @@ public class SupabaseClient {
 
             boolean localPending = hasPendingChange(changes, SyncChange.SCHEDULE, local.getId());
             local.setCloudId(remote.getCloudId());
-            if (!localPending && !local.isDeleted()) copyScheduleValues(remote, local);
-            db.scheduleDao().update(local);
+            if (!localPending && !local.isDeleted()) {
+                copyScheduleValues(remote, local);
+                db.scheduleDao().update(local);
+            }
         }
     }
 
@@ -507,7 +529,7 @@ public class SupabaseClient {
         for (JsonElement element : remoteRows) {
             JsonObject row = element.getAsJsonObject();
             AssignmentItem remote = parseAssignment(row);
-            if (remote.getCloudId() == null) throw new IOException("Missing assignment identifier.");
+            if (remote.getCloudId() == null) continue;
 
             AssignmentItem local = db.assignmentDao().findByCloudId(remote.getCloudId());
             if (local == null) {
@@ -521,26 +543,36 @@ public class SupabaseClient {
 
             boolean localPending = hasPendingChange(changes, SyncChange.ASSIGNMENT, local.getId());
             local.setCloudId(remote.getCloudId());
-            if (!localPending && !local.isDeleted()) copyAssignmentValues(remote, local);
-            db.assignmentDao().update(local);
+            if (!localPending && !local.isDeleted()) {
+                copyAssignmentValues(remote, local);
+                db.assignmentDao().update(local);
+            }
         }
     }
 
     private void syncScheduleChange(AppDatabase db, SyncChange change) throws IOException {
         ScheduleItem item = db.scheduleDao().findById(change.getLocalId());
-        if (item == null) {
-            if (SyncChange.DELETE.equals(change.getOperation())) return;
-            throw new IOException("A saved schedule is no longer available.");
+        if (SyncChange.DELETE.equals(change.getOperation())) {
+            if (item != null && item.getCloudId() != null) {
+                executeSyncRequest(withIdFilter("/rest/v1/schedules", item.getCloudId()), "DELETE", null);
+            }
+            if (item != null) {
+                db.scheduleDao().deletePermanently(item.getId());
+            }
+            return;
         }
-        if (SyncChange.DELETE.equals(change.getOperation()) || item.isDeleted()) return;
+        if (item == null || item.isDeleted()) return;
+
         if (item.getCloudId() == null) {
             JsonArray response = JsonParser.parseString(executeSyncRequest(
                     "/rest/v1/schedules", "POST", scheduleJson(item))).getAsJsonArray();
             String cloudId = response.isEmpty() ? null : getCloudId(response.get(0).getAsJsonObject());
             if (cloudId == null) throw new IOException("The schedule could not be confirmed as saved.");
             item = db.scheduleDao().findById(item.getId());
-            item.setCloudId(cloudId);
-            db.scheduleDao().update(item);
+            if (item != null) {
+                item.setCloudId(cloudId);
+                db.scheduleDao().update(item);
+            }
         } else {
             String response = executeSyncRequest(
                     withIdFilter("/rest/v1/schedules", item.getCloudId()),
@@ -553,19 +585,27 @@ public class SupabaseClient {
 
     private void syncAssignmentChange(AppDatabase db, SyncChange change) throws IOException {
         AssignmentItem item = db.assignmentDao().findById(change.getLocalId());
-        if (item == null) {
-            if (SyncChange.DELETE.equals(change.getOperation())) return;
-            throw new IOException("A saved task is no longer available.");
+        if (SyncChange.DELETE.equals(change.getOperation())) {
+            if (item != null && item.getCloudId() != null) {
+                executeSyncRequest(withIdFilter("/rest/v1/assignments", item.getCloudId()), "DELETE", null);
+            }
+            if (item != null) {
+                db.assignmentDao().deletePermanently(item.getId());
+            }
+            return;
         }
-        if (SyncChange.DELETE.equals(change.getOperation()) || item.isDeleted()) return;
+        if (item == null || item.isDeleted()) return;
+
         if (item.getCloudId() == null) {
             JsonArray response = JsonParser.parseString(executeSyncRequest(
                     "/rest/v1/assignments", "POST", assignmentJson(item))).getAsJsonArray();
             String cloudId = response.isEmpty() ? null : getCloudId(response.get(0).getAsJsonObject());
             if (cloudId == null) throw new IOException("The task could not be confirmed as saved.");
             item = db.assignmentDao().findById(item.getId());
-            item.setCloudId(cloudId);
-            db.assignmentDao().update(item);
+            if (item != null) {
+                item.setCloudId(cloudId);
+                db.assignmentDao().update(item);
+            }
         } else {
             String response = executeSyncRequest(
                     withIdFilter("/rest/v1/assignments", item.getCloudId()),
@@ -576,7 +616,66 @@ public class SupabaseClient {
         }
     }
 
+    private synchronized boolean refreshSessionToken() {
+        String refreshToken = prefs.getString(KEY_REFRESH_TOKEN, null);
+        if (refreshToken == null || refreshToken.isEmpty()) return false;
+
+        JsonObject bodyJson = new JsonObject();
+        bodyJson.addProperty("refresh_token", refreshToken);
+
+        Request request = new Request.Builder()
+                .url(SUPABASE_URL + "/auth/v1/token?grant_type=refresh_token")
+                .addHeader("apikey", SUPABASE_ANON_KEY)
+                .addHeader("Content-Type", "application/json")
+                .post(RequestBody.create(bodyJson.toString(), JSON))
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                String respStr = response.body().string();
+                JsonObject json = JsonParser.parseString(respStr).getAsJsonObject();
+                String newAccess = json.has("access_token") && !json.get("access_token").isJsonNull()
+                        ? json.get("access_token").getAsString() : null;
+                String newRefresh = json.has("refresh_token") && !json.get("refresh_token").isJsonNull()
+                        ? json.get("refresh_token").getAsString() : null;
+
+                if (newAccess != null && !newAccess.isEmpty()) {
+                    SharedPreferences.Editor editor = prefs.edit().putString(KEY_ACCESS_TOKEN, newAccess);
+                    if (newRefresh != null && !newRefresh.isEmpty()) {
+                        editor.putString(KEY_REFRESH_TOKEN, newRefresh);
+                    }
+                    editor.apply();
+                    return true;
+                }
+            }
+        } catch (IOException ignored) { }
+        return false;
+    }
+
     private String executeSyncRequest(String path, String method, JsonObject body) throws IOException {
+        Request request = buildSyncRequest(path, method, body);
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (response.code() == 401) {
+                if (refreshSessionToken()) {
+                    Request retryRequest = buildSyncRequest(path, method, body);
+                    try (Response retryResponse = httpClient.newCall(retryRequest).execute()) {
+                        String retryBody = retryResponse.body() != null ? retryResponse.body().string() : "";
+                        if (!retryResponse.isSuccessful()) {
+                            throw new IOException("Cloud sync request failed with status " + retryResponse.code());
+                        }
+                        return retryBody;
+                    }
+                }
+            }
+            String responseBody = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                throw new IOException("Cloud sync request failed with status " + response.code());
+            }
+            return responseBody;
+        }
+    }
+
+    private Request buildSyncRequest(String path, String method, JsonObject body) {
         Request.Builder builder = new Request.Builder()
                 .url(SUPABASE_URL + path)
                 .addHeader("apikey", SUPABASE_ANON_KEY)
@@ -584,18 +683,13 @@ public class SupabaseClient {
                 .addHeader("Prefer", "return=representation");
         if ("GET".equals(method)) {
             builder.get();
+        } else if ("DELETE".equals(method)) {
+            builder.delete();
         } else {
-            builder.method(method, RequestBody.create(body.toString(), JSON))
+            builder.method(method, RequestBody.create(body != null ? body.toString() : "{}", JSON))
                     .addHeader("Content-Type", "application/json");
         }
-
-        try (Response response = httpClient.newCall(builder.build()).execute()) {
-            String responseBody = response.body() != null ? response.body().string() : "";
-            if (!response.isSuccessful()) {
-                throw new IOException("Cloud sync request failed with status " + response.code());
-            }
-            return responseBody;
-        }
+        return builder.build();
     }
 
     private String withIdFilter(String path, String cloudId) {
@@ -627,20 +721,20 @@ public class SupabaseClient {
     }
 
     private boolean sameSchedule(ScheduleItem first, ScheduleItem second) {
-        return first.getSubject().equals(second.getSubject())
-                && first.getDay().equals(second.getDay())
-                && first.getStartTime().equals(second.getStartTime())
-                && first.getEndTime().equals(second.getEndTime())
+        return java.util.Objects.equals(first.getSubject(), second.getSubject())
+                && java.util.Objects.equals(first.getDay(), second.getDay())
+                && java.util.Objects.equals(first.getStartTime(), second.getStartTime())
+                && java.util.Objects.equals(first.getEndTime(), second.getEndTime())
                 && first.isWork() == second.isWork()
-                && first.getColorHex().equals(second.getColorHex());
+                && java.util.Objects.equals(first.getColorHex(), second.getColorHex());
     }
 
     private boolean sameAssignment(AssignmentItem first, AssignmentItem second) {
-        return first.getTitle().equals(second.getTitle())
-                && first.getSubject().equals(second.getSubject())
-                && first.getCategory().equals(second.getCategory())
-                && first.getDueDate().equals(second.getDueDate())
-                && first.getDueTime().equals(second.getDueTime())
+        return java.util.Objects.equals(first.getTitle(), second.getTitle())
+                && java.util.Objects.equals(first.getSubject(), second.getSubject())
+                && java.util.Objects.equals(first.getCategory(), second.getCategory())
+                && java.util.Objects.equals(first.getDueDate(), second.getDueDate())
+                && java.util.Objects.equals(first.getDueTime(), second.getDueTime())
                 && first.getDueTimestamp() == second.getDueTimestamp()
                 && first.isCompleted() == second.isCompleted();
     }

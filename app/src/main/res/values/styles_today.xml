@@ -7,9 +7,15 @@
     </style>
 
     <style name="WS.Title">
-        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
-        <item name="fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
+        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_bold</item>
+        <item name="fontFamily">@font/atkinson_hyperlegible_next_bold</item>
         <item name="android:textSize">@dimen/ws_title_size</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+    <style name="WS.LoadNumber">
+        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_bold</item>
+        <item name="fontFamily">@font/atkinson_hyperlegible_next_bold</item>
+        <item name="android:textSize">@dimen/ws_load_number_size</item>
         <item name="android:textColor">@color/text_primary</item>
     </style>
     <style name="WS.CardTitle">
@@ -19,8 +25,8 @@
         <item name="android:textColor">@color/text_primary</item>
     </style>
     <style name="WS.Item">
-        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_medium</item>
-        <item name="fontFamily">@font/atkinson_hyperlegible_next_medium</item>
+        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
+        <item name="fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
         <item name="android:textSize">@dimen/ws_item_size</item>
         <item name="android:textColor">@color/text_primary</item>
     </style>
@@ -49,14 +55,38 @@
         <item name="android:textColor">@color/text_muted</item>
     </style>
     <style name="WS.Rank">
-        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
-        <item name="fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
+        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_bold</item>
+        <item name="fontFamily">@font/atkinson_hyperlegible_next_bold</item>
         <item name="android:textSize">@dimen/today_task_rank_text</item>
         <item name="android:textColor">@color/text_secondary</item>
     </style>
+    <style name="WS.UrgentDue">
+        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
+        <item name="fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
+        <item name="android:textSize">@dimen/ws_caption_size</item>
+        <item name="android:textColor">@color/brand_raspberry</item>
+    </style>
+    <style name="WS.Due">
+        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_regular</item>
+        <item name="fontFamily">@font/atkinson_hyperlegible_next_regular</item>
+        <item name="android:textSize">@dimen/ws_caption_size</item>
+        <item name="android:textColor">@color/text_muted</item>
+    </style>
+    <style name="WS.ScheduleStart">
+        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
+        <item name="fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
+        <item name="android:textSize">@dimen/ws_value_size</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+    <style name="WS.ScheduleEnd">
+        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_regular</item>
+        <item name="fontFamily">@font/atkinson_hyperlegible_next_regular</item>
+        <item name="android:textSize">@dimen/ws_caption_size</item>
+        <item name="android:textColor">@color/text_muted</item>
+    </style>
     <style name="WS.NavActive">
-        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_medium</item>
-        <item name="fontFamily">@font/atkinson_hyperlegible_next_medium</item>
+        <item name="android:fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
+        <item name="fontFamily">@font/atkinson_hyperlegible_next_semibold</item>
         <item name="android:textSize">@dimen/ws_micro_size</item>
         <item name="android:textColor">@color/brand_purple</item>
     </style>

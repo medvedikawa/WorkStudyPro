@@ -112,6 +112,10 @@ public class ScanButtonHelper {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
         File photoFile = new File(activity.getFilesDir(), "schedule_capture.jpg");
+        if (photoFile.exists()) {
+            photoFile.delete();
+        }
+
         photoUri = FileProvider.getUriForFile(
                 activity,
                 activity.getPackageName() + ".fileProvider",
@@ -124,7 +128,16 @@ public class ScanButtonHelper {
                 .apply();
 
         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+        takePictureIntent.setClipData(android.content.ClipData.newRawUri("", photoUri));
         takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+        java.util.List<android.content.pm.ResolveInfo> resInfoList = activity.getPackageManager()
+                .queryIntentActivities(takePictureIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        for (android.content.pm.ResolveInfo resolveInfo : resInfoList) {
+            String packageName = resolveInfo.activityInfo.packageName;
+            activity.grantUriPermission(packageName, photoUri,
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
 
         try {
             cameraLauncher.launch(takePictureIntent);

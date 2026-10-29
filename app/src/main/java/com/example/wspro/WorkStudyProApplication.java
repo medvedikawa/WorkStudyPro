@@ -15,8 +15,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class WorkStudyProApplication extends Application implements Application.ActivityLifecycleCallbacks {
 
+    private static final long SYNC_DEBOUNCE_DELAY_MS = 5000L;
+
     private final AtomicBoolean promptCheckRunning = new AtomicBoolean(false);
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Runnable debouncedSyncRunnable = this::performSilentSync;
+
     private Activity resumedActivity;
     private volatile boolean hasValidatedNetwork;
     private volatile boolean promptShownForConnection;
@@ -27,6 +31,7 @@ public class WorkStudyProApplication extends Application implements Application.
         SupabaseClient.applyAppearance(
                 SupabaseClient.getInstance(this).getAppearanceMode());
         registerActivityLifecycleCallbacks(this);
+
         ConnectivityManager connectivityManager =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager == null) return;
@@ -65,27 +70,62 @@ public class WorkStudyProApplication extends Application implements Application.
         if (isValidated && !hasValidatedNetwork) {
             hasValidatedNetwork = true;
             promptShownForConnection = false;
-            showSyncPromptIfNeeded();
+            triggerDebouncedSync();
+            showOfflineSyncPromptIfNeeded();
         } else if (!isValidated) {
             hasValidatedNetwork = false;
             promptShownForConnection = false;
         }
     }
 
-    private void showSyncPromptIfNeeded() {
+    public void onLocalChangesQueued() {
+        if (hasValidatedNetwork) {
+            triggerDebouncedSync();
+        } else {
+            new Thread(() -> {
+                try {
+                    AppDatabase.getInstance(this).syncChangeDao().markPendingAsOffline();
+                } catch (Exception ignored) { }
+            }).start();
+        }
+    }
+
+    private void triggerDebouncedSync() {
+        mainHandler.removeCallbacks(debouncedSyncRunnable);
+        mainHandler.postDelayed(debouncedSyncRunnable, SYNC_DEBOUNCE_DELAY_MS);
+    }
+
+    private void performSilentSync() {
+        SupabaseClient client = SupabaseClient.getInstance(this);
+        if (!hasValidatedNetwork || !client.isLoggedIn() || client.isDemoSession()) return;
+        client.syncAllLocalDataToCloud(this, new SupabaseClient.DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                // Silent success - no toasts or popups!
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                // Silent failure - changes remain queued safely, no toast spam!
+            }
+        });
+    }
+
+    private void showOfflineSyncPromptIfNeeded() {
         Activity activity = resumedActivity;
+        SupabaseClient client = SupabaseClient.getInstance(this);
         if (!hasValidatedNetwork || promptShownForConnection || activity == null
                 || activity.isFinishing() || activity.isDestroyed()
-                || !SupabaseClient.getInstance(this).isLoggedIn()
+                || !client.isLoggedIn() || client.isDemoSession()
                 || !promptCheckRunning.compareAndSet(false, true)) {
             return;
         }
 
         new Thread(() -> {
-            boolean hasPendingChanges;
+            boolean hasOfflineChanges;
             try {
-                hasPendingChanges = AppDatabase.getInstance(getApplicationContext())
-                        .syncChangeDao().getPendingCount() > 0;
+                hasOfflineChanges = AppDatabase.getInstance(getApplicationContext())
+                        .syncChangeDao().getOfflinePendingCount() > 0;
             } catch (RuntimeException e) {
                 promptCheckRunning.set(false);
                 return;
@@ -94,7 +134,7 @@ public class WorkStudyProApplication extends Application implements Application.
             mainHandler.post(() -> {
                 promptCheckRunning.set(false);
                 Activity current = resumedActivity;
-                if (!hasPendingChanges || !hasValidatedNetwork || promptShownForConnection
+                if (!hasOfflineChanges || !hasValidatedNetwork || promptShownForConnection
                         || current == null || current.isFinishing() || current.isDestroyed()) {
                     return;
                 }
@@ -103,45 +143,19 @@ public class WorkStudyProApplication extends Application implements Application.
                 new AlertDialog.Builder(current)
                         .setTitle("Sync your schedule?")
                         .setMessage("We have detected changes in your schedule. Should we sync them now?")
-                        .setPositiveButton("Yes", (dialog, which) ->
-                                SupabaseClient.getInstance(getApplicationContext())
-                                        .syncAllLocalDataToCloud(getApplicationContext(),
-                                                new SupabaseClient.DataCallback<Boolean>() {
-                                                    @Override
-                                                    public void onSuccess(Boolean result) {
-                                                        promptShownForConnection = false;
-                                                        if (current instanceof SettingsActivity) {
-                                                            ((SettingsActivity) current).refreshSyncStatus();
-                                                        }
-                                                        android.widget.Toast.makeText(
-                                                                getApplicationContext(),
-                                                                "Your data is synced.",
-                                                                android.widget.Toast.LENGTH_LONG).show();
-                                                        onLocalChangesQueued();
-                                                    }
-
-                                                    @Override
-                                                    public void onError(String errorMessage) {
-                                                        android.widget.Toast.makeText(
-                                                                getApplicationContext(),
-                                                                "Couldn't sync right now. Your changes are still saved on this device.",
-                                                                android.widget.Toast.LENGTH_LONG).show();
-                                                    }
-                                                }))
+                        .setPositiveButton("Yes", (dialog, which) -> performSilentSync())
                         .setNegativeButton("Not yet", null)
                         .show();
             });
         }).start();
     }
 
-    public void onLocalChangesQueued() {
-        if (hasValidatedNetwork) showSyncPromptIfNeeded();
-    }
-
     @Override
     public void onActivityResumed(Activity activity) {
         resumedActivity = activity;
-        if (hasValidatedNetwork) showSyncPromptIfNeeded();
+        if (hasValidatedNetwork) {
+            showOfflineSyncPromptIfNeeded();
+        }
     }
 
     @Override

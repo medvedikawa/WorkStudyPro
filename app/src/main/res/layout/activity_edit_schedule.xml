@@ -1,53 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@color/ws_bg"
-    android:orientation="vertical"
-    android:fitsSystemWindows="true"
-    android:padding="20dp">
+    android:background="@color/background">
 
-    <ImageButton
-        android:id="@+id/btnReturnBack"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/back_arrow"
-        app:tint="@color/ws_accent"
-        android:contentDescription="Return back"
-        android:scaleType="centerInside" />
-
-    <!-- Header Title -->
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- Header Bar -->
+    <LinearLayout
+        android:id="@+id/editScheduleHeader"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/tvScheduleTitle"
-        android:text="Review &amp; Edit Schedule"
-        android:textColor="@color/ws_on_brand"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="4dp" />
+        android:layout_alignParentTop="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="@color/surface">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/tvScheduleSubtitle"
-        android:text="Verify scanned details and adjust meeting times."
-        android:textColor="@color/ws_text2"
-        android:textSize="14sp"
-        android:layout_marginBottom="14dp" />
+        <ImageButton
+            android:id="@+id/btnReturnBack"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/back_arrow"
+            app:tint="@color/ws_accent"
+            android:contentDescription="Back"
+            android:scaleType="centerInside" />
 
-    <!-- Scanned Image Quick Preview & Re-crop Bar -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+
+            <TextView
+                android:id="@+id/tvScheduleTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Verify &amp; Add Schedule"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvScheduleSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Adjust detected subjects, times, and day assignments."
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Scanned Image Thumbnail Preview Card -->
     <LinearLayout
         android:id="@+id/layoutScannedPreviewCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/editScheduleHeader"
         android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:background="@drawable/bg_input"
         android:padding="10dp"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="14dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"
         android:visibility="gone">
 
         <ImageView
@@ -55,97 +72,100 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:scaleType="centerCrop"
-            android:background="@drawable/bg_card"
-            android:layout_marginEnd="12dp" />
+            android:background="@drawable/bg_card" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_marginStart="10dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📷 Scanned Schedule Image"
-                android:textColor="@color/ws_on_brand"
+                android:text="Cropped Schedule Image"
+                android:textColor="@color/text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cropped &amp; oriented for OCR"
-                android:textColor="@color/ws_muted"
+                android:text="Verify scanned text below against your source."
+                android:textColor="@color/text_muted"
                 android:textSize="11sp" />
         </LinearLayout>
 
         <Button
             android:id="@+id/btnReCrop"
             android:layout_width="wrap_content"
-            android:layout_height="34dp"
-            android:text="✂️ Re-crop"
+            android:layout_height="32dp"
+            android:text="⛶ Re-Crop"
             android:textSize="11sp"
+            android:textStyle="bold"
             android:textColor="@color/ws_accent"
             android:backgroundTint="@color/ws_surface2"
-            android:paddingHorizontal="10dp" />
+            android:paddingHorizontal="10dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvEmptyState"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@color/ws_text2"
-        android:textSize="14sp"
-        android:gravity="center"
-        android:padding="16dp"
-        android:visibility="gone" />
-
-    <!-- Time Slots Section Header + Add Button -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Meeting Days &amp; Times"
-            android:textColor="@color/ws_text"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/btnAddTimeSlot"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="+ Add Slot"
-            android:textColor="@color/ws_accent"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:padding="4dp" />
-    </LinearLayout>
-
-    <!-- RecyclerView for Multiple Time Slots -->
+    <!-- Content Area: List of Editable Time Slots -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerTimeSlots"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginBottom="16dp" />
+        android:layout_height="match_parent"
+        android:layout_below="@id/layoutScannedPreviewCard"
+        android:layout_above="@id/layoutBottomActions"
+        android:padding="16dp"
+        android:clipToPadding="false" />
 
-    <!-- Save & Check Button -->
-    <Button
-        android:id="@+id/btnSaveSchedule"
+    <TextView
+        android:id="@+id/tvEmptyState"
         android:layout_width="wrap_content"
-        android:layout_height="54dp"
-        android:backgroundTint="@color/ws_accent"
-        android:text="Save"
-        android:textColor="@color/ws_text"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:padding="24dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        android:visibility="gone" />
 
-</LinearLayout>
+    <!-- Bottom Actions: Add Slot & Save Schedule -->
+    <LinearLayout
+        android:id="@+id/layoutBottomActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@color/surface"
+        android:elevation="8dp">
+
+        <TextView
+            android:id="@+id/btnAddTimeSlot"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:gravity="center"
+            android:text="+ Add Another Time Slot"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_input"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginBottom="10dp" />
+
+        <Button
+            android:id="@+id/btnSaveSchedule"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Save Schedule"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@color/ws_on_brand"
+            android:backgroundTint="@color/ws_accent" />
+    </LinearLayout>
+
+</RelativeLayout>

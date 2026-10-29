@@ -2,8 +2,6 @@ package com.example.wspro;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
-import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -21,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -33,7 +30,7 @@ public class TasksActivity extends AppCompatActivity {
     private TextView tvTaskSubtitle;
     private ScanButtonHelper scanButtonHelper;
 
-    private List<AssignmentItem> currentAssignments = new ArrayList<>();
+    private List<AssignmentItem> rawAssignments = new ArrayList<>();
     private List<ScheduleItem> currentSchedules = new ArrayList<>();
 
     @Override
@@ -52,9 +49,8 @@ public class TasksActivity extends AppCompatActivity {
         btnAddNewTaskHeader.setOnClickListener(v -> showAddAssignmentDialog());
         btnEmptyAddTask.setOnClickListener(v -> showAddAssignmentDialog());
 
-        // Setup RecyclerView
         recyclerTasks.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new AssignmentAdapter(this, currentAssignments, new AssignmentAdapter.OnAssignmentActionListener() {
+        adapter = new AssignmentAdapter(this, new ArrayList<>(), new AssignmentAdapter.OnAssignmentActionListener() {
             @Override
             public void onToggleComplete(AssignmentItem item, boolean isCompleted) {
                 item.setCompleted(isCompleted);
@@ -62,7 +58,6 @@ public class TasksActivity extends AppCompatActivity {
                     LocalDataRepository.updateAssignment(
                             AppDatabase.getInstance(getApplicationContext()), item);
                     ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
-                    loadTasksAndSchedules();
                 }).start();
             }
 
@@ -72,82 +67,69 @@ public class TasksActivity extends AppCompatActivity {
                     LocalDataRepository.deleteAssignment(
                             AppDatabase.getInstance(getApplicationContext()), item);
                     ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
-                    loadTasksAndSchedules();
                 }).start();
             }
         });
         recyclerTasks.setAdapter(adapter);
 
-        // Setup bottom navigation
         setupBottomNav();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadTasksAndSchedules();
+        setupReactiveObservers();
     }
 
     private void setupBottomNav() {
         BottomNavHelper.setup(this, BottomNavHelper.Tab.TASKS, scanButtonHelper);
     }
 
-    private void loadTasksAndSchedules() {
-        new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(getApplicationContext());
-            List<AssignmentItem> dbAssignments = db.assignmentDao().getAllAssignments();
-            List<ScheduleItem> dbSchedules = db.scheduleDao().getAll();
+    private void setupReactiveObservers() {
+        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
 
-            currentSchedules = dbSchedules;
+        db.scheduleDao().getAllLiveData().observe(this, schedules -> {
+            currentSchedules = schedules != null ? schedules : new ArrayList<>();
+            applyPrioritiesAndRender(rawAssignments);
+        });
 
-            // Cloud sync fallback if local DB has no assignments yet
-            if (dbAssignments.isEmpty() && SupabaseClient.getInstance(getApplicationContext()).isLoggedIn()) {
+        db.assignmentDao().getAllAssignmentsLiveData().observe(this, assignments -> {
+            rawAssignments = assignments != null ? assignments : new ArrayList<>();
+            if (rawAssignments.isEmpty() && SupabaseClient.getInstance(getApplicationContext()).isLoggedIn()) {
                 SupabaseClient.getInstance(getApplicationContext()).fetchAssignmentsFromCloud(new SupabaseClient.DataCallback<List<AssignmentItem>>() {
                     @Override
                     public void onSuccess(List<AssignmentItem> cloudItems) {
                         if (cloudItems != null && !cloudItems.isEmpty()) {
-                            new Thread(() -> {
-                                LocalDataRepository.insertCloudAssignments(db, cloudItems);
-                                List<AssignmentItem> refreshed = db.assignmentDao().getAllAssignments();
-                                applyPrioritiesAndRender(refreshed);
-                            }).start();
+                            new Thread(() -> LocalDataRepository.insertCloudAssignments(db, cloudItems)).start();
                         } else {
-                            applyPrioritiesAndRender(dbAssignments);
+                            applyPrioritiesAndRender(rawAssignments);
                         }
                     }
 
                     @Override
                     public void onError(String errorMessage) {
-                        applyPrioritiesAndRender(dbAssignments);
+                        applyPrioritiesAndRender(rawAssignments);
                     }
                 });
             } else {
-                applyPrioritiesAndRender(dbAssignments);
+                applyPrioritiesAndRender(rawAssignments);
             }
-        }).start();
+        });
     }
 
     private void applyPrioritiesAndRender(List<AssignmentItem> items) {
         List<AssignmentItem> prioritized = PriorityEngine.calculateAndSort(items, currentSchedules);
-        currentAssignments = prioritized;
 
-        runOnUiThread(() -> {
-            adapter.updateData(currentAssignments);
-            if (currentAssignments.isEmpty()) {
-                layoutEmptyTasks.setVisibility(View.VISIBLE);
-                recyclerTasks.setVisibility(View.GONE);
-                tvTaskSubtitle.setText("0 pending academic tasks");
-            } else {
-                layoutEmptyTasks.setVisibility(View.GONE);
-                recyclerTasks.setVisibility(View.VISIBLE);
+        adapter.updateData(prioritized);
+        if (prioritized.isEmpty()) {
+            layoutEmptyTasks.setVisibility(View.VISIBLE);
+            recyclerTasks.setVisibility(View.GONE);
+            tvTaskSubtitle.setText("0 pending academic tasks");
+        } else {
+            layoutEmptyTasks.setVisibility(View.GONE);
+            recyclerTasks.setVisibility(View.VISIBLE);
 
-                long pendingCount = 0;
-                for (AssignmentItem a : currentAssignments) {
-                    if (!a.isCompleted()) pendingCount++;
-                }
-                tvTaskSubtitle.setText(pendingCount + " active tasks • Sorted by urgency & work collision");
+            long pendingCount = 0;
+            for (AssignmentItem a : prioritized) {
+                if (!a.isCompleted()) pendingCount++;
             }
-        });
+            tvTaskSubtitle.setText(pendingCount + " active tasks • Sorted by urgency & work collision");
+        }
     }
 
     private void showAddAssignmentDialog() {
@@ -176,10 +158,9 @@ public class TasksActivity extends AppCompatActivity {
         Button btnSave = dialogView.findViewById(R.id.btnSaveAssignment);
         Button btnCancel = dialogView.findViewById(R.id.btnCancelAssignment);
 
-        // State holder for dialog
         final String[] selectedCategory = {"Task Performance"};
         final Calendar selectedCal = Calendar.getInstance();
-        selectedCal.add(Calendar.DAY_OF_YEAR, 1); // default tomorrow
+        selectedCal.add(Calendar.DAY_OF_YEAR, 1);
         selectedCal.set(Calendar.HOUR_OF_DAY, 23);
         selectedCal.set(Calendar.MINUTE, 59);
         selectedCal.set(Calendar.SECOND, 0);
@@ -191,7 +172,6 @@ public class TasksActivity extends AppCompatActivity {
         tvSelectedDate.setText(displayDateFormat.format(selectedCal.getTime()));
         tvSelectedTime.setText(timeFormat.format(selectedCal.getTime()));
 
-        // Category Toggle Helpers
         TextView[] chips = {chipTaskPerformance, chipGroupWork, chipLaboratory, chipAssignment};
         String[] catNames = {"Task Performance", "Group Work", "Laboratory", "Assignment"};
 
@@ -203,7 +183,7 @@ public class TasksActivity extends AppCompatActivity {
                     selectedCategory[0] = catNames[i];
                 } else {
                     chips[i].setBackgroundResource(R.drawable.bg_toggle_unselected);
-                    chips[i].setTextColor(ContextCompat.getColor(this, R.color.ws_muted));
+                    chips[i].setTextColor(ContextCompat.getColor(this, R.color.text_muted));
                 }
             }
         };
@@ -212,7 +192,6 @@ public class TasksActivity extends AppCompatActivity {
             chip.setOnClickListener(categoryClick);
         }
 
-        // Calendar Date Picker
         btnPickDate.setOnClickListener(v -> {
             DatePickerDialog dpd = new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
                 selectedCal.set(Calendar.YEAR, year);
@@ -223,7 +202,6 @@ public class TasksActivity extends AppCompatActivity {
             dpd.show();
         });
 
-        // Clock Time Picker
         btnPickTime.setOnClickListener(v -> {
             TimePickerDialog tpd = new TimePickerDialog(this, (view, hourOfDay, minute) -> {
                 selectedCal.set(Calendar.HOUR_OF_DAY, hourOfDay);
@@ -270,7 +248,6 @@ public class TasksActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     Toast.makeText(this, "Task added & prioritized!", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
-                    loadTasksAndSchedules();
                 });
             }).start();
         });

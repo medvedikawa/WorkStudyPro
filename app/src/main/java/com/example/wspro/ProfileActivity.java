@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -23,6 +24,9 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView tvLastSynced;
     private Button btnSyncNow;
     private EditText etWeeklyLimit;
+
+    private List<ScheduleItem> cachedSchedules = new ArrayList<>();
+    private int cachedPendingTasks = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,12 +76,27 @@ public class ProfileActivity extends AppCompatActivity {
 
         ScanButtonHelper scanButtonHelper = new ScanButtonHelper(this);
         BottomNavHelper.setup(this, BottomNavHelper.Tab.YOU, scanButtonHelper);
+
+        setupReactiveObservers();
+    }
+
+    private void setupReactiveObservers() {
+        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+        db.scheduleDao().getAllLiveData().observe(this, schedules -> {
+            cachedSchedules = schedules != null ? schedules : new ArrayList<>();
+            renderSummary();
+        });
+        db.assignmentDao().getPendingAssignmentsLiveData().observe(this, pending -> {
+            cachedPendingTasks = pending != null ? pending.size() : 0;
+            renderSummary();
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadSummary();
+        refreshLastSynced();
+        renderSummary();
     }
 
     private void bindAlertSwitch(int viewId, boolean initialValue, Consumer<Boolean> onChanged) {
@@ -100,7 +119,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
         client.setWeeklyHoursLimit(hours);
         etWeeklyLimit.setError(null);
-        loadSummary();
+        renderSummary();
         Toast.makeText(this, "Weekly hours limit saved.", Toast.LENGTH_SHORT).show();
     }
 
@@ -135,32 +154,21 @@ public class ProfileActivity extends AppCompatActivity {
         tvLastSynced.setText(client.getLastSyncTimeString());
     }
 
-    private void loadSummary() {
-        new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(getApplicationContext());
-            List<ScheduleItem> schedules = db.scheduleDao().getAll();
-            int pendingTasks = db.assignmentDao().getPendingAssignments().size();
-            double totalHours = 0;
-            for (ScheduleItem item : schedules) {
-                int start = ConflictChecker.timeToMinutes(item.getStartTime());
-                int end = ConflictChecker.timeToMinutes(item.getEndTime());
-                if (end > start) totalHours += (end - start) / 60.0;
-            }
+    private void renderSummary() {
+        int weeklyLimit = client.getWeeklyHoursLimit();
+        LoadCalculator.LoadResult result = LoadCalculator.calculate(cachedSchedules, weeklyLimit);
 
-            int weeklyLimit = client.getWeeklyHoursLimit();
-            String loadStatus = totalHours > weeklyLimit
-                    ? "High workload"
-                    : totalHours >= weeklyLimit * 0.75
-                    ? "Moderate workload"
-                    : "Low workload";
-            String loadSummary = String.format(Locale.getDefault(),
-                    "%s · %.1f / %d hours this week", loadStatus, totalHours, weeklyLimit);
+        String loadStatus = result.isHigh()
+                ? "High workload"
+                : result.band == LoadCalculator.LoadBand.MODERATE
+                ? "Moderate workload"
+                : "Low workload";
 
-            runOnUiThread(() -> {
-                tvWeeklyLoad.setText(loadSummary);
-                tvPendingTasks.setText(pendingTasks + (pendingTasks == 1
-                        ? " pending task" : " pending tasks"));
-            });
-        }).start();
+        String loadSummary = String.format(Locale.getDefault(),
+                "%s · %.1f / %d hours this week", loadStatus, result.totalHours, result.weeklyLimit);
+
+        tvWeeklyLoad.setText(loadSummary);
+        tvPendingTasks.setText(cachedPendingTasks + (cachedPendingTasks == 1
+                ? " pending task" : " pending tasks"));
     }
 }

@@ -71,6 +71,289 @@
                 </FrameLayout>
             </LinearLayout>
 
+            <!-- Week Calendar Strip (Section A) -->
+            <LinearLayout
+                android:id="@+id/layoutWeekStrip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal"
+                android:weightSum="7">
+
+                <!-- Chip 0 (Su) -->
+                <LinearLayout
+                    android:id="@+id/chipDay0"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_calendar_chip_normal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvChipDay0"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Su"
+                        android:textAppearance="@style/WS.Micro" />
+
+                    <TextView
+                        android:id="@+id/tvChipDate0"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="25"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <View
+                        android:id="@+id/vChipDot0"
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/ic_dot_indicator"
+                        android:visibility="invisible" />
+                </LinearLayout>
+
+                <!-- Chip 1 (Mo) -->
+                <LinearLayout
+                    android:id="@+id/chipDay1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_calendar_chip_normal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvChipDay1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mo"
+                        android:textAppearance="@style/WS.Micro" />
+
+                    <TextView
+                        android:id="@+id/tvChipDate1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="26"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <View
+                        android:id="@+id/vChipDot1"
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/ic_dot_indicator"
+                        android:visibility="invisible" />
+                </LinearLayout>
+
+                <!-- Chip 2 (Tu) -->
+                <LinearLayout
+                    android:id="@+id/chipDay2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_calendar_chip_normal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvChipDay2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tu"
+                        android:textAppearance="@style/WS.Micro" />
+
+                    <TextView
+                        android:id="@+id/tvChipDate2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="27"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <View
+                        android:id="@+id/vChipDot2"
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/ic_dot_indicator"
+                        android:visibility="invisible" />
+                </LinearLayout>
+
+                <!-- Chip 3 (We) -->
+                <LinearLayout
+                    android:id="@+id/chipDay3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_calendar_chip_normal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvChipDay3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="We"
+                        android:textAppearance="@style/WS.Micro" />
+
+                    <TextView
+                        android:id="@+id/tvChipDate3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="28"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <View
+                        android:id="@+id/vChipDot3"
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/ic_dot_indicator"
+                        android:visibility="invisible" />
+                </LinearLayout>
+
+                <!-- Chip 4 (Th) -->
+                <LinearLayout
+                    android:id="@+id/chipDay4"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_calendar_chip_normal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvChipDay4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Th"
+                        android:textAppearance="@style/WS.Micro" />
+
+                    <TextView
+                        android:id="@+id/tvChipDate4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="29"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <View
+                        android:id="@+id/vChipDot4"
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/ic_dot_indicator"
+                        android:visibility="invisible" />
+                </LinearLayout>
+
+                <!-- Chip 5 (Fr) -->
+                <LinearLayout
+                    android:id="@+id/chipDay5"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_calendar_chip_normal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvChipDay5"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Fr"
+                        android:textAppearance="@style/WS.Micro" />
+
+                    <TextView
+                        android:id="@+id/tvChipDate5"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="30"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <View
+                        android:id="@+id/vChipDot5"
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/ic_dot_indicator"
+                        android:visibility="invisible" />
+                </LinearLayout>
+
+                <!-- Chip 6 (Sa) -->
+                <LinearLayout
+                    android:id="@+id/chipDay6"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_calendar_chip_normal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvChipDay6"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sa"
+                        android:textAppearance="@style/WS.Micro" />
+
+                    <TextView
+                        android:id="@+id/tvChipDate6"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="31"
+                        android:textAppearance="@style/WS.CardTitle" />
+
+                    <View
+                        android:id="@+id/vChipDot6"
+                        android:layout_width="4dp"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/ic_dot_indicator"
+                        android:visibility="invisible" />
+                </LinearLayout>
+            </LinearLayout>
+
             <LinearLayout
                 android:id="@+id/layoutWorkloadCard"
                 android:layout_width="match_parent"
@@ -84,24 +367,53 @@
                 android:paddingBottom="@dimen/today_card_vertical_padding"
                 android:visibility="gone">
 
+                <!-- Row 1: Left "This week" in WS.Caption, Right Load Band Chip -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:baselineAligned="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/tvWorkloadStatus"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textAppearance="@style/WS.CardTitle" />
+                        android:text="This week"
+                        android:textAppearance="@style/WS.Caption" />
 
                     <TextView
-                        android:id="@+id/tvWorkloadValue"
+                        android:id="@+id/tvWorkloadStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:background="@drawable/bg_load_band_purple"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="2dp"
+                        android:textColor="@color/brand_purple"
+                        android:textAppearance="@style/WS.Micro" />
+                </LinearLayout>
+
+                <!-- Row 2: 6dp below, baseline aligned: 34sp Bold hours, 6dp gap, "of {limit} hrs" in WS.Value -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:baselineAligned="true"
+                    android:gravity="bottom"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvWorkloadNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="38"
+                        android:textAppearance="@style/WS.LoadNumber" />
+
+                    <TextView
+                        android:id="@+id/tvWorkloadLimit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="of 45 hrs"
                         android:textAppearance="@style/WS.Value" />
                 </LinearLayout>
 
@@ -110,7 +422,7 @@
                     style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/today_load_progress_height"
-                    android:layout_marginTop="@dimen/today_load_progress_top"
+                    android:layout_marginTop="10dp"
                     android:indeterminate="false"
                     android:max="100"
                     android:progress="0"
@@ -120,7 +432,7 @@
                     android:id="@+id/tvWorkloadHours"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/today_load_caption_top"
+                    android:layout_marginTop="8dp"
                     android:textAppearance="@style/WS.Caption" />
             </LinearLayout>
 

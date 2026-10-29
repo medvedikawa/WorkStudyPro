@@ -27,8 +27,8 @@
     <color name="ws_category_assignment">#7E22CE</color>
     <color name="schedule_school">#1D4ED8</color>
     <color name="schedule_work">#0F766E</color>
-    <color name="schedule_school_on">#FFFFFF</color>
-    <color name="schedule_work_on">#FFFFFF</color>
+    <color name="schedule_school_on">#211A2B</color>
+    <color name="schedule_work_on">#211A2B</color>
     <color name="schedule_school_fill">#EAF1FF</color>
     <color name="schedule_work_fill">#E6F6F3</color>
     <color name="schedule_emerald">#15803D</color>
@@ -59,6 +59,9 @@
     <color name="work">#0F766E</color>
     <color name="raspberry_tint_16">#29BE185D</color>
     <color name="raspberry_tint_14">#24BE185D</color>
+    <color name="purple_tint_16">#296D28D9</color>
+    <color name="purple_tint_20">#336D28D9</color>
+    <color name="ws_other_default">#E15CF1</color>
     <color name="glow_start">#2E6D28D9</color>
     <color name="glow_end">#006D28D9</color>
     <color name="nav_surface">#E0FFFFFF</color>

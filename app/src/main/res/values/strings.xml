@@ -14,7 +14,8 @@
     <string name="today_load_moderate">Moderate load</string>
     <string name="today_load_high">High load</string>
     <string name="today_hours_of_limit">%1$d of %2$d hrs</string>
-    <string name="today_class_work_hours">%1$d hrs class, %2$d hrs work this week</string>
+    <string name="today_limit_hours">of %1$d hrs</string>
+    <string name="today_class_work_hours">%1$d hrs class, %2$d hrs work</string>
     <string name="today_over_limit">%1$d hrs over your %2$d hr limit</string>
     <string name="today_focus_title">Focus on these first</string>
     <string name="today_see_all">See all</string>

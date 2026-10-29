@@ -126,12 +126,24 @@ public class CropRotateActivity extends AppCompatActivity {
 
     public static Bitmap loadBitmapWithExif(Context context, Uri uri) throws Exception {
         int orientation = ExifInterface.ORIENTATION_NORMAL;
-        try (InputStream in = context.getContentResolver().openInputStream(uri)) {
-            if (in != null) {
-                ExifInterface exif = new ExifInterface(in);
+
+        // Try reading EXIF directly from local file first if accessible
+        File localFile = new File(context.getFilesDir(), "schedule_capture.jpg");
+        if (localFile.exists() && localFile.length() > 0) {
+            try {
+                ExifInterface exif = new ExifInterface(localFile.getAbsolutePath());
                 orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-            }
-        } catch (Exception ignored) {}
+            } catch (Exception ignored) {}
+        }
+
+        if (orientation == ExifInterface.ORIENTATION_NORMAL) {
+            try (InputStream in = context.getContentResolver().openInputStream(uri)) {
+                if (in != null) {
+                    ExifInterface exif = new ExifInterface(in);
+                    orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                }
+            } catch (Exception ignored) {}
+        }
 
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
