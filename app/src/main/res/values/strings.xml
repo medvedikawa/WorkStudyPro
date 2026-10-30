@@ -2,6 +2,10 @@
     <string name="app_name">WSPro</string>
     <string name="schedule_category_title">Category</string>
     <string name="schedule_category_prompt">Choose which schedule to edit</string>
+    <string name="schedule_title_edit">Edit Schedule</string>
+    <string name="schedule_edit_subtitle">Update, add, or remove your school/work entries.</string>
+    <string name="schedule_saving">Saving…</string>
+    <string name="schedule_save">Save</string>
     <string name="schedule_school">School</string>
     <string name="schedule_work">Work</string>
     <string name="schedule_empty_edit">No schedule to edit for the %1$s schedule yet. Go back to Week and use Scan Schedule to add one, or add a slot manually.</string>
@@ -56,10 +60,11 @@
     <string name="tasks_empty_title">Nothing due yet</string>
     <string name="tasks_empty_body">Add a task to keep track of upcoming work.</string>
     <string name="tasks_add_first">Add your first task</string>
-    <string name="crop_processing">Processing...</string>
+    <string name="crop_processing">Processing…</string>
     <string name="crop_scan_now">✓ Scan Now</string>
 
     <string-array name="days_array">
+        <item>Choose day…</item>
         <item>Monday</item>
         <item>Tuesday</item>
         <item>Wednesday</item>

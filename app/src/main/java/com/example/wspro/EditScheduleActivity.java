@@ -31,8 +31,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 public class EditScheduleActivity extends AppCompatActivity {
@@ -40,11 +42,7 @@ public class EditScheduleActivity extends AppCompatActivity {
     public static final String EXTRA_CATEGORY = "CATEGORY";
 
     private RecyclerView recyclerTimeSlots;
-    private TextView btnAddTimeSlot;
     private Button btnSaveSchedule;
-    private ImageButton btnReturnBack;
-    private TextView tvScheduleTitle;
-    private TextView tvScheduleSubtitle;
     private TextView tvEmptyState;
     private TimeSlotAdapter adapter;
     private List<TimeSlotItem> timeSlotList;
@@ -53,15 +51,16 @@ public class EditScheduleActivity extends AppCompatActivity {
     private boolean categoryWork;
 
     public static String normalizeDay(String rawDay) {
-        if (rawDay == null || rawDay.trim().isEmpty()) return "MON";
-        String d = rawDay.trim().toUpperCase();
-        if (d.startsWith("MO") || d.contains("MON")) return "MON";
-        if (d.startsWith("TU") || d.contains("TUE")) return "TUE";
-        if (d.startsWith("WE") || d.contains("WED")) return "WED";
-        if (d.startsWith("TH") || d.contains("THU")) return "THU";
-        if (d.startsWith("FR") || d.contains("FRI")) return "FRI";
-        if (d.startsWith("SA") || d.contains("SAT")) return "SAT";
-        if (d.startsWith("SU") || d.contains("SUN")) return "SUN";
+        if (rawDay == null || rawDay.trim().isEmpty()) return "";
+        String d = rawDay.trim().toUpperCase(Locale.US);
+        if (d.contains("CHOOSE") || d.contains("SELECT")) return "";
+        if (d.startsWith("MO") || d.contains("MON") || d.contains("LUN")) return "MON";
+        if (d.startsWith("TU") || d.contains("TUE") || d.contains("MAR")) return "TUE";
+        if (d.startsWith("WE") || d.contains("WED") || d.contains("MIY")) return "WED";
+        if (d.startsWith("TH") || d.contains("THU") || d.contains("HUW") || d.equals("R")) return "THU";
+        if (d.startsWith("FR") || d.contains("FRI") || d.contains("BIY")) return "FRI";
+        if (d.startsWith("SA") || d.contains("SAT") || d.contains("SAB")) return "SAT";
+        if (d.startsWith("SU") || d.contains("SUN") || d.contains("LIN")) return "SUN";
         return d;
     }
 
@@ -72,11 +71,11 @@ public class EditScheduleActivity extends AppCompatActivity {
         createNotificationChannel();
 
         recyclerTimeSlots = findViewById(R.id.recyclerTimeSlots);
-        btnAddTimeSlot = findViewById(R.id.btnAddTimeSlot);
+        TextView btnAddTimeSlot = findViewById(R.id.btnAddTimeSlot);
         btnSaveSchedule = findViewById(R.id.btnSaveSchedule);
-        btnReturnBack = findViewById(R.id.btnReturnBack);
-        tvScheduleTitle = findViewById(R.id.tvScheduleTitle);
-        tvScheduleSubtitle = findViewById(R.id.tvScheduleSubtitle);
+        ImageButton btnReturnBack = findViewById(R.id.btnReturnBack);
+        TextView tvScheduleTitle = findViewById(R.id.tvScheduleTitle);
+        TextView tvScheduleSubtitle = findViewById(R.id.tvScheduleSubtitle);
         tvEmptyState = findViewById(R.id.tvEmptyState);
 
         LinearLayout previewCard = findViewById(R.id.layoutScannedPreviewCard);
@@ -101,8 +100,8 @@ public class EditScheduleActivity extends AppCompatActivity {
         btnSaveSchedule.setOnClickListener(v -> saveSchedule());
 
         if (editMode) {
-            tvScheduleTitle.setText("Edit Schedule");
-            tvScheduleSubtitle.setText("Update, add, or remove your school/work entries.");
+            tvScheduleTitle.setText(R.string.schedule_title_edit);
+            tvScheduleSubtitle.setText(R.string.schedule_edit_subtitle);
             previewCard.setVisibility(View.GONE);
             btnSaveSchedule.setEnabled(false);
             loadCategorySchedules();
@@ -114,13 +113,13 @@ public class EditScheduleActivity extends AppCompatActivity {
     private void initializeScanMode(LinearLayout previewCard, ImageView thumbnail, Button recropButton) {
         String imageUriString = getIntent().getStringExtra("CAPTURED_IMAGE_URI");
         String rawUriString = getIntent().getStringExtra("RAW_IMAGE_URI");
-        if (rawUriString == null || rawUriString.isEmpty()) rawUriString = imageUriString;
+        String finalRaw = rawUriString == null || rawUriString.isEmpty()
+                ? imageUriString : rawUriString;
 
         if (imageUriString != null) {
             Uri imageUri = Uri.parse(imageUriString);
             previewCard.setVisibility(View.VISIBLE);
             thumbnail.setImageURI(imageUri);
-            String finalRaw = rawUriString;
             recropButton.setOnClickListener(v -> {
                 Intent cropIntent = new Intent(EditScheduleActivity.this, CropRotateActivity.class);
                 cropIntent.putExtra("RAW_IMAGE_URI", finalRaw);
@@ -146,7 +145,9 @@ public class EditScheduleActivity extends AppCompatActivity {
                 originalEditItems.add(copyTimeSlot(item));
             }
             runOnUiThread(() -> {
-                adapter.notifyDataSetChanged();
+                if (!saved.isEmpty()) {
+                    adapter.notifyItemRangeInserted(0, saved.size());
+                }
                 updateEmptyState();
                 btnSaveSchedule.setEnabled(true);
             });
@@ -157,7 +158,7 @@ public class EditScheduleActivity extends AppCompatActivity {
         int colorResource = editMode
                 ? (categoryWork ? R.color.schedule_work : R.color.schedule_school)
                 : R.color.schedule_school;
-        timeSlotList.add(new TimeSlotItem("", "MON", "", "",
+        timeSlotList.add(new TimeSlotItem("", "", "", "",
                 editMode && categoryWork, colorHex(colorResource)));
         adapter.notifyItemInserted(timeSlotList.size() - 1);
         recyclerTimeSlots.scrollToPosition(timeSlotList.size() - 1);
@@ -179,19 +180,19 @@ public class EditScheduleActivity extends AppCompatActivity {
     }
 
     private void saveSchedule() {
-        if (!editMode && timeSlotList.isEmpty()) {
+        if (timeSlotList.isEmpty()) {
             Toast.makeText(this, "Please add at least one time slot.", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (editMode && !validateEditRows()) return;
-        if (editMode && !hasUnsavedChanges()) {
+        if (!validateEditRows()) return;
+        if (editMode && isUnchanged()) {
             Toast.makeText(this, "No changes to save.", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
         btnSaveSchedule.setEnabled(false);
-        btnSaveSchedule.setText("Saving...");
+        btnSaveSchedule.setText(R.string.schedule_saving);
         List<ScheduleItem> itemsToSave = createScheduleItems();
         List<Integer> deletedIds = findDeletedIds();
 
@@ -209,7 +210,7 @@ public class EditScheduleActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     btnSaveSchedule.setEnabled(true);
-                    btnSaveSchedule.setText("Save");
+                    btnSaveSchedule.setText(R.string.schedule_save);
                     if (!conflictSubject.isEmpty()) {
                         sendConflictNotification(conflictSubject);
                         Toast.makeText(this, "Conflict detected with " + conflictSubject
@@ -225,7 +226,7 @@ public class EditScheduleActivity extends AppCompatActivity {
                 android.util.Log.e("EditScheduleActivity", "Could not save schedule", e);
                 runOnUiThread(() -> {
                     btnSaveSchedule.setEnabled(true);
-                    btnSaveSchedule.setText("Save");
+                    btnSaveSchedule.setText(R.string.schedule_save);
                     Toast.makeText(this, "Couldn't save your schedule. Please try again.",
                             Toast.LENGTH_LONG).show();
                 });
@@ -234,7 +235,6 @@ public class EditScheduleActivity extends AppCompatActivity {
     }
 
     private boolean validateEditRows() {
-        boolean valid = true;
         SimpleDateFormat formatter = new SimpleDateFormat("h:mm a", Locale.US);
         formatter.setLenient(false);
         for (TimeSlotItem item : timeSlotList) {
@@ -246,14 +246,32 @@ public class EditScheduleActivity extends AppCompatActivity {
                     ? null : "Enter a valid end time.");
             Date start = parseTime(item.getStartTime(), formatter);
             Date end = parseTime(item.getEndTime(), formatter);
-            if (start != null && end != null && !start.before(end)) {
-                item.setEndTimeError("End time must be after start time.");
+            if (start != null && end != null) {
+                int startMin = ConflictChecker.timeToMinutes(item.getStartTime());
+                int endMin = ConflictChecker.timeToMinutes(item.getEndTime());
+                if (startMin == endMin) {
+                    item.setEndTimeError("Start and end time cannot be identical.");
+                }
             }
-            if (item.getSubjectError() != null || item.getStartTimeError() != null
-                    || item.getEndTimeError() != null) valid = false;
         }
-        adapter.notifyDataSetChanged();
+        boolean valid = areRowsValid();
+        if (!valid) {
+            Toast.makeText(this, "Please select a day and fill in all required fields.", Toast.LENGTH_SHORT).show();
+        }
+        adapter.notifyItemRangeChanged(0, timeSlotList.size());
         return valid;
+    }
+
+    private boolean areRowsValid() {
+        for (TimeSlotItem item : timeSlotList) {
+            if (normalizeDay(item.getDay()).isEmpty()
+                    || item.getSubjectError() != null
+                    || item.getStartTimeError() != null
+                    || item.getEndTimeError() != null) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isValidTime(String value, SimpleDateFormat formatter) {
@@ -325,28 +343,24 @@ public class EditScheduleActivity extends AppCompatActivity {
         return copy;
     }
 
-    private boolean hasUnsavedChanges() {
-        if (timeSlotList.size() != originalEditItems.size()) return true;
-        for (int i = 0; i < timeSlotList.size(); i++) {
-            TimeSlotItem current = timeSlotList.get(i);
-            TimeSlotItem original = originalEditItems.get(i);
+    private boolean isUnchanged() {
+        if (timeSlotList.size() != originalEditItems.size()) return false;
+        Iterator<TimeSlotItem> originals = originalEditItems.iterator();
+        for (TimeSlotItem current : timeSlotList) {
+            TimeSlotItem original = originals.next();
             if (current.getId() != original.getId()
-                    || !same(current.getSubject(), original.getSubject())
-                    || !same(normalizeDay(current.getDay()), normalizeDay(original.getDay()))
-                    || !same(current.getStartTime(), original.getStartTime())
-                    || !same(current.getEndTime(), original.getEndTime())
+                    || !Objects.equals(current.getSubject(), original.getSubject())
+                    || !Objects.equals(normalizeDay(current.getDay()), normalizeDay(original.getDay()))
+                    || !Objects.equals(current.getStartTime(), original.getStartTime())
+                    || !Objects.equals(current.getEndTime(), original.getEndTime())
                     || current.isWork() != original.isWork()
-                    || !same(current.getColorHex(), original.getColorHex())) return true;
+                    || !Objects.equals(current.getColorHex(), original.getColorHex())) return false;
         }
-        return false;
-    }
-
-    private boolean same(String first, String second) {
-        return first == null ? second == null : first.equals(second);
+        return true;
     }
 
     private void requestBack() {
-        if (!editMode || !hasUnsavedChanges()) {
+        if (!editMode || isUnchanged()) {
             finish();
             return;
         }
@@ -400,75 +414,180 @@ public class EditScheduleActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to read text: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         timeSlotList.add(new TimeSlotItem("", "MON", "", "", false,
                                 colorHex(R.color.schedule_school)));
-                        adapter.notifyDataSetChanged();
+                        adapter.notifyItemInserted(timeSlotList.size() - 1);
                     });
         } catch (IOException e) {
-            e.printStackTrace();
+            android.util.Log.e("EditScheduleActivity", "Could not load image for text recognition", e);
+            Toast.makeText(this, "Failed to read schedule image.", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void parseScannedText(Text visionText) {
-        boolean foundData = false;
-        String currentSubject = "Scanned Class";
-
-        for (Text.TextBlock block : visionText.getTextBlocks()) {
-            for (Text.Line line : block.getLines()) {
-                String text = line.getText().trim();
-                if (text.isEmpty()) continue;
-
-                if (text.toUpperCase().contains("AM") || text.toUpperCase().contains("PM") || text.contains("-") || text.contains("–")) {
-                    String detectDay = extractDay(text);
-                    String[] times = extractTimeRange(text);
-
-                    String startTime = times.length > 0 ? times[0] : "";
-                    String endTime = times.length > 1 ? times[1] : "";
-
-                    if (!startTime.isEmpty() || !endTime.isEmpty()) {
-                        timeSlotList.add(new TimeSlotItem(currentSubject, detectDay, startTime,
-                                endTime, false, colorHex(R.color.schedule_school)));
-                        foundData = true;
+        List<ScheduleTableParser.Word> words = new ArrayList<>();
+        if (visionText != null) {
+            for (Text.TextBlock block : visionText.getTextBlocks()) {
+                for (Text.Line line : block.getLines()) {
+                    for (Text.Element element : line.getElements()) {
+                        android.graphics.Rect box = element.getBoundingBox();
+                        if (box != null) {
+                            words.add(new ScheduleTableParser.Word(
+                                    element.getText(), box.left, box.top, box.right, box.bottom
+                            ));
+                        }
                     }
-                } else {
-                    currentSubject = text;
                 }
             }
         }
 
-        if (!foundData) {
-            timeSlotList.add(new TimeSlotItem("", "MON", "", "", false,
+        // Export raw OCR word list to debug JSON file
+        exportDebugOcrWords(words);
+
+        ScheduleTableParser.ParseResult result = ScheduleTableParser.parse(words);
+
+        if (result.qualityGateFailed) {
+            showQualityGateDialog(result.qualityGateMessage);
+            return;
+        }
+
+        // Log parser output list (count plus each item)
+        android.util.Log.d("EditScheduleActivity", "Parsed " + result.meetings.size() + " meetings from scanner:");
+        for (ScheduleTableParser.ParsedMeeting meeting : result.meetings) {
+            android.util.Log.d("EditScheduleActivity", "Meeting: " + meeting);
+        }
+
+        int previousCount = timeSlotList.size();
+        timeSlotList.clear();
+
+        for (ScheduleTableParser.ParsedMeeting m : result.meetings) {
+            TimeSlotItem item = new TimeSlotItem(
+                    m.subject,
+                    m.day != null ? m.day : "",
+                    m.startTime,
+                    m.endTime,
+                    false,
+                    colorHex(R.color.schedule_school)
+            );
+            item.setFlags(m.flags);
+            timeSlotList.add(item);
+        }
+
+        if (timeSlotList.isEmpty()) {
+            timeSlotList.add(new TimeSlotItem("", "", "", "", false,
                     colorHex(R.color.schedule_school)));
-            Toast.makeText(this, "Please verify and adjust fields manually.", Toast.LENGTH_LONG).show();
+        }
+        if (previousCount > 0) {
+            adapter.notifyItemRangeRemoved(0, previousCount);
+        }
+        if (!timeSlotList.isEmpty()) {
+            adapter.notifyItemRangeInserted(0, timeSlotList.size());
+            recyclerTimeSlots.scrollToPosition(timeSlotList.size() - 1);
+        }
+        updateEmptyState();
+
+        // Warning banner
+        TextView tvScanWarning = findViewById(R.id.tvScanWarning);
+        if (tvScanWarning != null) {
+            if (result.unitsMismatch || !result.skippedLines.isEmpty()) {
+                tvScanWarning.setVisibility(View.VISIBLE);
+            } else {
+                tvScanWarning.setVisibility(View.GONE);
+            }
         }
 
-        adapter.notifyDataSetChanged();
+        // Skipped lines section ("Lines we couldn't place")
+        setupSkippedLinesSection(result.skippedLines);
     }
 
-    private String extractDay(String line) {
-        String upper = line.toUpperCase();
-        if (upper.contains("TH") || upper.contains("THU")) return "THU";
-        if (upper.contains("TU") || upper.contains("TUE")) return "TUE";
-        if (upper.contains("MO") || upper.contains("MON")) return "MON";
-        if (upper.contains("WE") || upper.contains("WED")) return "WED";
-        if (upper.contains("FR") || upper.contains("FRI")) return "FRI";
-        if (upper.contains("SA") || upper.contains("SAT")) return "SAT";
-        if (upper.contains("SU") || upper.contains("SUN")) return "SUN";
-        return "MON";
+    private void showQualityGateDialog(String message) {
+        new AlertDialog.Builder(this)
+                .setTitle("Scan Unclear")
+                .setMessage(message != null ? message : "We couldn't read this clearly. Try again in better light, or add your classes manually.")
+                .setCancelable(false)
+                .setPositiveButton("Retake", (dialog, which) -> {
+                    String rawUriString = getIntent().getStringExtra("RAW_IMAGE_URI");
+                    String imageUriString = getIntent().getStringExtra("CAPTURED_IMAGE_URI");
+                    String rawUri = rawUriString == null ? imageUriString : rawUriString;
+                    Intent cropIntent = new Intent(EditScheduleActivity.this, CropRotateActivity.class);
+                    cropIntent.putExtra("RAW_IMAGE_URI", rawUri);
+                    startActivity(cropIntent);
+                    finish();
+                })
+                .setNegativeButton("Add manually", (dialog, which) -> {
+                    timeSlotList.clear();
+                    addEmptySlot();
+                })
+                .show();
     }
 
-    private String[] extractTimeRange(String line) {
-        String[] parts = line.split("[-–]|(?i)\\bto\\b");
-        if (parts.length >= 2) {
-            return new String[]{cleanTimeUnit(parts[0]), cleanTimeUnit(parts[1])};
+    private void setupSkippedLinesSection(List<String> skippedLines) {
+        LinearLayout layoutSkippedSection = findViewById(R.id.layoutSkippedSection);
+        LinearLayout layoutSkippedContainer = findViewById(R.id.layoutSkippedContainer);
+        TextView tvSkippedHeader = findViewById(R.id.tvSkippedHeader);
+
+        if (layoutSkippedSection == null || layoutSkippedContainer == null) return;
+
+        if (skippedLines == null || skippedLines.isEmpty()) {
+            layoutSkippedSection.setVisibility(View.GONE);
+            return;
         }
-        return new String[]{cleanTimeUnit(line), ""};
+
+        layoutSkippedSection.setVisibility(View.VISIBLE);
+        layoutSkippedContainer.removeAllViews();
+
+        if (tvSkippedHeader != null) {
+            tvSkippedHeader.setOnClickListener(v -> {
+                boolean isExpanded = layoutSkippedContainer.getVisibility() == View.VISIBLE;
+                layoutSkippedContainer.setVisibility(isExpanded ? View.GONE : View.VISIBLE);
+                tvSkippedHeader.setText(isExpanded ? "Lines we couldn't place ▸" : "Lines we couldn't place ▾");
+            });
+        }
+
+        for (String line : skippedLines) {
+            View rowView = getLayoutInflater().inflate(R.layout.item_skipped_line, layoutSkippedContainer, false);
+            TextView tvSkippedText = rowView.findViewById(R.id.tvSkippedText);
+            Button btnAddAsClass = rowView.findViewById(R.id.btnAddAsClass);
+
+            if (tvSkippedText != null) tvSkippedText.setText(line);
+            if (btnAddAsClass != null) {
+                btnAddAsClass.setOnClickListener(v -> {
+                    TimeSlotItem item = new TimeSlotItem(line, "", "", "", false, colorHex(R.color.schedule_school));
+                    timeSlotList.add(item);
+                    adapter.notifyItemInserted(timeSlotList.size() - 1);
+                    layoutSkippedContainer.removeView(rowView);
+                    if (layoutSkippedContainer.getChildCount() == 0) {
+                        layoutSkippedSection.setVisibility(View.GONE);
+                    }
+                });
+            }
+
+            layoutSkippedContainer.addView(rowView);
+        }
     }
 
-    private String cleanTimeUnit(String token) {
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d{1,2}[:.]\\d{2}\\s*(?i)[ap]m|\\d{1,2}\\s*(?i)[ap]m)", java.util.regex.Pattern.CASE_INSENSITIVE);
-        java.util.regex.Matcher matcher = pattern.matcher(token);
-        if (matcher.find()) {
-            return matcher.group(0).toUpperCase().trim();
+    private void exportDebugOcrWords(List<ScheduleTableParser.Word> words) {
+        boolean isDebug = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        if (!isDebug || words == null || words.isEmpty()) return;
+        try {
+            java.io.File downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
+            if (downloadsDir == null || !downloadsDir.exists()) {
+                downloadsDir = getExternalCacheDir();
+            }
+            java.io.File file = new java.io.File(downloadsDir, "ocr_words_debug.json");
+            java.io.FileWriter writer = new java.io.FileWriter(file);
+            writer.write("[\n");
+            for (int i = 0; i < words.size(); i++) {
+                ScheduleTableParser.Word w = words.get(i);
+                writer.write(String.format(Locale.US,
+                        "  {\"text\": \"%s\", \"left\": %d, \"top\": %d, \"right\": %d, \"bottom\": %d}%s\n",
+                        w.text.replace("\"", "\\\""), w.left, w.top, w.right, w.bottom,
+                        (i < words.size() - 1 ? "," : "")
+                ));
+            }
+            writer.write("]\n");
+            writer.close();
+            android.util.Log.d("EditScheduleActivity", "Exported debug OCR words to " + file.getAbsolutePath());
+        } catch (IOException e) {
+            android.util.Log.e("EditScheduleActivity", "Failed to export OCR words debug JSON", e);
         }
-        return "";
     }
 }

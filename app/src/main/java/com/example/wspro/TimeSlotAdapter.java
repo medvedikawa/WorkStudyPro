@@ -65,6 +65,17 @@ public class TimeSlotAdapter extends RecyclerView.Adapter<TimeSlotAdapter.ViewHo
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         TimeSlotItem item = timeSlots.get(position);
 
+        // 0. Flags Hint Display
+        String flagHint = item.getFlagHintText();
+        if (holder.tvSlotFlags != null) {
+            if (flagHint != null && !flagHint.isEmpty()) {
+                holder.tvSlotFlags.setText(flagHint);
+                holder.tvSlotFlags.setVisibility(View.VISIBLE);
+            } else {
+                holder.tvSlotFlags.setVisibility(View.GONE);
+            }
+        }
+
         // 1. TextWatcher for Subject
         if (holder.subjectWatcher != null) {
             holder.etSubject.removeTextChangedListener(holder.subjectWatcher);
@@ -96,21 +107,31 @@ public class TimeSlotAdapter extends RecyclerView.Adapter<TimeSlotAdapter.ViewHo
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         holder.spinnerDay.setAdapter(spinnerAdapter);
 
-        String itemDay = item.getDay() != null ? item.getDay().toUpperCase() : "MON";
-        for (int i = 0; i < spinnerAdapter.getCount(); i++) {
-            String opt = spinnerAdapter.getItem(i).toString().toUpperCase();
-            if (opt.startsWith(itemDay.substring(0, Math.min(2, itemDay.length())))
-                    || itemDay.startsWith(opt.substring(0, Math.min(2, opt.length())))) {
-                holder.spinnerDay.setSelection(i);
-                break;
+        String itemDay = item.getDay() != null ? item.getDay().toUpperCase().trim() : "";
+        holder.spinnerDay.setSelection(0);
+        if (!itemDay.isEmpty()) {
+            for (int i = 1; i < spinnerAdapter.getCount(); i++) {
+                CharSequence itemSeq = spinnerAdapter.getItem(i);
+                if (itemSeq == null) continue;
+                String opt = itemSeq.toString().toUpperCase();
+                String normOpt = EditScheduleActivity.normalizeDay(opt);
+                if (normOpt.equalsIgnoreCase(itemDay) || opt.startsWith(itemDay.substring(0, Math.min(2, itemDay.length())))) {
+                    holder.spinnerDay.setSelection(i);
+                    break;
+                }
             }
         }
 
         holder.spinnerDay.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                String fullDay = parent.getItemAtPosition(pos).toString();
-                item.setDay(EditScheduleActivity.normalizeDay(fullDay));
+                if (pos == 0) {
+                    item.setDay("");
+                } else {
+                    Object selectedObj = parent.getItemAtPosition(pos);
+                    String fullDay = selectedObj != null ? selectedObj.toString() : "";
+                    item.setDay(EditScheduleActivity.normalizeDay(fullDay));
+                }
             }
 
             @Override
@@ -269,7 +290,7 @@ public class TimeSlotAdapter extends RecyclerView.Adapter<TimeSlotAdapter.ViewHo
         Spinner spinnerDay;
         ImageView btnDelete;
         TextView btnTypeSchool, btnTypeWork;
-        TextView tvSubjectError, tvStartError, tvEndError;
+        TextView tvSubjectError, tvStartError, tvEndError, tvSlotFlags;
         View layoutColorPalette;
         View[] colorDots = new View[6];
         FrameLayout[] colorWrappers = new FrameLayout[6];
@@ -277,6 +298,7 @@ public class TimeSlotAdapter extends RecyclerView.Adapter<TimeSlotAdapter.ViewHo
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            tvSlotFlags = itemView.findViewById(R.id.tvSlotFlags);
             etSubject = itemView.findViewById(R.id.etRowSubject);
             etStart = itemView.findViewById(R.id.etRowStart);
             etEnd = itemView.findViewById(R.id.etRowEnd);

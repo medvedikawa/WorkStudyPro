@@ -50,16 +50,23 @@ public class LoadCalculator {
 
         if (schedules != null) {
             for (ScheduleItem item : schedules) {
+                if (item.getStartTime() == null || item.getEndTime() == null) continue;
+                if (item.getStartTime().trim().isEmpty() || item.getEndTime().trim().isEmpty()) continue;
+
                 int start = ConflictChecker.timeToMinutes(item.getStartTime());
                 int end = ConflictChecker.timeToMinutes(item.getEndTime());
-                if (end > start) {
-                    double hours = (end - start) / 60.0;
-                    totalHours += hours;
-                    if (item.isWork()) {
-                        workHours += hours;
-                    } else {
-                        classHours += hours;
-                    }
+
+                if (end <= start) {
+                    // Overnight shift (ends next day, add 24 hours = 1440 mins)
+                    end += 1440;
+                }
+
+                double hours = (end - start) / 60.0;
+                totalHours += hours;
+                if (item.isWork()) {
+                    workHours += hours;
+                } else {
+                    classHours += hours;
                 }
             }
         }

@@ -62,6 +62,16 @@
             app:tint="@color/ws_accent" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/tvSlotFlags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/brand_raspberry"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:layout_marginBottom="6dp" />
+
     <!-- Subject or Shift Name -->
     <EditText
         android:id="@+id/etRowSubject"
