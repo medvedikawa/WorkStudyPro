@@ -36,7 +36,8 @@ public class DateScrollerHelper {
             String dayNumStr = dayNumFormat.format(currentDate);
             String dayNameStr = dayNameFormat.format(currentDate);
             String fullDayName = fullDateFormat.format(currentDate);
-            final String dayCode = dayNameStr.toUpperCase().trim(); // e.g. "MON", "TUE", "WED"
+            final String dayCode = new SimpleDateFormat("EEE", Locale.US)
+                    .format(currentDate).toUpperCase(Locale.ROOT).trim();
 
             View chipView = LayoutInflater.from(context).inflate(R.layout.item_day_chip, daysContainer, false);
 

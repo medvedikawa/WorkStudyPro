@@ -823,8 +823,8 @@ public class ScheduleTableParser {
 
             boolean hasColonOrMeridiem = rawStart.contains(":") || rawStart.contains(".") ||
                     rawEnd.contains(":") || rawEnd.contains(".") ||
-                    rawStart.toUpperCase().contains("AM") || rawStart.toUpperCase().contains("PM") ||
-                    rawEnd.toUpperCase().contains("AM") || rawEnd.toUpperCase().contains("PM");
+                    rawStart.toUpperCase(Locale.ROOT).contains("AM") || rawStart.toUpperCase(Locale.ROOT).contains("PM") ||
+                    rawEnd.toUpperCase(Locale.ROOT).contains("AM") || rawEnd.toUpperCase(Locale.ROOT).contains("PM");
 
             if (!hasColonOrMeridiem && !inTimeColumn) {
                 continue;
@@ -840,9 +840,9 @@ public class ScheduleTableParser {
                 } catch (NumberFormatException ignored) {}
             }
 
-            String upperEnd = rawEnd.toUpperCase();
+            String upperEnd = rawEnd.toUpperCase(Locale.ROOT);
             String endMeridiem = upperEnd.contains("PM") ? "PM" : (upperEnd.contains("AM") ? "AM" : "");
-            String upperStart = rawStart.toUpperCase();
+            String upperStart = rawStart.toUpperCase(Locale.ROOT);
 
             if (!upperStart.contains("AM") && !upperStart.contains("PM") && !endMeridiem.isEmpty()) {
                 rawStart = rawStart + endMeridiem;
@@ -909,7 +909,7 @@ public class ScheduleTableParser {
 
     private static boolean checkSheetHasSaOrSu(List<Word> words) {
         for (Word w : words) {
-            String t = w.text.trim().toUpperCase();
+            String t = w.text.trim().toUpperCase(Locale.ROOT);
             if (t.equals("SA") || t.equals("SU") || t.equals("SAT") || t.equals("SUN") || t.equals("SABADO") || t.equals("LINGGO")) {
                 return true;
             }
@@ -1122,7 +1122,7 @@ public class ScheduleTableParser {
         if (text == null) return false;
         String t = text.trim();
         if (t.length() < 3) return false;
-        String upper = t.toUpperCase();
+        String upper = t.toUpperCase(Locale.ROOT);
         if (upper.contains("TBA") || upper.contains("ARRANGED") || upper.contains("ONLINE") || upper.contains("ASYNC")) {
             return true;
         }
@@ -1164,7 +1164,7 @@ public class ScheduleTableParser {
             if (parts.length < 3) return -1;
             int h = Integer.parseInt(parts[0]);
             int m = Integer.parseInt(parts[1]);
-            String meridiem = parts[2].toUpperCase();
+            String meridiem = parts[2].toUpperCase(Locale.ROOT);
 
             if (meridiem.equals("PM") && h < 12) h += 12;
             if (meridiem.equals("AM") && h == 12) h = 0;

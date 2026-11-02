@@ -31,6 +31,31 @@ public interface AssignmentDao {
     @Query("SELECT * FROM assignment_table WHERE isDeleted = 0 ORDER BY isCompleted ASC, dueTimestamp ASC")
     LiveData<List<AssignmentItem>> getAllAssignmentsLiveData();
 
+    @Query("SELECT * FROM assignment_table WHERE isDeleted = 0 "
+            + "AND (:searchQuery = '' OR instr(lower(ifnull(title, '')), lower(:searchQuery)) > 0 "
+            + "OR instr(lower(ifnull(subject, '')), lower(:searchQuery)) > 0) "
+            + "AND (:categoryFilter = '' OR category = :categoryFilter COLLATE NOCASE) "
+            + "AND (:subjectFilter = '' OR subject = :subjectFilter COLLATE NOCASE) "
+            + "AND (:statusFilter = -1 OR isCompleted = :statusFilter) "
+            + "AND (:dueFilter = -1 "
+            + "OR (:dueFilter = 0 AND isCompleted = 0 AND dueTimestamp < :nowTimestamp) "
+            + "OR (:dueFilter = 1 AND dueTimestamp >= :dayStartTimestamp "
+            + "AND dueTimestamp < :tomorrowStartTimestamp) "
+            + "OR (:dueFilter = 2 AND dueTimestamp >= :weekStartTimestamp "
+            + "AND dueTimestamp < :nextWeekStartTimestamp)) "
+            + "ORDER BY isCompleted ASC, dueTimestamp ASC")
+    LiveData<List<AssignmentItem>> searchAssignmentsLiveData(
+            String searchQuery,
+            String categoryFilter,
+            String subjectFilter,
+            int statusFilter,
+            int dueFilter,
+            long nowTimestamp,
+            long dayStartTimestamp,
+            long tomorrowStartTimestamp,
+            long weekStartTimestamp,
+            long nextWeekStartTimestamp);
+
     @Query("SELECT * FROM assignment_table WHERE isDeleted = 0 AND isCompleted = 0 ORDER BY dueTimestamp ASC")
     List<AssignmentItem> getPendingAssignments();
 

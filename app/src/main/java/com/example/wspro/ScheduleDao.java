@@ -33,6 +33,11 @@ public interface ScheduleDao {
     @Query("SELECT * FROM schedule_table WHERE isDeleted = 0")
     LiveData<List<ScheduleItem>> getAllLiveData();
 
+    @Query("SELECT DISTINCT TRIM(subject) FROM schedule_table "
+            + "WHERE isWork = 0 AND isDeleted = 0 AND subject IS NOT NULL AND TRIM(subject) != '' "
+            + "ORDER BY TRIM(subject) COLLATE NOCASE ASC")
+    LiveData<List<String>> getSchoolSubjectNames();
+
     @Query("SELECT * FROM schedule_table WHERE isWork = :isWork AND isDeleted = 0 "
             + "ORDER BY CASE day WHEN 'MON' THEN 1 WHEN 'TUE' THEN 2 WHEN 'WED' THEN 3 "
             + "WHEN 'THU' THEN 4 WHEN 'FRI' THEN 5 WHEN 'SAT' THEN 6 WHEN 'SUN' THEN 7 ELSE 8 END, startTime")
@@ -46,6 +51,9 @@ public interface ScheduleDao {
 
     @Query("SELECT * FROM schedule_table WHERE id = :id LIMIT 1")
     ScheduleItem findById(int id);
+
+    @Query("SELECT * FROM schedule_table WHERE groupId = :groupId AND isDeleted = 0")
+    List<ScheduleItem> getByGroupId(String groupId);
 
     @Query("UPDATE schedule_table SET isDeleted = 1 WHERE id = :id")
     void markDeleted(int id);

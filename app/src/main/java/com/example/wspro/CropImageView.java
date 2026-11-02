@@ -8,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -44,6 +45,17 @@ public class CropImageView extends View {
     private float mHandleRadius = 24f;
     private float mTouchRadius = 48f;
     private float mMinCropSize = 80f;
+
+    private boolean mIsCircular = false;
+    private ScaleGestureDetector mScaleDetector;
+
+    public void setCircular(boolean circular) {
+        this.mIsCircular = circular;
+        if (getWidth() > 0 && getHeight() > 0) {
+            recalculateBounds(getWidth(), getHeight(), true);
+        }
+        invalidate();
+    }
 
     public CropImageView(Context context) {
         super(context);
@@ -90,6 +102,65 @@ public class CropImageView extends View {
         mHandleInnerPaint.setColor(ContextCompat.getColor(getContext(), R.color.ws_on_brand));
         mHandleInnerPaint.setStyle(Paint.Style.FILL);
         mHandleInnerPaint.setAntiAlias(true);
+
+        mScaleDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScale(@NonNull ScaleGestureDetector detector) {
+                float scaleFactor = detector.getScaleFactor();
+                if (scaleFactor == 1.0f) return true;
+
+                float cx = mCropRect.centerX();
+                float cy = mCropRect.centerY();
+                float currentW = mCropRect.width();
+                float currentH = mCropRect.height();
+
+                if (mIsCircular) {
+                    float maxSize = Math.min(mImageRect.width(), mImageRect.height());
+                    float newSize = Math.max(mMinCropSize, Math.min(maxSize, currentW * scaleFactor));
+                    float half = newSize / 2f;
+
+                    float newL = cx - half;
+                    float newT = cy - half;
+                    float newR = cx + half;
+                    float newB = cy + half;
+
+                    if (newL < mImageRect.left) {
+                        newR += (mImageRect.left - newL);
+                        newL = mImageRect.left;
+                    }
+                    if (newR > mImageRect.right) {
+                        newL -= (newR - mImageRect.right);
+                        newR = mImageRect.right;
+                    }
+                    if (newT < mImageRect.top) {
+                        newB += (mImageRect.top - newT);
+                        newT = mImageRect.top;
+                    }
+                    if (newB > mImageRect.bottom) {
+                        newT -= (newB - mImageRect.bottom);
+                        newB = mImageRect.bottom;
+                    }
+
+                    mCropRect.set(
+                            Math.max(mImageRect.left, newL),
+                            Math.max(mImageRect.top, newT),
+                            Math.min(mImageRect.right, newR),
+                            Math.min(mImageRect.bottom, newB)
+                    );
+                } else {
+                    float newW = Math.max(mMinCropSize, Math.min(mImageRect.width(), currentW * scaleFactor));
+                    float newH = Math.max(mMinCropSize, Math.min(mImageRect.height(), currentH * scaleFactor));
+                    float halfW = newW / 2f;
+                    float halfH = newH / 2f;
+                    float left = Math.max(mImageRect.left, Math.min(mImageRect.right - newW, cx - halfW));
+                    float top = Math.max(mImageRect.top, Math.min(mImageRect.bottom - newH, cy - halfH));
+                    mCropRect.set(left, top, left + newW, top + newH);
+                }
+
+                invalidate();
+                return true;
+            }
+        });
     }
 
     public void setImageBitmap(Bitmap bitmap) {
@@ -121,7 +192,14 @@ public class CropImageView extends View {
 
     public void resetCrop() {
         if (mImageRect.width() > 0 && mImageRect.height() > 0) {
-            mCropRect.set(mImageRect);
+            if (mIsCircular) {
+                float size = Math.min(mImageRect.width(), mImageRect.height());
+                float cx = mImageRect.centerX();
+                float cy = mImageRect.centerY();
+                mCropRect.set(cx - size / 2f, cy - size / 2f, cx + size / 2f, cy + size / 2f);
+            } else {
+                mCropRect.set(mImageRect);
+            }
             invalidate();
         }
     }
@@ -180,6 +258,34 @@ public class CropImageView extends View {
                 cropData.width,
                 cropData.height
         );
+    }
+
+    public static Bitmap createCircularCroppedBitmap(CropData cropData) {
+        Bitmap cropped = createCroppedBitmap(cropData);
+        if (cropped == null) return null;
+        return getCircularBitmap(cropped);
+    }
+
+    public static Bitmap getCircularBitmap(Bitmap bitmap) {
+        if (bitmap == null) return null;
+        int size = Math.min(bitmap.getWidth(), bitmap.getHeight());
+        Bitmap output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output);
+
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        android.graphics.Rect srcRect = new android.graphics.Rect(
+                (bitmap.getWidth() - size) / 2,
+                (bitmap.getHeight() - size) / 2,
+                (bitmap.getWidth() + size) / 2,
+                (bitmap.getHeight() + size) / 2
+        );
+        android.graphics.Rect dstRect = new android.graphics.Rect(0, 0, size, size);
+
+        canvas.drawARGB(0, 0, 0, 0);
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint);
+        paint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, srcRect, dstRect, paint);
+        return output;
     }
 
     public static final class CropData {
@@ -244,8 +350,15 @@ public class CropImageView extends View {
 
         mImageRect.set(left, top, left + drawW, top + drawH);
 
-        if (resetCropRect || mCropRect.isEmpty()) {
-            mCropRect.set(mImageRect);
+        if (mIsCircular || resetCropRect || mCropRect.isEmpty()) {
+            if (mIsCircular) {
+                float size = Math.min(mImageRect.width(), mImageRect.height());
+                float cx = mImageRect.centerX();
+                float cy = mImageRect.centerY();
+                mCropRect.set(cx - size / 2f, cy - size / 2f, cx + size / 2f, cy + size / 2f);
+            } else {
+                mCropRect.set(mImageRect);
+            }
         } else {
             // Constrain existing crop rect to new image bounds
             mCropRect.left = Math.max(mImageRect.left, Math.min(mCropRect.left, mImageRect.right - mMinCropSize));
@@ -263,32 +376,38 @@ public class CropImageView extends View {
         // 1. Draw base bitmap
         canvas.drawBitmap(mRotatedBitmap, null, mImageRect, mBitmapPaint);
 
-        // 2. Draw darkened scrims outside mCropRect
-        // Top scrim
-        canvas.drawRect(0, 0, getWidth(), mCropRect.top, mScrimPaint);
-        // Bottom scrim
-        canvas.drawRect(0, mCropRect.bottom, getWidth(), getHeight(), mScrimPaint);
-        // Left scrim
-        canvas.drawRect(0, mCropRect.top, mCropRect.left, mCropRect.bottom, mScrimPaint);
-        // Right scrim
-        canvas.drawRect(mCropRect.right, mCropRect.top, getWidth(), mCropRect.bottom, mScrimPaint);
+        if (mIsCircular) {
+            android.graphics.Path path = new android.graphics.Path();
+            path.addRect(0, 0, getWidth(), getHeight(), android.graphics.Path.Direction.CW);
+            float radius = Math.min(mCropRect.width(), mCropRect.height()) / 2f;
+            path.addCircle(mCropRect.centerX(), mCropRect.centerY(), radius, android.graphics.Path.Direction.CCW);
+            canvas.drawPath(path, mScrimPaint);
 
-        // 3. Draw Rule of Thirds Guide Lines inside crop rect
-        float thirdW = mCropRect.width() / 3f;
-        float thirdH = mCropRect.height() / 3f;
-        canvas.drawLine(mCropRect.left + thirdW, mCropRect.top, mCropRect.left + thirdW, mCropRect.bottom, mGuidePaint);
-        canvas.drawLine(mCropRect.left + (thirdW * 2f), mCropRect.top, mCropRect.left + (thirdW * 2f), mCropRect.bottom, mGuidePaint);
-        canvas.drawLine(mCropRect.left, mCropRect.top + thirdH, mCropRect.right, mCropRect.top + thirdH, mGuidePaint);
-        canvas.drawLine(mCropRect.left, mCropRect.top + (thirdH * 2f), mCropRect.right, mCropRect.top + (thirdH * 2f), mGuidePaint);
+            canvas.drawCircle(mCropRect.centerX(), mCropRect.centerY(), radius, mFramePaint);
+        } else {
+            // 2. Draw darkened scrims outside mCropRect
+            canvas.drawRect(0, 0, getWidth(), mCropRect.top, mScrimPaint);
+            canvas.drawRect(0, mCropRect.bottom, getWidth(), getHeight(), mScrimPaint);
+            canvas.drawRect(0, mCropRect.top, mCropRect.left, mCropRect.bottom, mScrimPaint);
+            canvas.drawRect(mCropRect.right, mCropRect.top, getWidth(), mCropRect.bottom, mScrimPaint);
 
-        // 4. Draw Crop Rectangle Frame
-        canvas.drawRect(mCropRect, mFramePaint);
+            // 3. Draw Rule of Thirds Guide Lines inside crop rect
+            float thirdW = mCropRect.width() / 3f;
+            float thirdH = mCropRect.height() / 3f;
+            canvas.drawLine(mCropRect.left + thirdW, mCropRect.top, mCropRect.left + thirdW, mCropRect.bottom, mGuidePaint);
+            canvas.drawLine(mCropRect.left + (thirdW * 2f), mCropRect.top, mCropRect.left + (thirdW * 2f), mCropRect.bottom, mGuidePaint);
+            canvas.drawLine(mCropRect.left, mCropRect.top + thirdH, mCropRect.right, mCropRect.top + thirdH, mGuidePaint);
+            canvas.drawLine(mCropRect.left, mCropRect.top + (thirdH * 2f), mCropRect.right, mCropRect.top + (thirdH * 2f), mGuidePaint);
 
-        // 5. Draw 4 Corner Handles
-        drawCornerHandle(canvas, mCropRect.left, mCropRect.top);
-        drawCornerHandle(canvas, mCropRect.right, mCropRect.top);
-        drawCornerHandle(canvas, mCropRect.left, mCropRect.bottom);
-        drawCornerHandle(canvas, mCropRect.right, mCropRect.bottom);
+            // 4. Draw Crop Rectangle Frame
+            canvas.drawRect(mCropRect, mFramePaint);
+
+            // 5. Draw 4 Corner Handles
+            drawCornerHandle(canvas, mCropRect.left, mCropRect.top);
+            drawCornerHandle(canvas, mCropRect.right, mCropRect.top);
+            drawCornerHandle(canvas, mCropRect.left, mCropRect.bottom);
+            drawCornerHandle(canvas, mCropRect.right, mCropRect.bottom);
+        }
     }
 
     private void drawCornerHandle(Canvas canvas, float x, float y) {
@@ -298,15 +417,28 @@ public class CropImageView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if (mScaleDetector != null) {
+            mScaleDetector.onTouchEvent(event);
+        }
+
+        if (mScaleDetector != null && mScaleDetector.isInProgress()) {
+            mTouchMode = TOUCH_NONE;
+            return true;
+        }
+
         float x = event.getX();
         float y = event.getY();
 
-        switch (event.getAction()) {
+        switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
                 mTouchMode = getTouchHandle(x, y);
                 mLastTouchX = x;
                 mLastTouchY = y;
                 return mTouchMode != TOUCH_NONE || super.onTouchEvent(event);
+
+            case MotionEvent.ACTION_POINTER_DOWN:
+                mTouchMode = TOUCH_NONE;
+                return true;
 
             case MotionEvent.ACTION_MOVE:
                 if (mTouchMode == TOUCH_NONE) return false;
@@ -314,24 +446,48 @@ public class CropImageView extends View {
                 float dx = x - mLastTouchX;
                 float dy = y - mLastTouchY;
 
-                if (mTouchMode == TOUCH_TOP_LEFT) {
-                    mCropRect.left = Math.min(mCropRect.right - mMinCropSize, Math.max(mImageRect.left, mCropRect.left + dx));
-                    mCropRect.top = Math.min(mCropRect.bottom - mMinCropSize, Math.max(mImageRect.top, mCropRect.top + dy));
-                } else if (mTouchMode == TOUCH_TOP_RIGHT) {
-                    mCropRect.right = Math.max(mCropRect.left + mMinCropSize, Math.min(mImageRect.right, mCropRect.right + dx));
-                    mCropRect.top = Math.min(mCropRect.bottom - mMinCropSize, Math.max(mImageRect.top, mCropRect.top + dy));
-                } else if (mTouchMode == TOUCH_BOTTOM_LEFT) {
-                    mCropRect.left = Math.min(mCropRect.right - mMinCropSize, Math.max(mImageRect.left, mCropRect.left + dx));
-                    mCropRect.bottom = Math.max(mCropRect.top + mMinCropSize, Math.min(mImageRect.bottom, mCropRect.bottom + dy));
-                } else if (mTouchMode == TOUCH_BOTTOM_RIGHT) {
-                    mCropRect.right = Math.max(mCropRect.left + mMinCropSize, Math.min(mImageRect.right, mCropRect.right + dx));
-                    mCropRect.bottom = Math.max(mCropRect.top + mMinCropSize, Math.min(mImageRect.bottom, mCropRect.bottom + dy));
-                } else if (mTouchMode == TOUCH_MOVE) {
-                    float w = mCropRect.width();
-                    float h = mCropRect.height();
-                    float newL = Math.max(mImageRect.left, Math.min(mImageRect.right - w, mCropRect.left + dx));
-                    float newT = Math.max(mImageRect.top, Math.min(mImageRect.bottom - h, mCropRect.top + dy));
-                    mCropRect.set(newL, newT, newL + w, newT + h);
+                if (mIsCircular) {
+                    if (mTouchMode == TOUCH_MOVE) {
+                        float w = mCropRect.width();
+                        float h = mCropRect.height();
+                        float newL = Math.max(mImageRect.left, Math.min(mImageRect.right - w, mCropRect.left + dx));
+                        float newT = Math.max(mImageRect.top, Math.min(mImageRect.bottom - h, mCropRect.top + dy));
+                        mCropRect.set(newL, newT, newL + w, newT + h);
+                    } else if (mTouchMode != TOUCH_NONE) {
+                        float delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+                        if (mTouchMode == TOUCH_TOP_LEFT || mTouchMode == TOUCH_BOTTOM_LEFT) {
+                            delta = -delta;
+                        }
+                        float maxSize = Math.min(mImageRect.width(), mImageRect.height());
+                        float newSize = Math.max(mMinCropSize, Math.min(maxSize, mCropRect.width() + delta));
+                        float cx = mCropRect.centerX();
+                        float cy = mCropRect.centerY();
+                        float half = newSize / 2f;
+
+                        float newL = Math.max(mImageRect.left, Math.min(mImageRect.right - newSize, cx - half));
+                        float newT = Math.max(mImageRect.top, Math.min(mImageRect.bottom - newSize, cy - half));
+                        mCropRect.set(newL, newT, newL + newSize, newT + newSize);
+                    }
+                } else {
+                    if (mTouchMode == TOUCH_TOP_LEFT) {
+                        mCropRect.left = Math.min(mCropRect.right - mMinCropSize, Math.max(mImageRect.left, mCropRect.left + dx));
+                        mCropRect.top = Math.min(mCropRect.bottom - mMinCropSize, Math.max(mImageRect.top, mCropRect.top + dy));
+                    } else if (mTouchMode == TOUCH_TOP_RIGHT) {
+                        mCropRect.right = Math.max(mCropRect.left + mMinCropSize, Math.min(mImageRect.right, mCropRect.right + dx));
+                        mCropRect.top = Math.min(mCropRect.bottom - mMinCropSize, Math.max(mImageRect.top, mCropRect.top + dy));
+                    } else if (mTouchMode == TOUCH_BOTTOM_LEFT) {
+                        mCropRect.left = Math.min(mCropRect.right - mMinCropSize, Math.max(mImageRect.left, mCropRect.left + dx));
+                        mCropRect.bottom = Math.max(mCropRect.top + mMinCropSize, Math.min(mImageRect.bottom, mCropRect.bottom + dy));
+                    } else if (mTouchMode == TOUCH_BOTTOM_RIGHT) {
+                        mCropRect.right = Math.max(mCropRect.left + mMinCropSize, Math.min(mImageRect.right, mCropRect.right + dx));
+                        mCropRect.bottom = Math.max(mCropRect.top + mMinCropSize, Math.min(mImageRect.bottom, mCropRect.bottom + dy));
+                    } else if (mTouchMode == TOUCH_MOVE) {
+                        float w = mCropRect.width();
+                        float h = mCropRect.height();
+                        float newL = Math.max(mImageRect.left, Math.min(mImageRect.right - w, mCropRect.left + dx));
+                        float newT = Math.max(mImageRect.top, Math.min(mImageRect.bottom - h, mCropRect.top + dy));
+                        mCropRect.set(newL, newT, newL + w, newT + h);
+                    }
                 }
 
                 mLastTouchX = x;

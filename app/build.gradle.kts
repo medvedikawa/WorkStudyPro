@@ -41,11 +41,15 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation("com.google.mlkit:text-recognition:16.0.0")
+    implementation("androidx.exifinterface:exifinterface:1.4.2")
 
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     annotationProcessor(libs.room.compiler)
+
+    // WorkManager
+    implementation(libs.work.runtime)
 
     // Supabase REST & JSON
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

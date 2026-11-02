@@ -12,23 +12,15 @@
     <color name="ws_fire">#B45309</color>
     <color name="ws_ember">#B91C1C</color>
     <color name="ws_on_brand">#FFFFFF</color>
-    <color name="ws_on_purple">#FFFFFF</color>
-    <color name="ws_on_raspberry">#FFFFFF</color>
     <color name="ws_success">#15803D</color>
     <color name="ws_warning">#B45309</color>
     <color name="ws_error">#B91C1C</color>
-    <color name="ws_error_fill">#FEE2E2</color>
-    <color name="ws_warning_fill">#FEF3C7</color>
-    <color name="ws_priority_fill">#F1EDF7</color>
-    <color name="ws_priority_text">#7C2D12</color>
     <color name="ws_category_task">#C2410C</color>
     <color name="ws_category_group">#15803D</color>
     <color name="ws_category_lab">#0369A1</color>
     <color name="ws_category_assignment">#7E22CE</color>
     <color name="schedule_school">#1D4ED8</color>
     <color name="schedule_work">#0F766E</color>
-    <color name="schedule_school_on">#211A2B</color>
-    <color name="schedule_work_on">#211A2B</color>
     <color name="schedule_school_fill">#EAF1FF</color>
     <color name="schedule_work_fill">#E6F6F3</color>
     <color name="schedule_emerald">#15803D</color>
@@ -37,7 +29,6 @@
     <color name="schedule_orange">#B45309</color>
     <color name="crop_scrim">#B3000000</color>
     <color name="crop_grid">#66FFFFFF</color>
-    <color name="schedule_pill_time">#EDE7F6</color>
     <color name="item_hour_text">#5F566A</color>
     <color name="item_hour_track">#DED7E8</color>
     <color name="scan_handle">#406D28D9</color>
@@ -60,10 +51,8 @@
     <color name="raspberry_tint_16">#29BE185D</color>
     <color name="raspberry_tint_14">#24BE185D</color>
     <color name="purple_tint_16">#296D28D9</color>
-    <color name="purple_tint_20">#336D28D9</color>
-    <color name="ws_other_default">#E15CF1</color>
     <color name="glow_start">#2E6D28D9</color>
     <color name="glow_end">#006D28D9</color>
     <color name="nav_surface">#E0FFFFFF</color>
-    <color name="today_transparent">#00000000</color>
+    <color name="schedule_day_on">#FFFFFF</color>
 </resources>

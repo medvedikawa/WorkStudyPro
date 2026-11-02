@@ -64,18 +64,25 @@
             android:letterSpacing="0.06"
             android:layout_marginBottom="6dp" />
 
-        <EditText
-            android:id="@+id/etAssignmentSubject"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAssignmentSubject"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_input"
-            android:hint="e.g. Database Systems"
-            android:textColorHint="@color/text_muted"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:padding="12dp"
-            android:inputType="textCapWords"
-            android:layout_marginBottom="14dp" />
+            android:layout_marginBottom="14dp"
+            app:boxStrokeColor="@color/ws_accent"
+            app:endIconMode="dropdown_menu">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/etAssignmentSubject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="e.g. Database Systems"
+                android:inputType="textCapWords"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_muted"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Category Selector -->
         <TextView

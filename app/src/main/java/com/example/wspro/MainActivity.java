@@ -6,21 +6,19 @@ import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -32,9 +30,6 @@ import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-
-    protected static final String CHANNEL_ID = "work_study_conflicts";
-    private static final String TAG = "TodayScreen";
 
     private TextView tvDateHeader;
     private TextView tvWelcomeTitle;
@@ -88,7 +83,21 @@ public class MainActivity extends AppCompatActivity {
             if (fab != null) fab.performClick();
         });
 
-        createNotificationChannel();
+        View btnNotificationContainer = findViewById(R.id.btnNotificationContainer);
+        if (btnNotificationContainer != null) {
+            btnNotificationContainer.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
+                startActivity(intent);
+            });
+        }
+        View btnQuickNotification = findViewById(R.id.btnQuickNotification);
+        if (btnQuickNotification != null) {
+            btnQuickNotification.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
+                startActivity(intent);
+            });
+        }
+
         BottomNavHelper.setup(this, BottomNavHelper.Tab.TODAY, new ScanButtonHelper(this));
         requestNotificationPermission();
 
@@ -104,6 +113,13 @@ public class MainActivity extends AppCompatActivity {
         db.assignmentDao().getPendingAssignmentsLiveData().observe(this, assignments -> {
             cachedAssignments = assignments != null ? assignments : new ArrayList<>();
             renderDashboard(cachedSchedules, cachedAssignments);
+        });
+
+        View viewNotificationUnreadDot = findViewById(R.id.viewNotificationUnreadDot);
+        db.notificationDao().getUnreadCountLiveData().observe(this, count -> {
+            if (viewNotificationUnreadDot != null) {
+                viewNotificationUnreadDot.setVisibility(count != null && count > 0 ? View.VISIBLE : View.GONE);
+            }
         });
     }
 
@@ -131,11 +147,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                boolean rationaleShown = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                        .getBoolean("notif_rationale_shown", false);
+                if (!rationaleShown) {
+                    new MaterialAlertDialogBuilder(this)
+                            .setTitle(R.string.today_notification_permission_title)
+                            .setMessage(R.string.today_notification_permission_message)
+                            .setPositiveButton(R.string.today_notification_permission_enable, (dialog, which) -> {
+                                getSharedPreferences("app_prefs", MODE_PRIVATE)
+                                        .edit().putBoolean("notif_rationale_shown", true).apply();
+                                ActivityCompat.requestPermissions(MainActivity.this,
+                                        new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+                            })
+                            .setNegativeButton(R.string.today_notification_permission_not_now, (dialog, which) -> {
+                                getSharedPreferences("app_prefs", MODE_PRIVATE)
+                                        .edit().putBoolean("notif_rationale_shown", true).apply();
+                                dialog.dismiss();
+                            })
+                            .show();
+                }
+            }
         }
     }
 
@@ -189,11 +223,11 @@ public class MainActivity extends AppCompatActivity {
 
             boolean hasSchedule = false;
             if (schedules != null) {
-                String fullDayStr = fullDays[i].toLowerCase();
-                String shortCodeStr = shortCodes[i].toLowerCase();
+                String fullDayStr = fullDays[i].toLowerCase(Locale.ROOT);
+                String shortCodeStr = shortCodes[i].toLowerCase(Locale.ROOT);
                 for (ScheduleItem item : schedules) {
                     if (item.getDay() != null) {
-                        String d = item.getDay().toLowerCase();
+                        String d = item.getDay().toLowerCase(Locale.ROOT);
                         if (d.contains(fullDayStr) || d.contains(shortCodeStr) || d.equals(String.valueOf(i))) {
                             hasSchedule = true;
                             break;
@@ -247,7 +281,6 @@ public class MainActivity extends AppCompatActivity {
 
         TextView tvWorkloadNumber = findViewById(R.id.tvWorkloadNumber);
         TextView tvWorkloadLimit = findViewById(R.id.tvWorkloadLimit);
-
         if (tvWorkloadNumber != null) {
             tvWorkloadNumber.setText(String.valueOf(result.getRoundedTotal()));
         }
@@ -329,9 +362,7 @@ public class MainActivity extends AppCompatActivity {
         tvConflictDetails.setText(getString(R.string.today_conflict_details,
                 nameA, nameB, firstConflict.getStartTime(), firstConflict.getEndTime()));
         layoutConflictCard.setVisibility(View.VISIBLE);
-        btnSuggestAction.setOnClickListener(v -> sendPushNotification(getString(
-                R.string.today_conflict_details, nameA, nameB,
-                firstConflict.getStartTime(), firstConflict.getEndTime())));
+        btnSuggestAction.setOnClickListener(v -> navigateToWeek());
     }
 
     private void renderTodaySchedule(List<ScheduleItem> allSchedules) {
@@ -507,31 +538,4 @@ public class MainActivity extends AppCompatActivity {
         return trimmed;
     }
 
-    private void sendPushNotification(String message) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .setContentTitle(getString(R.string.today_conflict_notification_title))
-                .setContentText(message)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true);
-
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                == PackageManager.PERMISSION_GRANTED) {
-            notificationManager.notify(404, builder.build());
-        }
-    }
-
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
-        CharSequence name = getString(R.string.today_notification_channel_name);
-        String description = getString(R.string.today_notification_channel_description);
-        int importance = android.app.NotificationManager.IMPORTANCE_HIGH;
-        android.app.NotificationChannel channel =
-                new android.app.NotificationChannel(CHANNEL_ID, name, importance);
-        channel.setDescription(description);
-        android.app.NotificationManager manager = getSystemService(android.app.NotificationManager.class);
-        if (manager != null) manager.createNotificationChannel(channel);
-    }
 }

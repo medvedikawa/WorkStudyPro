@@ -31,4 +31,7 @@ public interface SyncChangeDao {
 
     @Query("DELETE FROM pending_sync_changes WHERE id = :changeId")
     void remove(long changeId);
+
+    @Query("DELETE FROM pending_sync_changes")
+    void clearAll();
 }

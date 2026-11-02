@@ -11,11 +11,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class WorkStudyProApplication extends Application implements Application.ActivityLifecycleCallbacks {
 
+    private static final String TAG = "WorkStudyProApp";
     private static final long SYNC_DEBOUNCE_DELAY_MS = 5000L;
+    private static WorkStudyProApplication appInstance;
 
     private final AtomicBoolean promptCheckRunning = new AtomicBoolean(false);
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -25,11 +29,21 @@ public class WorkStudyProApplication extends Application implements Application.
     private volatile boolean hasValidatedNetwork;
     private volatile boolean promptShownForConnection;
 
+    public static Context getAppContext() {
+        return appInstance;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
-        SupabaseClient.applyAppearance(
-                SupabaseClient.getInstance(this).getAppearanceMode());
+        appInstance = this;
+
+        NotificationHelper.createChannels(this);
+        SupabaseClient supabaseClient = SupabaseClient.getInstance(this);
+        if (supabaseClient.isLoggedIn() && !supabaseClient.isDemoSession()) {
+            NotificationTriggerEngine.schedulePeriodicCheck(this);
+        }
+        SupabaseClient.applyAppearance(supabaseClient.getAppearanceMode());
         registerActivityLifecycleCallbacks(this);
 
         ConnectivityManager connectivityManager =
@@ -38,7 +52,7 @@ public class WorkStudyProApplication extends Application implements Application.
 
         ConnectivityManager.NetworkCallback callback = new ConnectivityManager.NetworkCallback() {
             @Override
-            public void onAvailable(Network network) {
+            public void onAvailable(@NonNull Network network) {
                 updateConnectionState(connectivityManager, network);
             }
 
@@ -59,74 +73,86 @@ public class WorkStudyProApplication extends Application implements Application.
         if (activeNetwork != null) updateConnectionState(connectivityManager, activeNetwork);
     }
 
-    private void updateConnectionState(ConnectivityManager manager, Network network) {
-        updateConnectionState(manager.getNetworkCapabilities(network));
+    private void updateConnectionState(ConnectivityManager cm, Network network) {
+        if (cm == null || network == null) return;
+        updateConnectionState(cm.getNetworkCapabilities(network));
     }
 
     private void updateConnectionState(NetworkCapabilities capabilities) {
-        boolean isValidated = capabilities != null
+        boolean isConnected = capabilities != null
                 && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
-        if (isValidated && !hasValidatedNetwork) {
-            hasValidatedNetwork = true;
-            promptShownForConnection = false;
-            triggerDebouncedSync();
-            showOfflineSyncPromptIfNeeded();
-        } else if (!isValidated) {
+                && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+
+        if (!isConnected) {
             hasValidatedNetwork = false;
             promptShownForConnection = false;
+            return;
         }
+
+        hasValidatedNetwork = true;
+        promptShownForConnection = false;
+        scheduleDebouncedSync();
+        showOfflineSyncPromptIfNeeded();
     }
 
-    public void onLocalChangesQueued() {
-        if (hasValidatedNetwork) {
-            triggerDebouncedSync();
-        } else {
-            new Thread(() -> {
-                try {
-                    AppDatabase.getInstance(this).syncChangeDao().markPendingAsOffline();
-                } catch (Exception ignored) { }
-            }).start();
-        }
-    }
-
-    private void triggerDebouncedSync() {
+    private void scheduleDebouncedSync() {
         mainHandler.removeCallbacks(debouncedSyncRunnable);
         mainHandler.postDelayed(debouncedSyncRunnable, SYNC_DEBOUNCE_DELAY_MS);
     }
 
-    private void performSilentSync() {
+    public void onLocalChangesQueued() {
         SupabaseClient client = SupabaseClient.getInstance(this);
-        if (!hasValidatedNetwork || !client.isLoggedIn() || client.isDemoSession()) return;
-        client.syncAllLocalDataToCloud(this, new SupabaseClient.DataCallback<Boolean>() {
+        if (!client.isLoggedIn() || client.isDemoSession()) return;
+
+        client.setHasUnsyncedChanges(true);
+        if (hasValidatedNetwork) {
+            scheduleDebouncedSync();
+        }
+    }
+
+    private void performSilentSync() {
+        if (!hasValidatedNetwork) return;
+
+        SupabaseClient client = SupabaseClient.getInstance(this);
+        if (!client.isLoggedIn() || client.isDemoSession()) return;
+
+        client.syncAllLocalDataToCloud(this, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {
-                // Silent success - no toasts or popups!
+                promptShownForConnection = false;
             }
 
             @Override
             public void onError(String errorMessage) {
-                // Silent failure - changes remain queued safely, no toast spam!
+                showOfflineSyncPromptIfNeeded();
             }
         });
     }
 
     private void showOfflineSyncPromptIfNeeded() {
-        Activity activity = resumedActivity;
         SupabaseClient client = SupabaseClient.getInstance(this);
-        if (!hasValidatedNetwork || promptShownForConnection || activity == null
-                || activity.isFinishing() || activity.isDestroyed()
-                || !client.isLoggedIn() || client.isDemoSession()
-                || !promptCheckRunning.compareAndSet(false, true)) {
+        if (!hasValidatedNetwork || promptShownForConnection || !client.isLoggedIn() || client.isDemoSession()) {
+            return;
+        }
+
+        if (!promptCheckRunning.compareAndSet(false, true)) {
             return;
         }
 
         new Thread(() -> {
             boolean hasOfflineChanges;
             try {
-                hasOfflineChanges = AppDatabase.getInstance(getApplicationContext())
-                        .syncChangeDao().getOfflinePendingCount() > 0;
+                hasOfflineChanges =
+                        AppDatabase.getInstance(this).syncChangeDao().getOfflinePendingCount() > 0;
             } catch (RuntimeException e) {
+                android.util.Log.e(TAG, "Could not check for offline changes", e);
+                promptCheckRunning.set(false);
+                return;
+            }
+
+            if (!hasOfflineChanges) {
                 promptCheckRunning.set(false);
                 return;
             }
@@ -134,7 +160,7 @@ public class WorkStudyProApplication extends Application implements Application.
             mainHandler.post(() -> {
                 promptCheckRunning.set(false);
                 Activity current = resumedActivity;
-                if (!hasOfflineChanges || !hasValidatedNetwork || promptShownForConnection
+                if (!hasValidatedNetwork || promptShownForConnection
                         || current == null || current.isFinishing() || current.isDestroyed()) {
                     return;
                 }

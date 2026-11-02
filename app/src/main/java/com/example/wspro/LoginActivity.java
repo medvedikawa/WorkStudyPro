@@ -2,15 +2,17 @@ package com.example.wspro;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.InputType;
+import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.material.snackbar.Snackbar;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -27,7 +29,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // 1. Auto-skip login if session exists in client
         if (supabaseClient.isLoggedIn()) {
-            navigateToDashboard();
+            refreshProfileAndNavigate();
             return;
         }
 
@@ -57,40 +59,36 @@ public class LoginActivity extends AppCompatActivity {
             navigateToDashboard();
         });
 
-        // 5. Handle Forgot Password
+        // 5. Handle Forgot Password: Navigate to full ForgotPasswordActivity
         tvForgot.setOnClickListener(v -> {
-            EditText etEmail = new EditText(this);
-            etEmail.setHint("Enter your registered email");
-            etEmail.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS | InputType.TYPE_CLASS_TEXT);
-            int padding = (int) (16 * getResources().getDisplayMetrics().density);
-            etEmail.setPadding(padding, padding, padding, padding);
-
-            new AlertDialog.Builder(this)
-                    .setTitle("Reset Password")
-                    .setMessage("Enter your registered email address to receive password reset instructions.")
-                    .setView(etEmail)
-                    .setPositiveButton("Send Reset Link", (dialog, which) -> {
-                        String email = etEmail.getText().toString().trim();
-                        if (email.isEmpty()) {
-                            Toast.makeText(LoginActivity.this, "Please enter your email.", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        Toast.makeText(LoginActivity.this, "Sending reset link...", Toast.LENGTH_SHORT).show();
-                        supabaseClient.resetPassword(email, new SupabaseClient.AuthCallback() {
-                            @Override
-                            public void onSuccess(String userId, String userEmail, String accessToken) {
-                                Toast.makeText(LoginActivity.this, "Password reset instructions sent to " + email, Toast.LENGTH_LONG).show();
-                            }
-
-                            @Override
-                            public void onError(String errorMessage) {
-                                Toast.makeText(LoginActivity.this, "Failed to send reset link: " + errorMessage, Toast.LENGTH_LONG).show();
-                            }
-                        });
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
+            Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
+            startActivity(intent);
         });
+
+        handleIncomingSnackbar(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIncomingSnackbar(intent);
+    }
+
+    private void handleIncomingSnackbar(Intent intent) {
+        if (intent != null && intent.hasExtra(ForgotPasswordActivity.EXTRA_SNACKBAR_MESSAGE)) {
+            String message = intent.getStringExtra(ForgotPasswordActivity.EXTRA_SNACKBAR_MESSAGE);
+            if (message != null && !message.isEmpty()) {
+                View rootView = findViewById(android.R.id.content);
+                if (rootView != null) {
+                    Snackbar snackbar = Snackbar.make(rootView, message, Snackbar.LENGTH_LONG);
+                    snackbar.setBackgroundTint(ContextCompat.getColor(this, R.color.ws_accent));
+                    snackbar.setTextColor(ContextCompat.getColor(this, R.color.ws_on_brand));
+                    snackbar.show();
+                }
+                intent.removeExtra(ForgotPasswordActivity.EXTRA_SNACKBAR_MESSAGE);
+            }
+        }
     }
 
     private void handleLogin() {
@@ -112,7 +110,7 @@ public class LoginActivity extends AppCompatActivity {
                 btnLogin.setEnabled(true);
                 btnLogin.setText("Log In");
                 Toast.makeText(LoginActivity.this, "Welcome back!", Toast.LENGTH_SHORT).show();
-                navigateToDashboard();
+                refreshProfileAndNavigate();
             }
 
             @Override
@@ -120,6 +118,43 @@ public class LoginActivity extends AppCompatActivity {
                 btnLogin.setEnabled(true);
                 btnLogin.setText("Log In");
                 Toast.makeText(LoginActivity.this, "Login failed: " + errorMessage, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void refreshProfileAndNavigate() {
+        if (supabaseClient.isDemoSession()) {
+            navigateToDashboard();
+            return;
+        }
+        supabaseClient.loadProfileFromSupabase(this, new SupabaseClient.DataCallback<UserProfile>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                if (profile == null) {
+                    supabaseClient.updateProfileData(LoginActivity.this,
+                            supabaseClient.getUserName(), supabaseClient.getUserCourse(),
+                            supabaseClient.getAvatarUrl(), new SupabaseClient.DataCallback<Boolean>() {
+                                @Override
+                                public void onSuccess(Boolean result) {
+                                    navigateToDashboard();
+                                }
+
+                                @Override
+                                public void onError(String errorMessage) {
+                                    Toast.makeText(LoginActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                                    navigateToDashboard();
+                                }
+                            });
+                    return;
+                }
+                navigateToDashboard();
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                Toast.makeText(LoginActivity.this,
+                        "Couldn't refresh your profile: " + errorMessage, Toast.LENGTH_LONG).show();
+                navigateToDashboard();
             }
         });
     }

@@ -84,7 +84,8 @@ public class ScanButtonHelper {
         com.google.android.material.bottomsheet.BottomSheetDialog bottomSheetDialog =
                 new com.google.android.material.bottomsheet.BottomSheetDialog(activity);
 
-        android.view.View sheetView = activity.getLayoutInflater().inflate(R.layout.layout_scan_options, null);
+        android.view.View sheetView = activity.getLayoutInflater().inflate(
+                R.layout.layout_scan_options, new android.widget.FrameLayout(activity), false);
         bottomSheetDialog.setContentView(sheetView);
 
         sheetView.findViewById(R.id.btnOptionCamera).setOnClickListener(v -> {

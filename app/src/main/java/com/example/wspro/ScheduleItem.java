@@ -5,7 +5,10 @@ import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "schedule_table", indices = {@Index(value = {"cloudId"}, unique = true)})
+@Entity(tableName = "schedule_table", indices = {
+        @Index(value = {"cloudId"}, unique = true),
+        @Index(value = {"groupId"})
+})
 public class ScheduleItem {
 
     @PrimaryKey(autoGenerate = true)
@@ -18,6 +21,7 @@ public class ScheduleItem {
     private String colorHex;  // Hex color code e.g., "#4F46E5"
     private String cloudId;
     private boolean isDeleted;
+    private String groupId;
 
     public ScheduleItem(String subject, String day, String startTime, String endTime, boolean isWork, String colorHex) {
         this.subject = subject;
@@ -52,4 +56,6 @@ public class ScheduleItem {
     public void setCloudId(String cloudId) { this.cloudId = cloudId; }
     public boolean isDeleted() { return isDeleted; }
     public void setDeleted(boolean deleted) { isDeleted = deleted; }
+    public String getGroupId() { return groupId; }
+    public void setGroupId(String groupId) { this.groupId = groupId; }
 }

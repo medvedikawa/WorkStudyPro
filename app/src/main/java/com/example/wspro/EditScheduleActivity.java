@@ -1,11 +1,10 @@
 package com.example.wspro;
 
-import static com.example.wspro.MainActivity.CHANNEL_ID;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -14,11 +13,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AlertDialog;
 import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 public class EditScheduleActivity extends AppCompatActivity {
     public static final String EXTRA_EDIT_MODE = "EDIT_MODE";
@@ -49,6 +52,10 @@ public class EditScheduleActivity extends AppCompatActivity {
     private final List<TimeSlotItem> originalEditItems = new ArrayList<>();
     private boolean editMode;
     private boolean categoryWork;
+    private boolean deletingSlot;
+    private boolean scheduleReady;
+    private boolean saveInProgress;
+    private final Set<String> resolvedEditGroups = new HashSet<>();
 
     public static String normalizeDay(String rawDay) {
         if (rawDay == null || rawDay.trim().isEmpty()) return "";
@@ -68,7 +75,6 @@ public class EditScheduleActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_schedule);
-        createNotificationChannel();
 
         recyclerTimeSlots = findViewById(R.id.recyclerTimeSlots);
         TextView btnAddTimeSlot = findViewById(R.id.btnAddTimeSlot);
@@ -83,12 +89,15 @@ public class EditScheduleActivity extends AppCompatActivity {
         Button recropButton = findViewById(R.id.btnReCrop);
         editMode = getIntent().getBooleanExtra(EXTRA_EDIT_MODE, false);
         categoryWork = "work".equalsIgnoreCase(getIntent().getStringExtra(EXTRA_CATEGORY));
+        scheduleReady = !editMode;
 
         timeSlotList = new ArrayList<>();
         recyclerTimeSlots.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new TimeSlotAdapter(this, timeSlotList, editMode);
-        adapter.setOnItemsChangedListener(this::updateEmptyState);
+        adapter = new TimeSlotAdapter(this, editMode);
+        adapter.setOnItemChangedListener(this::updateTimeSlotFromAdapter);
+        adapter.setOnDeleteSlotListener(this::confirmDeleteSlot);
         recyclerTimeSlots.setAdapter(adapter);
+        submitTimeSlots();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -103,7 +112,6 @@ public class EditScheduleActivity extends AppCompatActivity {
             tvScheduleTitle.setText(R.string.schedule_title_edit);
             tvScheduleSubtitle.setText(R.string.schedule_edit_subtitle);
             previewCard.setVisibility(View.GONE);
-            btnSaveSchedule.setEnabled(false);
             loadCategorySchedules();
         } else {
             initializeScanMode(previewCard, thumbnail, recropButton);
@@ -136,20 +144,24 @@ public class EditScheduleActivity extends AppCompatActivity {
         new Thread(() -> {
             List<ScheduleItem> saved = AppDatabase.getInstance(getApplicationContext())
                     .scheduleDao().getSchedulesByWork(categoryWork);
+            List<TimeSlotItem> loadedItems = new ArrayList<>();
+            List<TimeSlotItem> loadedOriginals = new ArrayList<>();
             for (ScheduleItem schedule : saved) {
                 TimeSlotItem item = new TimeSlotItem(schedule.getSubject(), schedule.getDay(),
                         schedule.getStartTime(), schedule.getEndTime(), categoryWork,
                         schedule.getColorHex());
                 item.setId(schedule.getId());
-                timeSlotList.add(item);
-                originalEditItems.add(copyTimeSlot(item));
+                item.setGroupId(schedule.getGroupId());
+                loadedItems.add(item);
+                loadedOriginals.add(copyTimeSlot(item));
             }
             runOnUiThread(() -> {
-                if (!saved.isEmpty()) {
-                    adapter.notifyItemRangeInserted(0, saved.size());
-                }
+                timeSlotList.addAll(loadedItems);
+                originalEditItems.addAll(loadedOriginals);
+                submitTimeSlots();
                 updateEmptyState();
-                btnSaveSchedule.setEnabled(true);
+                scheduleReady = true;
+                updateSaveButtonEnabled();
             });
         }).start();
     }
@@ -158,11 +170,243 @@ public class EditScheduleActivity extends AppCompatActivity {
         int colorResource = editMode
                 ? (categoryWork ? R.color.schedule_work : R.color.schedule_school)
                 : R.color.schedule_school;
-        timeSlotList.add(new TimeSlotItem("", "", "", "",
-                editMode && categoryWork, colorHex(colorResource)));
-        adapter.notifyItemInserted(timeSlotList.size() - 1);
+        TimeSlotItem item = new TimeSlotItem("", "", "9:00 AM", "5:00 PM",
+                editMode && categoryWork, colorHex(colorResource));
+        item.setGroupId(UUID.randomUUID().toString());
+        timeSlotList.add(item);
+        submitTimeSlots();
         recyclerTimeSlots.scrollToPosition(timeSlotList.size() - 1);
         updateEmptyState();
+    }
+
+    private void confirmDeleteSlot(TimeSlotItem item) {
+        String itemName = item.getSubject() == null || item.getSubject().trim().isEmpty()
+                ? getString(R.string.schedule_unnamed_item) : item.getSubject().trim();
+        if (item.getId() > 0 && item.getGroupId() != null && !item.getGroupId().isEmpty()) {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle(getString(R.string.schedule_delete_title, itemName))
+                    .setMessage(R.string.schedule_delete_message)
+                    .setNeutralButton("This day only", (dialog, which) -> deleteSlot(item))
+                    .setPositiveButton("All days", (dialog, which) -> deleteGroup(item))
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show();
+            return;
+        }
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.schedule_delete_title, itemName))
+                .setMessage(R.string.schedule_delete_message)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.schedule_delete_action, (dialogInterface, which) ->
+                        deleteSlot(item))
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setTextColor(ContextCompat.getColor(this, R.color.ws_error)));
+        dialog.show();
+    }
+
+    private void deleteGroup(TimeSlotItem item) {
+        if (deletingSlot) return;
+        deletingSlot = true;
+        updateSaveButtonEnabled();
+        recyclerTimeSlots.setEnabled(false);
+        List<TimeSlotItem> currentItems = copyTimeSlots(timeSlotList);
+        List<TimeSlotItem> originalItems = copyTimeSlots(originalEditItems);
+        new Thread(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+                List<ScheduleItem> stored = db.scheduleDao().getByGroupId(item.getGroupId());
+                if (stored.isEmpty()) throw new IllegalStateException("Schedule group no longer exists");
+                List<TimeSlotItem> removedItems = new ArrayList<>();
+                List<TimeSlotItem> removedBaselines = new ArrayList<>();
+                for (ScheduleItem schedule : stored) {
+                    for (TimeSlotItem candidate : currentItems) {
+                        if (candidate.getId() == schedule.getId()) {
+                            removedItems.add(candidate);
+                        }
+                    }
+                    TimeSlotItem baseline = null;
+                    for (TimeSlotItem candidate : originalItems) {
+                        if (candidate.getId() == schedule.getId()) {
+                            baseline = candidate;
+                            break;
+                        }
+                    }
+                    if (baseline != null) {
+                        removedBaselines.add(copyTimeSlot(baseline));
+                    }
+                }
+                LocalDataRepository.deleteSchedules(db, stored);
+                ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
+                runOnUiThread(() -> {
+                    Set<Integer> removedIds = new HashSet<>();
+                    for (ScheduleItem schedule : stored) removedIds.add(schedule.getId());
+                    for (int i = timeSlotList.size() - 1; i >= 0; i--) {
+                        if (removedIds.contains(timeSlotList.get(i).getId())) timeSlotList.remove(i);
+                    }
+                    originalEditItems.removeIf(original -> removedIds.contains(original.getId()));
+                    submitTimeSlots();
+                    updateEmptyState();
+                    deletingSlot = false;
+                    updateSaveButtonEnabled();
+                    recyclerTimeSlots.setEnabled(true);
+                    showGroupDeleteUndo(removedItems, removedBaselines, stored);
+                });
+            } catch (RuntimeException e) {
+                android.util.Log.e("EditScheduleActivity", "Could not delete schedule group", e);
+                runOnUiThread(() -> {
+                    deletingSlot = false;
+                    updateSaveButtonEnabled();
+                    recyclerTimeSlots.setEnabled(true);
+                    Toast.makeText(this, R.string.schedule_delete_failed, Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
+    }
+
+    private void showGroupDeleteUndo(List<TimeSlotItem> removedItems,
+                                     List<TimeSlotItem> removedBaselines,
+                                     List<ScheduleItem> stored) {
+        Snackbar.make(findViewById(R.id.scrollContent), R.string.schedule_deleted, Snackbar.LENGTH_LONG)
+                .setAction(R.string.action_undo, view -> new Thread(() -> {
+                    try {
+                        LocalDataRepository.restoreSchedules(
+                                AppDatabase.getInstance(getApplicationContext()), stored);
+                        ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
+                        runOnUiThread(() -> {
+                            for (TimeSlotItem item : removedItems) timeSlotList.add(copyTimeSlot(item));
+                            for (TimeSlotItem baseline : removedBaselines) {
+                                originalEditItems.add(copyTimeSlot(baseline));
+                            }
+                            submitTimeSlots();
+                            updateEmptyState();
+                        });
+                    } catch (RuntimeException e) {
+                        android.util.Log.e("EditScheduleActivity", "Could not undo schedule group deletion", e);
+                        runOnUiThread(() -> Toast.makeText(this,
+                                R.string.schedule_restore_failed, Toast.LENGTH_LONG).show());
+                    }
+                }).start())
+                .show();
+    }
+
+    private void deleteSlot(TimeSlotItem item) {
+        TimeSlotItem editorItem = copyTimeSlot(item);
+        TimeSlotItem originalItem = item.getId() > 0 ? findOriginalItem(item.getId()) : null;
+        int originalPosition = originalItem == null ? -1 : originalEditItems.indexOf(originalItem);
+        TimeSlotItem baseline = originalItem == null ? null : copyTimeSlot(originalItem);
+        if (item.getId() <= 0) {
+            int removedPosition = removeTimeSlot(item.getStableId());
+            if (removedPosition >= 0) {
+                showDeleteUndo(editorItem, baseline, originalPosition, removedPosition, null);
+            }
+            return;
+        }
+
+        if (deletingSlot) return;
+        deletingSlot = true;
+        updateSaveButtonEnabled();
+        recyclerTimeSlots.setEnabled(false);
+        new Thread(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+                ScheduleItem storedItem = db.scheduleDao().findById(item.getId());
+                if (storedItem == null || storedItem.isDeleted()) {
+                    runOnUiThread(() -> {
+                        deletingSlot = false;
+                        updateSaveButtonEnabled();
+                        recyclerTimeSlots.setEnabled(true);
+                        Toast.makeText(this, R.string.schedule_delete_failed, Toast.LENGTH_LONG).show();
+                    });
+                    return;
+                }
+                LocalDataRepository.deleteSchedule(db, storedItem);
+                ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
+                runOnUiThread(() -> {
+                    deletingSlot = false;
+                    updateSaveButtonEnabled();
+                    recyclerTimeSlots.setEnabled(true);
+                    int removedPosition = removeTimeSlot(item.getStableId());
+                    TimeSlotItem removedBaseline = findOriginalItem(item.getId());
+                    int removedBaselinePosition = originalEditItems.indexOf(removedBaseline);
+                    if (removedBaseline != null) originalEditItems.remove(removedBaseline);
+                    if (removedPosition >= 0) {
+                        showDeleteUndo(editorItem,
+                                removedBaseline == null ? baseline : copyTimeSlot(removedBaseline),
+                                removedBaselinePosition >= 0 ? removedBaselinePosition : originalPosition,
+                                removedPosition, storedItem);
+                    }
+                });
+            } catch (RuntimeException e) {
+                android.util.Log.e("EditScheduleActivity", "Could not delete schedule item", e);
+                runOnUiThread(() -> {
+                    deletingSlot = false;
+                    updateSaveButtonEnabled();
+                    recyclerTimeSlots.setEnabled(true);
+                    Toast.makeText(this, R.string.schedule_delete_failed, Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
+    }
+
+    private TimeSlotItem findOriginalItem(int id) {
+        for (TimeSlotItem original : originalEditItems) {
+            if (original.getId() == id) return original;
+        }
+        return null;
+    }
+
+    private void showDeleteUndo(TimeSlotItem editorItem, TimeSlotItem baseline,
+                                int baselinePosition, int itemPosition, ScheduleItem storedItem) {
+        Snackbar snackbar = Snackbar.make(findViewById(R.id.scrollContent),
+                R.string.schedule_deleted, Snackbar.LENGTH_LONG);
+        snackbar.setAction(R.string.action_undo, view -> {
+            if (storedItem != null) {
+                new Thread(() -> {
+                    try {
+                        int restoredId = LocalDataRepository.restoreSchedule(
+                                AppDatabase.getInstance(getApplicationContext()), storedItem);
+                        ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
+                        runOnUiThread(() -> {
+                            editorItem.setId(restoredId);
+                            if (baseline != null) baseline.setId(restoredId);
+                            restoreDeletedEditorItem(
+                                    editorItem, baseline, baselinePosition, itemPosition);
+                        });
+                    } catch (RuntimeException e) {
+                        android.util.Log.e("EditScheduleActivity", "Could not undo schedule deletion", e);
+                        runOnUiThread(() ->
+                                Toast.makeText(this, R.string.schedule_restore_failed, Toast.LENGTH_LONG).show());
+                    }
+                }).start();
+            } else {
+                restoreDeletedEditorItem(editorItem, baseline, baselinePosition, itemPosition);
+            }
+        });
+        snackbar.show();
+    }
+
+    private void restoreDeletedEditorItem(TimeSlotItem editorItem, TimeSlotItem baseline,
+                                          int baselinePosition, int itemPosition) {
+        int insertAt = Math.max(0, Math.min(itemPosition, timeSlotList.size()));
+        timeSlotList.add(insertAt, copyTimeSlot(editorItem));
+        if (baseline != null) {
+            int baselineInsertAt = Math.max(0, Math.min(baselinePosition, originalEditItems.size()));
+            originalEditItems.add(baselineInsertAt, baseline);
+        }
+        submitTimeSlots();
+        updateEmptyState();
+    }
+
+    private int removeTimeSlot(long stableId) {
+        for (int i = 0; i < timeSlotList.size(); i++) {
+            if (timeSlotList.get(i).getStableId() == stableId) {
+                timeSlotList.remove(i);
+                submitTimeSlots();
+                updateEmptyState();
+                return i;
+            }
+        }
+        return -1;
     }
 
     private String colorHex(int colorResource) {
@@ -179,9 +423,111 @@ public class EditScheduleActivity extends AppCompatActivity {
         tvEmptyState.setVisibility(isEmptyEdit ? View.VISIBLE : View.GONE);
     }
 
+    private List<TimeSlotItem> copyTimeSlots(List<TimeSlotItem> items) {
+        List<TimeSlotItem> copies = new ArrayList<>(items.size());
+        for (TimeSlotItem item : items) copies.add(copyTimeSlot(item));
+        return copies;
+    }
+
+    private void submitTimeSlots() {
+        refreshScheduleValidation();
+        adapter.submitList(copyTimeSlots(timeSlotList));
+        updateSaveButtonEnabled();
+    }
+
+    private void refreshScheduleValidation() {
+        SimpleDateFormat formatter = new SimpleDateFormat("h:mm a", Locale.US);
+        formatter.setLenient(false);
+        for (TimeSlotItem item : timeSlotList) {
+            if (item.getDays().isEmpty()) {
+                item.setScheduleError("Select at least one day.");
+                continue;
+            }
+            Date start = parseTime(item.getStartTime(), formatter);
+            Date end = parseTime(item.getEndTime(), formatter);
+            if (start == null || end == null) {
+                item.setScheduleError("Enter valid start and end times.");
+            } else if (ConflictChecker.timeToMinutes(item.getEndTime())
+                    <= ConflictChecker.timeToMinutes(item.getStartTime())) {
+                item.setScheduleError("End time must be after start time.");
+            } else {
+                item.setScheduleError(null);
+            }
+        }
+    }
+
+    private void updateSaveButtonEnabled() {
+        boolean hasInvalidSchedule = false;
+        for (TimeSlotItem item : timeSlotList) {
+            if (item.getScheduleError() != null) {
+                hasInvalidSchedule = true;
+                break;
+            }
+        }
+        btnSaveSchedule.setEnabled(scheduleReady && !deletingSlot && !saveInProgress
+                && !timeSlotList.isEmpty() && !hasInvalidSchedule);
+    }
+
+    private void updateTimeSlotFromAdapter(TimeSlotItem originalItem, TimeSlotItem updatedItem) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            runOnUiThread(() -> updateTimeSlotFromAdapter(originalItem, updatedItem));
+            return;
+        }
+        long stableId = originalItem.getStableId();
+        for (int i = 0; i < timeSlotList.size(); i++) {
+            if (timeSlotList.get(i).getStableId() == stableId) {
+                TimeSlotItem currentItem = timeSlotList.get(i);
+                if (!Objects.equals(originalItem.getSubject(), updatedItem.getSubject())) {
+                    currentItem.setSubject(updatedItem.getSubject());
+                }
+                if (!Objects.equals(originalItem.getDays(), updatedItem.getDays())) {
+                    Set<String> mergedDays = new HashSet<>(currentItem.getDays());
+                    Set<String> removedDays = new HashSet<>(originalItem.getDays());
+                    removedDays.removeAll(updatedItem.getDays());
+                    mergedDays.removeAll(removedDays);
+                    Set<String> addedDays = new HashSet<>(updatedItem.getDays());
+                    addedDays.removeAll(originalItem.getDays());
+                    mergedDays.addAll(addedDays);
+                    currentItem.setDays(mergedDays);
+                    if (!addedDays.isEmpty()) {
+                        for (TimeSlotItem otherItem : timeSlotList) {
+                            if (otherItem == currentItem) continue;
+                            Set<String> otherDays = new HashSet<>(otherItem.getDays());
+                            if (otherDays.removeAll(addedDays)) otherItem.setDays(otherDays);
+                        }
+                    }
+                }
+                if (!Objects.equals(originalItem.getStartTime(), updatedItem.getStartTime())) {
+                    currentItem.setStartTime(updatedItem.getStartTime());
+                }
+                if (!Objects.equals(originalItem.getEndTime(), updatedItem.getEndTime())) {
+                    currentItem.setEndTime(updatedItem.getEndTime());
+                }
+                if (originalItem.isWork() != updatedItem.isWork()) {
+                    currentItem.setWork(updatedItem.isWork());
+                }
+                if (!Objects.equals(originalItem.getColorHex(), updatedItem.getColorHex())) {
+                    currentItem.setColorHex(updatedItem.getColorHex());
+                }
+                if (!Objects.equals(originalItem.getSubjectError(), updatedItem.getSubjectError())) {
+                    currentItem.setSubjectError(updatedItem.getSubjectError());
+                }
+                if (!Objects.equals(originalItem.getStartTimeError(), updatedItem.getStartTimeError())) {
+                    currentItem.setStartTimeError(updatedItem.getStartTimeError());
+                }
+                if (!Objects.equals(originalItem.getEndTimeError(), updatedItem.getEndTimeError())) {
+                    currentItem.setEndTimeError(updatedItem.getEndTimeError());
+                }
+                submitTimeSlots();
+                updateEmptyState();
+                return;
+            }
+        }
+    }
+
     private void saveSchedule() {
         if (timeSlotList.isEmpty()) {
-            Toast.makeText(this, "Please add at least one time slot.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please add at least one time block.", Toast.LENGTH_SHORT).show();
             return;
         }
         if (!validateEditRows()) return;
@@ -191,41 +537,133 @@ public class EditScheduleActivity extends AppCompatActivity {
             return;
         }
 
-        btnSaveSchedule.setEnabled(false);
+        if (askGroupedEditScope()) return;
+        checkConflictsAndSave();
+    }
+
+    private boolean askGroupedEditScope() {
+        for (TimeSlotItem item : timeSlotList) {
+            String groupId = item.getGroupId();
+            if (item.getId() <= 0 || groupId == null || groupId.isEmpty()
+                    || resolvedEditGroups.contains(groupId) || !isEdited(item)) continue;
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Apply changes to grouped days?")
+                    .setMessage("Choose whether this change applies to every day in this schedule group.")
+                    .setPositiveButton("All days", (dialog, which) -> {
+                        for (TimeSlotItem sibling : timeSlotList) {
+                            if (groupId.equals(sibling.getGroupId())) {
+                                sibling.setSubject(item.getSubject());
+                                sibling.setStartTime(item.getStartTime());
+                                sibling.setEndTime(item.getEndTime());
+                                sibling.setWork(item.isWork());
+                                sibling.setColorHex(item.getColorHex());
+                            }
+                        }
+                        resolvedEditGroups.add(groupId);
+                        submitTimeSlots();
+                        saveSchedule();
+                    })
+                    .setNeutralButton("This day only", (dialog, which) -> {
+                        Set<String> singleDay = new HashSet<>();
+                        if (!item.getOriginalDay().isEmpty()) singleDay.add(item.getOriginalDay());
+                        item.setDays(singleDay);
+                        item.setGroupId(null);
+                        resolvedEditGroups.add(groupId);
+                        submitTimeSlots();
+                        saveSchedule();
+                    })
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isEdited(TimeSlotItem item) {
+        TimeSlotItem original = findOriginalItem(item.getId());
+        return original != null && (!Objects.equals(item.getSubject(), original.getSubject())
+                || !Objects.equals(item.getStartTime(), original.getStartTime())
+                || !Objects.equals(item.getEndTime(), original.getEndTime())
+                || item.isWork() != original.isWork()
+                || !Objects.equals(item.getColorHex(), original.getColorHex())
+                || !Objects.equals(item.getDays(), original.getDays()));
+    }
+
+    private void checkConflictsAndSave() {
+        saveInProgress = true;
+        updateSaveButtonEnabled();
         btnSaveSchedule.setText(R.string.schedule_saving);
         List<ScheduleItem> itemsToSave = createScheduleItems();
+        submitTimeSlots();
         List<Integer> deletedIds = findDeletedIds();
 
         new Thread(() -> {
             try {
                 AppDatabase db = AppDatabase.getInstance(getApplicationContext());
-                String conflictSubject = findConflict(db, itemsToSave);
-                if (editMode) {
-                    LocalDataRepository.saveEditedSchedules(db, itemsToSave, deletedIds);
-                } else {
-                    LocalDataRepository.saveSchedules(db, itemsToSave);
+                List<String> conflicts = findConflicts(db, itemsToSave, deletedIds);
+                List<ScheduleItem> loadSchedules = new ArrayList<>();
+                Set<Integer> replaced = new HashSet<>(deletedIds);
+                for (ScheduleItem item : itemsToSave) if (item.getId() > 0) replaced.add(item.getId());
+                for (ScheduleItem existing : db.scheduleDao().getAll()) {
+                    if (!replaced.contains(existing.getId())) loadSchedules.add(existing);
                 }
+                loadSchedules.addAll(itemsToSave);
+                LoadCalculator.LoadResult load = LoadCalculator.calculate(loadSchedules,
+                        SupabaseClient.getInstance(getApplicationContext()).getWeeklyHoursLimit());
+                runOnUiThread(() -> {
+                    saveInProgress = false;
+                    updateSaveButtonEnabled();
+                    btnSaveSchedule.setText(R.string.schedule_save);
+                    if (!conflicts.isEmpty()) {
+                        StringBuilder summary = new StringBuilder();
+                        for (String conflict : conflicts) summary.append(conflict).append('\n');
+                        summary.append(String.format(Locale.US, "\nWeekly load: %.1f / %d hours",
+                                load.totalHours, load.weeklyLimit));
+                        new MaterialAlertDialogBuilder(this)
+                                .setTitle("Schedule conflicts found")
+                                .setMessage(summary.toString().trim())
+                                .setNegativeButton("Review", null)
+                                .setPositiveButton("Save anyway", (dialog, which) ->
+                                        persistSchedules(itemsToSave, deletedIds))
+                                .show();
+                    } else {
+                        persistSchedules(itemsToSave, deletedIds);
+                    }
+                });
+            } catch (RuntimeException e) {
+                android.util.Log.e("EditScheduleActivity", "Could not check schedule conflicts", e);
+                runOnUiThread(() -> {
+                    saveInProgress = false;
+                    updateSaveButtonEnabled();
+                    btnSaveSchedule.setText(R.string.schedule_save);
+                    Toast.makeText(this, "Couldn't check schedule conflicts. Please try again.",
+                            Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
+    }
+
+    private void persistSchedules(List<ScheduleItem> itemsToSave, List<Integer> deletedIds) {
+        saveInProgress = true;
+        updateSaveButtonEnabled();
+        btnSaveSchedule.setText(R.string.schedule_saving);
+        new Thread(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+                if (editMode) LocalDataRepository.saveEditedSchedules(db, itemsToSave, deletedIds);
+                else LocalDataRepository.saveSchedules(db, itemsToSave);
                 SupabaseClient.getInstance(getApplicationContext()).setHasUnsyncedChanges(true);
                 ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
-
                 runOnUiThread(() -> {
-                    btnSaveSchedule.setEnabled(true);
-                    btnSaveSchedule.setText(R.string.schedule_save);
-                    if (!conflictSubject.isEmpty()) {
-                        sendConflictNotification(conflictSubject);
-                        Toast.makeText(this, "Conflict detected with " + conflictSubject
-                                + (editMode ? ". Schedule updated." : ". Saved successfully!"),
-                                Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(this, editMode ? "Schedule updated."
-                                : "Schedule saved successfully.", Toast.LENGTH_SHORT).show();
-                    }
+                    Toast.makeText(this, editMode ? "Schedule updated." : "Schedule saved successfully.",
+                            Toast.LENGTH_SHORT).show();
                     finish();
                 });
             } catch (RuntimeException e) {
                 android.util.Log.e("EditScheduleActivity", "Could not save schedule", e);
                 runOnUiThread(() -> {
-                    btnSaveSchedule.setEnabled(true);
+                    saveInProgress = false;
+                    updateSaveButtonEnabled();
                     btnSaveSchedule.setText(R.string.schedule_save);
                     Toast.makeText(this, "Couldn't save your schedule. Please try again.",
                             Toast.LENGTH_LONG).show();
@@ -249,22 +687,24 @@ public class EditScheduleActivity extends AppCompatActivity {
             if (start != null && end != null) {
                 int startMin = ConflictChecker.timeToMinutes(item.getStartTime());
                 int endMin = ConflictChecker.timeToMinutes(item.getEndTime());
-                if (startMin == endMin) {
-                    item.setEndTimeError("Start and end time cannot be identical.");
+                if (endMin <= startMin) {
+                    item.setEndTimeError("End time must be after start time.");
                 }
             }
         }
         boolean valid = areRowsValid();
         if (!valid) {
-            Toast.makeText(this, "Please select a day and fill in all required fields.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Select at least one day and fill in all required fields.",
+                    Toast.LENGTH_SHORT).show();
         }
-        adapter.notifyItemRangeChanged(0, timeSlotList.size());
+        submitTimeSlots();
         return valid;
     }
 
     private boolean areRowsValid() {
         for (TimeSlotItem item : timeSlotList) {
-            if (normalizeDay(item.getDay()).isEmpty()
+            if (item.getDays().isEmpty()
+                    || item.getScheduleError() != null
                     || item.getSubjectError() != null
                     || item.getStartTimeError() != null
                     || item.getEndTimeError() != null) {
@@ -289,11 +729,17 @@ public class EditScheduleActivity extends AppCompatActivity {
     private List<ScheduleItem> createScheduleItems() {
         List<ScheduleItem> result = new ArrayList<>();
         for (TimeSlotItem item : timeSlotList) {
-            ScheduleItem schedule = new ScheduleItem(item.getSubject().trim(),
-                    normalizeDay(item.getDay()), item.getStartTime(), item.getEndTime(),
-                    editMode ? categoryWork : item.isWork(), item.getColorHex());
-            schedule.setId(item.getId());
-            result.add(schedule);
+            if (item.getGroupId() == null && (item.getId() <= 0 || item.getDays().size() > 1)) {
+                item.setGroupId(UUID.randomUUID().toString());
+            }
+            for (String day : item.getDays()) {
+                ScheduleItem schedule = new ScheduleItem(item.getSubject().trim(), day,
+                        item.getStartTime(), item.getEndTime(),
+                        editMode ? categoryWork : item.isWork(), item.getColorHex());
+                if (day.equals(item.getOriginalDay())) schedule.setId(item.getId());
+                schedule.setGroupId(item.getGroupId());
+                result.add(schedule);
+            }
         }
         return result;
     }
@@ -301,7 +747,9 @@ public class EditScheduleActivity extends AppCompatActivity {
     private List<Integer> findDeletedIds() {
         Set<Integer> retainedIds = new HashSet<>();
         for (TimeSlotItem item : timeSlotList) {
-            if (item.getId() > 0) retainedIds.add(item.getId());
+            if (item.getId() > 0 && item.getDays().contains(item.getOriginalDay())) {
+                retainedIds.add(item.getId());
+            }
         }
         List<Integer> deletedIds = new ArrayList<>();
         for (TimeSlotItem original : originalEditItems) {
@@ -310,37 +758,40 @@ public class EditScheduleActivity extends AppCompatActivity {
         return deletedIds;
     }
 
-    private String findConflict(AppDatabase db, List<ScheduleItem> proposed) {
-        Set<Integer> excludedIds = new HashSet<>();
-        if (editMode) {
-            for (TimeSlotItem original : originalEditItems) excludedIds.add(original.getId());
-        }
+    private List<String> findConflicts(AppDatabase db, List<ScheduleItem> proposed,
+                                       List<Integer> deletedIds) {
+        Set<Integer> replacedIds = new HashSet<>(deletedIds);
+        for (ScheduleItem item : proposed) if (item.getId() > 0) replacedIds.add(item.getId());
+        List<ScheduleItem> existingSchedules = db.scheduleDao().getAll();
         List<ScheduleItem> checked = new ArrayList<>();
+        List<String> conflicts = new ArrayList<>();
         for (ScheduleItem item : proposed) {
-            List<ScheduleItem> existingRows = db.scheduleDao().getAllSchedules(item.getDay());
-            for (ScheduleItem existing : existingRows) {
-                if (excludedIds.contains(existing.getId())) continue;
+            for (ScheduleItem existing : existingSchedules) {
+                if (replacedIds.contains(existing.getId())) continue;
                 if (ConflictChecker.hasConflict(item.getDay(), item.getStartTime(), item.getEndTime(),
                         existing.getDay(), existing.getStartTime(), existing.getEndTime())) {
-                    return existing.getSubject();
+                    conflicts.add(formatConflict(item, existing));
                 }
             }
             for (ScheduleItem previous : checked) {
                 if (ConflictChecker.hasConflict(item.getDay(), item.getStartTime(), item.getEndTime(),
                         previous.getDay(), previous.getStartTime(), previous.getEndTime())) {
-                    return previous.getSubject();
+                    conflicts.add(formatConflict(item, previous));
                 }
             }
             checked.add(item);
         }
-        return "";
+        return conflicts;
+    }
+
+    private String formatConflict(ScheduleItem first, ScheduleItem second) {
+        return first.getDay() + ": " + first.getSubject() + " (" + first.getStartTime() + " - "
+                + first.getEndTime() + ") overlaps " + second.getSubject() + " ("
+                + second.getStartTime() + " - " + second.getEndTime() + ")";
     }
 
     private TimeSlotItem copyTimeSlot(TimeSlotItem item) {
-        TimeSlotItem copy = new TimeSlotItem(item.getSubject(), item.getDay(), item.getStartTime(),
-                item.getEndTime(), item.isWork(), item.getColorHex());
-        copy.setId(item.getId());
-        return copy;
+        return item.copy();
     }
 
     private boolean isUnchanged() {
@@ -350,11 +801,12 @@ public class EditScheduleActivity extends AppCompatActivity {
             TimeSlotItem original = originals.next();
             if (current.getId() != original.getId()
                     || !Objects.equals(current.getSubject(), original.getSubject())
-                    || !Objects.equals(normalizeDay(current.getDay()), normalizeDay(original.getDay()))
+                    || !Objects.equals(current.getDays(), original.getDays())
                     || !Objects.equals(current.getStartTime(), original.getStartTime())
                     || !Objects.equals(current.getEndTime(), original.getEndTime())
                     || current.isWork() != original.isWork()
-                    || !Objects.equals(current.getColorHex(), original.getColorHex())) return false;
+                    || !Objects.equals(current.getColorHex(), original.getColorHex())
+                    || !Objects.equals(current.getGroupId(), original.getGroupId())) return false;
         }
         return true;
     }
@@ -372,37 +824,6 @@ public class EditScheduleActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "WorkStudy Conflict Notifications";
-            String description = "Alerts for working student time clashes";
-            int importance = android.app.NotificationManager.IMPORTANCE_HIGH;
-            android.app.NotificationChannel channel = new android.app.NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-
-            android.app.NotificationManager notificationManager = getSystemService(android.app.NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
-            }
-        }
-    }
-
-    private void sendConflictNotification(String conflictingSubject) {
-        android.app.NotificationManager notificationManager =
-                (android.app.NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
-
-        androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .setContentTitle("Schedule Conflict Detected!")
-                .setContentText("Your new schedule overlaps with: " + conflictingSubject)
-                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true);
-
-        if (notificationManager != null) {
-            notificationManager.notify((int) System.currentTimeMillis(), builder.build());
-        }
-    }
-
     private void processImageWithMLKit(Uri imageUri) {
         try {
             InputImage image = InputImage.fromFilePath(this, imageUri);
@@ -412,9 +833,12 @@ public class EditScheduleActivity extends AppCompatActivity {
                     .addOnSuccessListener(this::parseScannedText)
                     .addOnFailureListener(e -> {
                         Toast.makeText(this, "Failed to read text: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        timeSlotList.add(new TimeSlotItem("", "MON", "", "", false,
-                                colorHex(R.color.schedule_school)));
-                        adapter.notifyItemInserted(timeSlotList.size() - 1);
+                        runOnUiThread(() -> {
+                            timeSlotList.add(new TimeSlotItem("", "MON", "", "", false,
+                                    colorHex(R.color.schedule_school)));
+                            submitTimeSlots();
+                            updateEmptyState();
+                        });
                     });
         } catch (IOException e) {
             android.util.Log.e("EditScheduleActivity", "Could not load image for text recognition", e);
@@ -423,6 +847,10 @@ public class EditScheduleActivity extends AppCompatActivity {
     }
 
     private void parseScannedText(Text visionText) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            runOnUiThread(() -> parseScannedText(visionText));
+            return;
+        }
         List<ScheduleTableParser.Word> words = new ArrayList<>();
         if (visionText != null) {
             for (Text.TextBlock block : visionText.getTextBlocks()) {
@@ -455,7 +883,6 @@ public class EditScheduleActivity extends AppCompatActivity {
             android.util.Log.d("EditScheduleActivity", "Meeting: " + meeting);
         }
 
-        int previousCount = timeSlotList.size();
         timeSlotList.clear();
 
         for (ScheduleTableParser.ParsedMeeting m : result.meetings) {
@@ -475,11 +902,8 @@ public class EditScheduleActivity extends AppCompatActivity {
             timeSlotList.add(new TimeSlotItem("", "", "", "", false,
                     colorHex(R.color.schedule_school)));
         }
-        if (previousCount > 0) {
-            adapter.notifyItemRangeRemoved(0, previousCount);
-        }
+        submitTimeSlots();
         if (!timeSlotList.isEmpty()) {
-            adapter.notifyItemRangeInserted(0, timeSlotList.size());
             recyclerTimeSlots.scrollToPosition(timeSlotList.size() - 1);
         }
         updateEmptyState();
@@ -552,7 +976,8 @@ public class EditScheduleActivity extends AppCompatActivity {
                 btnAddAsClass.setOnClickListener(v -> {
                     TimeSlotItem item = new TimeSlotItem(line, "", "", "", false, colorHex(R.color.schedule_school));
                     timeSlotList.add(item);
-                    adapter.notifyItemInserted(timeSlotList.size() - 1);
+                    submitTimeSlots();
+                    updateEmptyState();
                     layoutSkippedContainer.removeView(rowView);
                     if (layoutSkippedContainer.getChildCount() == 0) {
                         layoutSkippedSection.setVisibility(View.GONE);

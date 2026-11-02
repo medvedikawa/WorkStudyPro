@@ -1,9 +1,12 @@
 package com.example.wspro;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,14 +38,22 @@ public class ProfileActivity extends AppCompatActivity {
 
         client = SupabaseClient.getInstance(this);
         AppearanceSetting.bind(this, (Spinner) findViewById(R.id.spinnerAppearance), client);
-        TextView name = findViewById(R.id.tvProfileName);
-        name.setText(client.getUserName());
-        ((TextView) findViewById(R.id.tvProfileEmail)).setText(client.getUserEmail());
-        ((TextView) findViewById(R.id.tvProfileCourse)).setText(client.getUserCourse());
-        String userName = client.getUserName();
-        TextView initial = findViewById(R.id.tvProfileInitial);
-        initial.setText(userName == null || userName.trim().isEmpty()
-                ? "?" : userName.trim().substring(0, 1).toUpperCase(Locale.getDefault()));
+
+        View profileHeader = findViewById(R.id.layoutProfileHeader);
+        TextView tvProfileEditLabel = findViewById(R.id.tvProfileEditLabel);
+        boolean demoAccount = client.isDemoSession();
+        profileHeader.setClickable(!demoAccount);
+        profileHeader.setFocusable(!demoAccount);
+        tvProfileEditLabel.setText(demoAccount
+                ? R.string.profile_demo_read_only : R.string.profile_edit_action);
+        if (!demoAccount) {
+            profileHeader.setOnClickListener(v -> {
+                Intent intent = new Intent(this, EditProfileActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        renderProfileInfo();
 
         tvWeeklyLoad = findViewById(R.id.tvProfileWeeklyLoad);
         tvPendingTasks = findViewById(R.id.tvProfilePendingTasks);
@@ -67,17 +78,49 @@ public class ProfileActivity extends AppCompatActivity {
         btnSyncNow.setOnClickListener(v -> syncNow());
 
         findViewById(R.id.btnLogOut).setOnClickListener(v -> {
-            client.clearSession();
-            Intent intent = new Intent(this, LoginActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
+            View logoutButton = findViewById(R.id.btnLogOut);
+            logoutButton.setEnabled(false);
+            client.clearUserData(this, new SupabaseClient.DataCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean result) {
+                    navigateToLogin();
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    logoutButton.setEnabled(true);
+                    Toast.makeText(ProfileActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                }
+            });
         });
 
         ScanButtonHelper scanButtonHelper = new ScanButtonHelper(this);
         BottomNavHelper.setup(this, BottomNavHelper.Tab.YOU, scanButtonHelper);
 
         setupReactiveObservers();
+        refreshProfileFromCloud();
+    }
+
+    private void refreshProfileFromCloud() {
+        if (!client.isLoggedIn() || client.isDemoSession()) return;
+        client.loadProfileFromSupabase(this, new SupabaseClient.DataCallback<UserProfile>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                if (profile != null && !isFinishing()) renderProfileInfo();
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                android.util.Log.e("SupabaseClient", "Could not refresh profile: " + errorMessage);
+            }
+        });
+    }
+
+    private void navigateToLogin() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void setupReactiveObservers() {
@@ -97,6 +140,46 @@ public class ProfileActivity extends AppCompatActivity {
         super.onResume();
         refreshLastSynced();
         renderSummary();
+        renderProfileInfo();
+    }
+
+    private void renderProfileInfo() {
+        TextView tvName = findViewById(R.id.tvProfileName);
+        TextView tvEmail = findViewById(R.id.tvProfileEmail);
+        TextView tvCourse = findViewById(R.id.tvProfileCourse);
+        TextView tvInitial = findViewById(R.id.tvProfileInitial);
+        ImageView ivAvatar = findViewById(R.id.ivProfileAvatar);
+
+        if (tvName != null) tvName.setText(client.getUserName());
+        if (tvEmail != null) tvEmail.setText(client.getUserEmail());
+        if (tvCourse != null) tvCourse.setText(client.getUserCourse());
+
+        String userName = client.getUserName();
+        String initialStr = (userName == null || userName.trim().isEmpty())
+                ? "?" : userName.trim().substring(0, 1).toUpperCase(Locale.getDefault());
+        if (tvInitial != null) tvInitial.setText(initialStr);
+
+        if (ivAvatar != null) {
+            ivAvatar.setVisibility(View.GONE);
+            client.loadProfileAvatar(this, new SupabaseClient.DataCallback<Bitmap>() {
+                @Override
+                public void onSuccess(Bitmap bitmap) {
+                    if (isFinishing()) return;
+                    ivAvatar.setImageBitmap(CropImageView.getCircularBitmap(bitmap));
+                    ivAvatar.setVisibility(View.VISIBLE);
+                    if (tvInitial != null) tvInitial.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    if (!isFinishing()) {
+                        ivAvatar.setVisibility(View.GONE);
+                        if (tvInitial != null) tvInitial.setVisibility(View.VISIBLE);
+                    }
+                }
+            });
+        }
+        if (tvInitial != null) tvInitial.setVisibility(View.VISIBLE);
     }
 
     private void bindAlertSwitch(int viewId, boolean initialValue, Consumer<Boolean> onChanged) {

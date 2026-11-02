@@ -6,6 +6,24 @@
     <string name="schedule_edit_subtitle">Update, add, or remove your school/work entries.</string>
     <string name="schedule_saving">Saving…</string>
     <string name="schedule_save">Save</string>
+    <string name="schedule_block_title">Time %1$d</string>
+    <string name="schedule_block_title_initial">Time 1</string>
+    <string name="schedule_block_delete">Delete time block</string>
+    <string name="schedule_weekdays">Weekdays</string>
+    <string name="schedule_every_day">Every day</string>
+    <string name="schedule_clear_days">Clear</string>
+    <string name="schedule_unnamed_item">this schedule item</string>
+    <string name="schedule_delete_title">Delete %1$s?</string>
+    <string name="schedule_delete_message">This removes it from your week and recalculates your load.</string>
+    <string name="schedule_delete_action">Delete</string>
+    <string name="schedule_deleted">Schedule item deleted</string>
+    <string name="schedule_delete_failed">Couldn\'t delete this schedule item. Please try again.</string>
+    <string name="schedule_restore_failed">Couldn\'t undo the deletion. Please try again.</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_undo">Undo</string>
+    <string name="profile_edit_action">Edit</string>
+    <string name="profile_demo_read_only">Demo profile</string>
+    <string name="profile_demo_edit_unavailable">Profile changes aren\'t available in the demo account.</string>
     <string name="schedule_school">School</string>
     <string name="schedule_work">Work</string>
     <string name="schedule_empty_edit">No schedule to edit for the %1$s schedule yet. Go back to Week and use Scan Schedule to add one, or add a slot manually.</string>
@@ -17,7 +35,6 @@
     <string name="today_load_low">Low load</string>
     <string name="today_load_moderate">Moderate load</string>
     <string name="today_load_high">High load</string>
-    <string name="today_hours_of_limit">%1$d of %2$d hrs</string>
     <string name="today_limit_hours">of %1$d hrs</string>
     <string name="today_class_work_hours">%1$d hrs class, %2$d hrs work</string>
     <string name="today_over_limit">%1$d hrs over your %2$d hr limit</string>
@@ -42,15 +59,15 @@
     <string name="today_overdue_hours_plural">Overdue by %1$d hrs</string>
     <string name="today_overdue_days">Overdue by %1$d day</string>
     <string name="today_overdue_days_plural">Overdue by %1$d days</string>
-    <string name="today_schedule_class">Class · %1$s</string>
-    <string name="today_schedule_work">Work · %1$s</string>
-    <string name="today_loading_error">Something went wrong loading your day.</string>
     <string name="today_conflict_heading">Schedule conflict on %1$s</string>
     <string name="today_conflict_details">%1$s overlaps with %2$s (%3$s - %4$s).</string>
     <string name="today_review_conflict">Review conflict</string>
-    <string name="today_conflict_notification_title">Schedule conflict</string>
-    <string name="today_notification_channel_name">WorkStudy schedule alerts</string>
-    <string name="today_notification_channel_description">Alerts about schedule conflicts</string>
+    <string name="today_notification_permission_title">Enable Notifications</string>
+    <string name="today_notification_permission_message">Allow WSPro to send you reminders 24h and 2h before task deadlines, schedule conflict alerts, and heavy workload warnings so you never miss a beat.</string>
+    <string name="today_notification_permission_enable">Enable</string>
+    <string name="today_notification_permission_not_now">Not Now</string>
+    <string name="forgot_step_indicator">STEP %1$d OF 3</string>
+    <string name="forgot_resend_countdown">Resend code in %1$ds</string>
     <string name="today_tab_today">Today</string>
     <string name="today_tab_week">Week</string>
     <string name="today_tab_tasks">Tasks</string>
@@ -60,23 +77,27 @@
     <string name="tasks_empty_title">Nothing due yet</string>
     <string name="tasks_empty_body">Add a task to keep track of upcoming work.</string>
     <string name="tasks_add_first">Add your first task</string>
+    <string name="tasks_search">Search tasks</string>
+    <string name="tasks_search_hint">Search by title or subject</string>
+    <string name="tasks_close_search">Close task search</string>
+    <string name="tasks_filter_category">Category</string>
+    <string name="tasks_filter_subject">Subject</string>
+    <string name="tasks_filter_due">Due</string>
+    <string name="tasks_filter_status">Status</string>
+    <string name="tasks_filter_clear">Clear all</string>
+    <string name="tasks_filter_any_category">Any category</string>
+    <string name="tasks_filter_any_subject">Any subject</string>
+    <string name="tasks_filter_any_due">Any due date</string>
+    <string name="tasks_filter_any_status">Any status</string>
+    <string name="tasks_filter_overdue">Overdue</string>
+    <string name="tasks_filter_today">Today</string>
+    <string name="tasks_filter_this_week">This week</string>
+    <string name="tasks_filter_pending">Pending</string>
+    <string name="tasks_filter_completed">Completed</string>
+    <string name="tasks_filter_no_subjects">No schedule subjects</string>
+    <string name="tasks_no_matches">No tasks match your search</string>
+    <string name="tasks_pending_subtitle">%1$d active tasks • Sorted by urgency &amp; work collision</string>
     <string name="crop_processing">Processing…</string>
     <string name="crop_scan_now">✓ Scan Now</string>
 
-    <string-array name="days_array">
-        <item>Choose day…</item>
-        <item>Monday</item>
-        <item>Tuesday</item>
-        <item>Wednesday</item>
-        <item>Thursday</item>
-        <item>Friday</item>
-        <item>Saturday</item>
-        <item>Sunday</item>
-    </string-array>
-
-    <string-array name = "schedule_categories">
-        <item>Class</item>
-        <item>Work</item>
-        <item>Other</item>
-    </string-array>
 </resources>

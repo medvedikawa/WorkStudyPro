@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <!-- Top Header Bar -->
+    <LinearLayout
+        android:id="@+id/cropHeaderBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:background="@color/raised">
+
+        <ImageButton
+            android:id="@+id/btnCancelCrop"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/back_arrow"
+            app:tint="@color/ws_accent"
+            android:contentDescription="Cancel"
+            android:scaleType="centerInside" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Crop Profile Picture"
+                android:textColor="@color/text_primary"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Position and rotate your photo inside the circle"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnHeaderSave"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Save"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/ws_on_brand"
+            android:backgroundTint="@color/ws_accent"
+            android:paddingHorizontal="14dp" />
+    </LinearLayout>
+
+    <!-- Interactive Circular Crop View -->
+    <com.example.wspro.CropImageView
+        android:id="@+id/cropImageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/cropHeaderBar"
+        android:layout_above="@id/cropBottomControls" />
+
+    <!-- Bottom Controls Bar -->
+    <LinearLayout
+        android:id="@+id/cropBottomControls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@color/raised"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp"
+        android:elevation="8dp">
+
+        <Button
+            android:id="@+id/btnRotateLeft"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:text="↺ 90°"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:backgroundTint="@color/raised"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/btnRotateRight"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:text="↻ 90°"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:backgroundTint="@color/raised"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/btnResetCrop"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:text="Reset"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:backgroundTint="@color/raised"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btnSaveCrop"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1.4"
+            android:text="Save Photo"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/ws_on_brand"
+            android:backgroundTint="@color/ws_accent" />
+
+    </LinearLayout>
+
+</RelativeLayout>

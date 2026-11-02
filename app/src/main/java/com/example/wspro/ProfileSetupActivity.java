@@ -37,18 +37,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
             }
     );
 
-    // 2. Permission launcher for photo/video access dialog
-    private final ActivityResultLauncher<String> requestMediaPermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestPermission(),
-            isGranted -> {
-                if (isGranted) {
-                    openDeviceAlbums();
-                } else {
-                    Toast.makeText(this, "Permission denied to access albums.", Toast.LENGTH_SHORT).show();
-                }
-            }
-    );
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,7 +57,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
         addValidationWatcher(etProfileEmail, this::validateEmail);
         addValidationWatcher(etProfilePassword, this::validatePassword);
 
-        btnSelectAlbumMedia.setOnClickListener(v -> verifyAndRequestMediaPermission());
+        btnSelectAlbumMedia.setOnClickListener(v -> openDeviceAlbums());
         btnCompleteSetup.setOnClickListener(v -> handleAccountCreation());
 
         ImageButton btnReturnBack = findViewById(R.id.btnReturnBack);
@@ -99,14 +87,19 @@ public class ProfileSetupActivity extends AppCompatActivity {
         SupabaseClient.getInstance(this).signUp(email, password, name, course, new SupabaseClient.AuthCallback() {
             @Override
             public void onSuccess(String userId, String userEmail, String accessToken) {
-                btnCompleteSetup.setEnabled(true);
-                btnCompleteSetup.setText("Create Account & Sign In");
-                Toast.makeText(ProfileSetupActivity.this, "Welcome, " + name + "! Account created.", Toast.LENGTH_LONG).show();
+                SupabaseClient client = SupabaseClient.getInstance(ProfileSetupActivity.this);
+                client.updateProfileData(ProfileSetupActivity.this, name, course, null,
+                        new SupabaseClient.DataCallback<Boolean>() {
+                            @Override
+                            public void onSuccess(Boolean result) {
+                                finishAccountCreation(name, null);
+                            }
 
-                Intent intent = new Intent(ProfileSetupActivity.this, MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
+                            @Override
+                            public void onError(String errorMessage) {
+                                finishAccountCreation(name, errorMessage);
+                            }
+                        });
             }
 
             @Override
@@ -116,6 +109,21 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 Toast.makeText(ProfileSetupActivity.this, "Sign-up error: " + errorMessage, Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void finishAccountCreation(String name, String profileError) {
+        btnCompleteSetup.setEnabled(true);
+        btnCompleteSetup.setText("Create Account & Sign In");
+        if (profileError == null) {
+            Toast.makeText(this, "Welcome, " + name + "! Account created.", Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Account created, but profile save failed: " + profileError,
+                    Toast.LENGTH_LONG).show();
+        }
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void addValidationWatcher(EditText field, Runnable validation) {
@@ -185,21 +193,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
             }
-        }
-    }
-
-    private void verifyAndRequestMediaPermission() {
-        String mediaPermission;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            mediaPermission = Manifest.permission.READ_MEDIA_IMAGES;
-        } else {
-            mediaPermission = Manifest.permission.READ_EXTERNAL_STORAGE;
-        }
-
-        if (ContextCompat.checkSelfPermission(this, mediaPermission) == PackageManager.PERMISSION_GRANTED) {
-            openDeviceAlbums();
-        } else {
-            requestMediaPermissionLauncher.launch(mediaPermission);
         }
     }
 

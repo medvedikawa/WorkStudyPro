@@ -5,17 +5,45 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/bg_card"
-    android:padding="12dp"
+    android:padding="16dp"
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
     android:layout_marginBottom="12dp">
 
-    <!-- Top Row: Type Selector (School Class vs Work Shift) + Delete -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/tvBlockTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/schedule_block_title_initial"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/btnDeleteSlot"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@android:drawable/ic_menu_delete"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/schedule_block_delete"
+            app:tint="@color/ws_accent" />
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/layoutTypeSelector"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="12dp">
 
         <TextView
             android:id="@+id/btnTypeSchool"
@@ -27,10 +55,12 @@
             android:textColor="@color/ws_on_brand"
             android:background="@drawable/bg_toggle_selected"
             android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
+            android:paddingVertical="8dp"
+            android:minHeight="44dp"
+            android:gravity="center"
             android:clickable="true"
             android:focusable="true"
-            android:layout_marginEnd="6dp" />
+            android:layout_marginEnd="8dp" />
 
         <TextView
             android:id="@+id/btnTypeWork"
@@ -42,24 +72,11 @@
             android:textColor="@color/text_muted"
             android:background="@drawable/bg_toggle_unselected"
             android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
+            android:paddingVertical="8dp"
+            android:minHeight="44dp"
+            android:gravity="center"
             android:clickable="true"
             android:focusable="true" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <!-- Delete Button -->
-        <ImageView
-            android:id="@+id/btnDeleteSlot"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@android:drawable/ic_menu_delete"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Delete Slot"
-            app:tint="@color/ws_accent" />
     </LinearLayout>
 
     <TextView
@@ -70,9 +87,8 @@
         android:textSize="12sp"
         android:textStyle="bold"
         android:visibility="gone"
-        android:layout_marginBottom="6dp" />
+        android:layout_marginBottom="12dp" />
 
-    <!-- Subject or Shift Name -->
     <EditText
         android:id="@+id/etRowSubject"
         android:layout_width="match_parent"
@@ -82,34 +98,84 @@
         android:textColor="@color/text_primary"
         android:textColorHint="@color/text_muted"
         android:background="@drawable/bg_input"
-        android:padding="10dp"
-        android:layout_marginBottom="8dp" />
+        android:padding="12dp"
+        android:layout_marginBottom="4dp" />
 
     <TextView
         android:id="@+id/tvSubjectError"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/ws_accent"
+        android:textColor="@color/ws_error"
         android:textSize="12sp"
         android:visibility="gone"
-        android:layout_marginBottom="6dp" />
+        android:layout_marginBottom="12dp" />
 
-    <!-- Day, Start Time, End Time -->
+    <LinearLayout
+        android:id="@+id/daySelector"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginStart="-16dp"
+        android:layout_marginEnd="-16dp"
+        android:layout_marginBottom="4dp" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="12dp">
 
-        <!-- Day Input Spinner -->
-        <Spinner
-            android:id="@+id/sDay"
-            android:layout_width="95dp"
+        <TextView
+            android:id="@+id/btnWeekdays"
+            android:layout_width="wrap_content"
             android:layout_height="44dp"
-            android:background="@drawable/bg_input"
-            android:padding="4dp"
-            android:layout_marginEnd="6dp" />
+            android:minWidth="44dp"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:text="@string/schedule_weekdays"
+            android:textColor="@color/ws_accent"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/btnEveryDay"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:minWidth="44dp"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:text="@string/schedule_every_day"
+            android:textColor="@color/ws_accent"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/btnClearDays"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:minWidth="44dp"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:text="@string/schedule_clear_days"
+            android:textColor="@color/ws_accent"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -121,7 +187,7 @@
             <EditText
                 android:id="@+id/etRowStart"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
+                android:layout_height="48dp"
                 android:background="@drawable/bg_input"
                 android:gravity="center"
                 android:textColor="@color/text_primary"
@@ -136,7 +202,7 @@
                 android:id="@+id/tvStartError"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/ws_accent"
+                android:textColor="@color/ws_error"
                 android:textSize="12sp"
                 android:visibility="gone" />
         </LinearLayout>
@@ -150,7 +216,7 @@
             <EditText
                 android:id="@+id/etRowEnd"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
+                android:layout_height="48dp"
                 android:background="@drawable/bg_input"
                 android:gravity="center"
                 android:textColor="@color/text_primary"
@@ -165,13 +231,31 @@
                 android:id="@+id/tvEndError"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/ws_accent"
+                android:textColor="@color/ws_error"
                 android:textSize="12sp"
                 android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Color Tag Palette Row -->
+    <TextView
+        android:id="@+id/tvScheduleSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvScheduleError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/ws_error"
+        android:textSize="12sp"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp" />
+
     <LinearLayout
         android:id="@+id/layoutColorPalette"
         android:layout_width="match_parent"
@@ -189,7 +273,6 @@
             android:textStyle="bold"
             android:layout_marginEnd="8dp" />
 
-        <!-- 6 Modern Color Circles -->
         <FrameLayout
             android:id="@+id/wrapperColor1"
             android:layout_width="32dp"
@@ -202,7 +285,6 @@
                 android:layout_gravity="center"
                 android:background="@drawable/bg_color_circle" />
         </FrameLayout>
-
         <FrameLayout
             android:id="@+id/wrapperColor2"
             android:layout_width="32dp"
@@ -215,7 +297,6 @@
                 android:layout_gravity="center"
                 android:background="@drawable/bg_color_circle" />
         </FrameLayout>
-
         <FrameLayout
             android:id="@+id/wrapperColor3"
             android:layout_width="32dp"
@@ -228,7 +309,6 @@
                 android:layout_gravity="center"
                 android:background="@drawable/bg_color_circle" />
         </FrameLayout>
-
         <FrameLayout
             android:id="@+id/wrapperColor4"
             android:layout_width="32dp"
@@ -241,7 +321,6 @@
                 android:layout_gravity="center"
                 android:background="@drawable/bg_color_circle" />
         </FrameLayout>
-
         <FrameLayout
             android:id="@+id/wrapperColor5"
             android:layout_width="32dp"
@@ -254,7 +333,6 @@
                 android:layout_gravity="center"
                 android:background="@drawable/bg_color_circle" />
         </FrameLayout>
-
         <FrameLayout
             android:id="@+id/wrapperColor6"
             android:layout_width="32dp"
@@ -266,7 +344,6 @@
                 android:layout_gravity="center"
                 android:background="@drawable/bg_color_circle" />
         </FrameLayout>
-
     </LinearLayout>
 
 </LinearLayout>

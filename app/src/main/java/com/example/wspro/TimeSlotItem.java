@@ -1,24 +1,37 @@
 package com.example.wspro;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class TimeSlotItem {
+    private static final AtomicLong NEXT_LOCAL_ID = new AtomicLong(-2);
+
     private int id;
+    private long localId = NEXT_LOCAL_ID.getAndDecrement();
     private String subject;
     private String day;
+    private String originalDay;
+    private final Set<String> days = new LinkedHashSet<>();
     private String startTime;
     private String endTime;
     private boolean isWork;
     private String colorHex;
+    private String groupId;
     private String subjectError;
     private String startTimeError;
     private String endTimeError;
+    private String scheduleError;
     private Set<ScheduleTableParser.Flag> flags = new HashSet<>();
 
     public TimeSlotItem(String subject, String day, String startTime, String endTime, boolean isWork, String colorHex) {
         this.subject = subject;
         this.day = day;
+        if (day != null && !day.trim().isEmpty()) {
+            this.days.add(EditScheduleActivity.normalizeDay(day));
+        }
+        this.originalDay = this.day;
         this.startTime = startTime;
         this.endTime = endTime;
         this.isWork = isWork;
@@ -27,10 +40,32 @@ public class TimeSlotItem {
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
+    public long getStableId() { return id > 0 ? id : localId; }
     public String getSubject() { return subject; }
     public void setSubject(String subject) { this.subject = subject; }
     public String getDay() { return day; }
-    public void setDay(String day) { this.day = day; }
+    public void setDay(String day) {
+        this.day = day;
+        this.days.clear();
+        if (day != null && !day.trim().isEmpty()) this.days.add(EditScheduleActivity.normalizeDay(day));
+    }
+    public String getOriginalDay() { return originalDay; }
+    public void setOriginalDay(String originalDay) {
+        this.originalDay = EditScheduleActivity.normalizeDay(originalDay);
+    }
+    public Set<String> getDays() { return days; }
+    public void setDays(Set<String> days) {
+        this.days.clear();
+        if (days != null) {
+            for (String value : days) {
+                String normalized = EditScheduleActivity.normalizeDay(value);
+                if (!normalized.isEmpty()) this.days.add(normalized);
+            }
+        }
+        this.day = this.days.isEmpty() ? "" : this.days.iterator().next();
+    }
+    public String getGroupId() { return groupId; }
+    public void setGroupId(String groupId) { this.groupId = groupId; }
     public String getStartTime() { return startTime; }
     public void setStartTime(String startTime) { this.startTime = startTime; }
     public String getEndTime() { return endTime; }
@@ -45,6 +80,8 @@ public class TimeSlotItem {
     public void setStartTimeError(String startTimeError) { this.startTimeError = startTimeError; }
     public String getEndTimeError() { return endTimeError; }
     public void setEndTimeError(String endTimeError) { this.endTimeError = endTimeError; }
+    public String getScheduleError() { return scheduleError; }
+    public void setScheduleError(String scheduleError) { this.scheduleError = scheduleError; }
 
     public Set<ScheduleTableParser.Flag> getFlags() { return flags; }
     public void setFlags(Set<ScheduleTableParser.Flag> flags) {
@@ -100,5 +137,20 @@ public class TimeSlotItem {
             }
         }
         return sb.length() > 0 ? sb.toString() : null;
+    }
+
+    public TimeSlotItem copy() {
+        TimeSlotItem copy = new TimeSlotItem(subject, day, startTime, endTime, isWork, colorHex);
+        copy.id = id;
+        copy.localId = localId;
+        copy.originalDay = originalDay;
+        copy.setDays(days);
+        copy.groupId = groupId;
+        copy.subjectError = subjectError;
+        copy.startTimeError = startTimeError;
+        copy.endTimeError = endTimeError;
+        copy.scheduleError = scheduleError;
+        copy.flags = new HashSet<>(flags);
+        return copy;
     }
 }

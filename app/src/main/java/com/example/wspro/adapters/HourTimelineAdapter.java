@@ -12,6 +12,7 @@ import com.example.wspro.ConflictChecker;
 import com.example.wspro.R;
 import com.example.wspro.ScheduleItem;
 import java.util.List;
+import java.util.Locale;
 
 public class HourTimelineAdapter extends RecyclerView.Adapter<HourTimelineAdapter.HourViewHolder> {
 
@@ -82,7 +83,7 @@ public class HourTimelineAdapter extends RecyclerView.Adapter<HourTimelineAdapte
 
     private boolean isValidTime(String time) {
         if (time == null || time.trim().isEmpty()) return false;
-        String t = time.trim().toUpperCase();
+        String t = time.trim().toUpperCase(Locale.ROOT);
         return ConflictChecker.timeToMinutes(t) >= 0;
     }
 

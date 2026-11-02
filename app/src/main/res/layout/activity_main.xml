@@ -57,9 +57,13 @@
                 </LinearLayout>
 
                 <FrameLayout
+                    android:id="@+id/btnNotificationContainer"
                     android:layout_width="@dimen/today_notification_size"
                     android:layout_height="@dimen/today_notification_size"
-                    android:background="@drawable/bg_today_notification">
+                    android:background="@drawable/bg_today_notification"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackgroundBorderless">
 
                     <ImageView
                         android:id="@+id/btnQuickNotification"
@@ -68,6 +72,16 @@
                         android:layout_gravity="center"
                         android:contentDescription="@string/today_notification_content_description"
                         android:src="@drawable/ic_today_notifications" />
+
+                    <View
+                        android:id="@+id/viewNotificationUnreadDot"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_notification_dot"
+                        android:visibility="gone" />
                 </FrameLayout>
             </LinearLayout>
 
