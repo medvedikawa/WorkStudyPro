@@ -55,4 +55,6 @@
     <color name="glow_end">#006D28D9</color>
     <color name="nav_surface">#E0FFFFFF</color>
     <color name="schedule_day_on">#FFFFFF</color>
+    <color name="schedule_warning_fill">#FFFFF2E5</color>
+    <color name="schedule_conflict_fill">#FFFFF1F2</color>
 </resources>

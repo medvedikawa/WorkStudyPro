@@ -360,7 +360,8 @@ public class MainActivity extends AppCompatActivity {
         String nameB = secondConflict.getSubject();
         tvConflictHeading.setText(getString(R.string.today_conflict_heading, day));
         tvConflictDetails.setText(getString(R.string.today_conflict_details,
-                nameA, nameB, firstConflict.getStartTime(), firstConflict.getEndTime()));
+                nameA, nameB, formatScheduleTime(firstConflict.getStartTime()),
+                formatScheduleTime(firstConflict.getEndTime())));
         layoutConflictCard.setVisibility(View.VISIBLE);
         btnSuggestAction.setOnClickListener(v -> navigateToWeek());
     }
@@ -521,21 +522,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String formatScheduleTime(String value) {
-        if (value == null) return "";
-        String trimmed = value.trim();
-        String[] patterns = {"h:mm a", "hh:mm a", "H:mm", "HH:mm"};
-        for (String pattern : patterns) {
-            SimpleDateFormat parser = new SimpleDateFormat(pattern, Locale.getDefault());
-            parser.setLenient(false);
-            try {
-                Date parsed = parser.parse(trimmed);
-                if (parsed != null) {
-                    return new SimpleDateFormat("h:mm a", Locale.getDefault()).format(parsed);
-                }
-            } catch (ParseException ignored) {
-            }
-        }
-        return trimmed;
+        return TimeFormatPreference.formatTime(this, value);
     }
 
 }

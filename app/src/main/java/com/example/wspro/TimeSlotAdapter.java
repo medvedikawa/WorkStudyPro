@@ -1,17 +1,16 @@
 package com.example.wspro;
 
-import android.app.TimePickerDialog;
 import android.content.Context;
 import android.graphics.drawable.GradientDrawable;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.graphics.Typeface;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
@@ -22,16 +21,21 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.timepicker.MaterialTimePicker;
+import com.google.android.material.timepicker.TimeFormat;
+
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
 public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.ViewHolder> {
+    private static final Object PAYLOAD_DAYS = new Object();
 
     private static final DiffUtil.ItemCallback<TimeSlotItem> DIFF_CALLBACK =
-            new DiffUtil.ItemCallback<TimeSlotItem>() {
+            new DiffUtil.ItemCallback<>() {
                 @Override
                 public boolean areItemsTheSame(@NonNull TimeSlotItem oldItem,
                                                @NonNull TimeSlotItem newItem) {
@@ -41,8 +45,37 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
                 @Override
                 public boolean areContentsTheSame(@NonNull TimeSlotItem oldItem,
                                                  @NonNull TimeSlotItem newItem) {
+                    return oldItem.getDays().equals(newItem.getDays())
+                            && areNonDayContentsTheSame(oldItem, newItem);
+                }
+
+                @Override
+                public Object getChangePayload(@NonNull TimeSlotItem oldItem,
+                                               @NonNull TimeSlotItem newItem) {
+                    if (!oldItem.getDays().equals(newItem.getDays())
+                            && areDaySelectionContentsTheSame(oldItem, newItem)) {
+                        return PAYLOAD_DAYS;
+                    }
+                    return null;
+                }
+
+                private boolean areDaySelectionContentsTheSame(TimeSlotItem oldItem,
+                                                                TimeSlotItem newItem) {
                     return Objects.equals(oldItem.getSubject(), newItem.getSubject())
-                            && oldItem.getDays().equals(newItem.getDays())
+                            && Objects.equals(oldItem.getStartTime(), newItem.getStartTime())
+                            && Objects.equals(oldItem.getEndTime(), newItem.getEndTime())
+                            && oldItem.isWork() == newItem.isWork()
+                            && Objects.equals(oldItem.getColorHex(), newItem.getColorHex())
+                            && Objects.equals(oldItem.getGroupId(), newItem.getGroupId())
+                            && Objects.equals(oldItem.getSubjectError(), newItem.getSubjectError())
+                            && Objects.equals(oldItem.getStartTimeError(), newItem.getStartTimeError())
+                            && Objects.equals(oldItem.getEndTimeError(), newItem.getEndTimeError())
+                            && Objects.equals(oldItem.getFlags(), newItem.getFlags());
+                }
+
+                private boolean areNonDayContentsTheSame(TimeSlotItem oldItem,
+                                                         TimeSlotItem newItem) {
+                    return Objects.equals(oldItem.getSubject(), newItem.getSubject())
                             && Objects.equals(oldItem.getStartTime(), newItem.getStartTime())
                             && Objects.equals(oldItem.getEndTime(), newItem.getEndTime())
                             && oldItem.isWork() == newItem.isWork()
@@ -52,13 +85,16 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
                             && Objects.equals(oldItem.getStartTimeError(), newItem.getStartTimeError())
                             && Objects.equals(oldItem.getEndTimeError(), newItem.getEndTimeError())
                             && Objects.equals(oldItem.getScheduleError(), newItem.getScheduleError())
+                            && oldItem.isConflict() == newItem.isConflict()
+                            && Objects.equals(oldItem.getConflictReason(), newItem.getConflictReason())
+                            && Objects.equals(oldItem.getCrossTabWarning(), newItem.getCrossTabWarning())
                             && Objects.equals(oldItem.getFlags(), newItem.getFlags());
                 }
             };
 
-    private static final String[] DAY_CODES = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
-    private static final String[] DAY_LABELS = {"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"};
-    private static final String[] DAY_NAMES = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    private static final String[] DAY_CODES = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
+    private static final String[] DAY_LABELS = {"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"};
+    private static final String[] DAY_NAMES = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
     private static final String[] SUMMARY_DAY_CODES = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
     private static final String[] SUMMARY_DAY_NAMES = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
 
@@ -68,6 +104,10 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
 
     public interface OnItemChangedListener {
         void onItemChanged(TimeSlotItem originalItem, TimeSlotItem updatedItem);
+    }
+
+    public interface OnAddSlotListener {
+        void onAddSlot(TimeSlotItem item);
     }
 
     private interface ItemMutation {
@@ -84,14 +124,14 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
     };
 
     private final Context context;
-    private final boolean categoryLocked;
+    private long expandedStableId = Long.MIN_VALUE;
     private OnItemChangedListener onItemChangedListener;
     private OnDeleteSlotListener onDeleteSlotListener;
+    private OnAddSlotListener onAddSlotListener;
 
-    public TimeSlotAdapter(Context context, boolean categoryLocked) {
+    public TimeSlotAdapter(Context context) {
         super(DIFF_CALLBACK);
         this.context = context;
-        this.categoryLocked = categoryLocked;
         setHasStableIds(true);
     }
 
@@ -106,6 +146,14 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
 
     public void setOnDeleteSlotListener(OnDeleteSlotListener listener) {
         onDeleteSlotListener = listener;
+    }
+
+    public void setOnAddSlotListener(OnAddSlotListener listener) {
+        onAddSlotListener = listener;
+    }
+
+    public void setExpandedStableId(long stableId) {
+        expandedStableId = stableId;
     }
 
     private void onItemChanged(TimeSlotItem item, ItemMutation mutation) {
@@ -127,7 +175,37 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         TimeSlotItem item = getItem(position);
 
-        holder.tvBlockTitle.setText(context.getString(R.string.schedule_block_title, position + 1));
+        holder.tvBlockTitle.setText(item.getSubject() == null || item.getSubject().trim().isEmpty()
+                ? context.getString(R.string.schedule_block_title, position + 1)
+                : item.getSubject().trim());
+        boolean expanded = expandedStableId == item.getStableId();
+        holder.expandedFields.setVisibility(expanded ? View.VISIBLE : View.GONE);
+        holder.ivExpandIndicator.setRotation(expanded ? 180f : 0f);
+        boolean conflict = item.isConflict();
+        boolean needsCheck = item.getFlagHintText() != null
+                || item.getScheduleError() != null
+                || item.getSubjectError() != null || item.getStartTimeError() != null
+                || item.getEndTimeError() != null;
+        holder.itemView.setBackground(createCardBackground(conflict));
+        holder.tvStatus.setText(conflict ? "Conflict" : needsCheck ? "Check" : "OK");
+        holder.tvStatus.setBackground(createStatusBackground(conflict
+                ? R.color.brand_raspberry : needsCheck ? R.color.ws_surface2 : R.color.schedule_emerald));
+        holder.tvStatus.setTextColor(ContextCompat.getColor(context,
+                conflict ? R.color.ws_on_brand : R.color.text_primary));
+        String conflictReason = item.getConflictReason();
+        holder.tvConflictReason.setText(conflictReason == null ? "" : conflictReason);
+        holder.tvConflictReason.setVisibility(conflictReason == null ? View.GONE : View.VISIBLE);
+        String crossTabWarning = item.getCrossTabWarning();
+        holder.tvCrossTabWarning.setText(crossTabWarning == null ? "" : crossTabWarning);
+        holder.tvCrossTabWarning.setVisibility(crossTabWarning == null ? View.GONE : View.VISIBLE);
+        holder.cardHeader.setOnClickListener(v -> {
+            long next = expanded ? Long.MIN_VALUE : item.getStableId();
+            int previous = findStablePosition(expandedStableId);
+            expandedStableId = next;
+            if (previous != RecyclerView.NO_POSITION) notifyItemChanged(previous);
+            int current = holder.getBindingAdapterPosition();
+            if (current != RecyclerView.NO_POSITION) notifyItemChanged(current);
+        });
 
         // 0. Flags Hint Display
         String flagHint = item.getFlagHintText();
@@ -153,7 +231,12 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String subject = s.toString();
+                item.setSubject(subject);
+                item.setSubjectError(null);
                 showInlineError(holder.tvSubjectError, null);
+                holder.tvBlockTitle.setText(subject.trim().isEmpty()
+                        ? context.getString(R.string.schedule_block_title, Math.max(1, holder.getBindingAdapterPosition() + 1))
+                        : subject.trim());
                 onItemChanged(item, updated -> {
                     updated.setSubject(subject);
                     updated.setSubjectError(null);
@@ -166,11 +249,7 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
         holder.etSubject.addTextChangedListener(holder.subjectWatcher);
 
         // 2. Day selection
-        Set<String> selectedElsewhere = new HashSet<>();
-        for (TimeSlotItem other : getCurrentList()) {
-            if (other != item) selectedElsewhere.addAll(other.getDays());
-        }
-        bindDays(holder, item, selectedElsewhere);
+        bindDays(holder, item, new HashSet<>());
         bindDayShortcut(holder.btnWeekdays, item,
                 new String[]{"MON", "TUE", "WED", "THU", "FRI"});
         bindDayShortcut(holder.btnEveryDay, item, DAY_CODES);
@@ -182,49 +261,23 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
                 ? View.GONE : View.VISIBLE);
 
         // 3. Time Pickers
-        holder.etStart.setText(item.getStartTime());
+        holder.etStart.setText(TimeFormatPreference.formatTime(context, item.getStartTime()));
         showInlineError(holder.tvStartError, item.getStartTimeError());
         holder.etStart.setOnClickListener(v ->
                 showTimePicker(holder.etStart, holder.tvStartError, item, true));
 
-        holder.etEnd.setText(item.getEndTime());
+        holder.etEnd.setText(TimeFormatPreference.formatTime(context, item.getEndTime()));
         showInlineError(holder.tvEndError, item.getEndTimeError());
         holder.etEnd.setOnClickListener(v ->
                 showTimePicker(holder.etEnd, holder.tvEndError, item, false));
 
-        // 4. Type Toggle (School vs Work)
-        updateTypeToggleUI(holder, item.isWork());
-        holder.btnTypeSchool.setVisibility(categoryLocked ? View.GONE : View.VISIBLE);
-        holder.btnTypeWork.setVisibility(categoryLocked ? View.GONE : View.VISIBLE);
-        holder.layoutColorPalette.setVisibility(categoryLocked ? View.GONE : View.VISIBLE);
-        holder.btnTypeSchool.setOnClickListener(v -> {
-            String colorHex = isColor(item, R.color.schedule_orange)
-                    || isColor(item, R.color.schedule_work)
-                    ? getColorHex(R.color.schedule_school) : item.getColorHex();
-            updateTypeToggleUI(holder, false);
-            updatePaletteSelection(holder, colorHex);
-            onItemChanged(item, updated -> {
-                updated.setWork(false);
-                updated.setColorHex(colorHex);
-            });
-        });
-
-        holder.btnTypeWork.setOnClickListener(v -> {
-            String colorHex = isColor(item, R.color.schedule_indigo)
-                    || isColor(item, R.color.schedule_school)
-                    ? getColorHex(R.color.schedule_work) : item.getColorHex();
-            updateTypeToggleUI(holder, true);
-            updatePaletteSelection(holder, colorHex);
-            onItemChanged(item, updated -> {
-                updated.setWork(true);
-                updated.setColorHex(colorHex);
-            });
-        });
-
-        // 5. Color Palette Setup
+        // 4. Color Palette Setup
         setupPalette(holder, item);
 
-        // 6. Delete Action
+        holder.btnAddAnother.setOnClickListener(v -> {
+            if (onAddSlotListener != null) onAddSlotListener.onAddSlot(item);
+        });
+
         if (holder.btnDelete != null) {
             holder.btnDelete.setOnClickListener(v -> {
                 int pos = holder.getBindingAdapterPosition();
@@ -236,50 +289,112 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
     }
 
     @Override
-    public void onViewAttachedToWindow(@NonNull ViewHolder holder) {
-        super.onViewAttachedToWindow(holder);
-        int position = holder.getBindingAdapterPosition();
-        if (position != RecyclerView.NO_POSITION) {
-            holder.tvBlockTitle.setText(context.getString(R.string.schedule_block_title, position + 1));
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position,
+                                 @NonNull List<Object> payloads) {
+        if (payloads.contains(PAYLOAD_DAYS)) {
+            TimeSlotItem item = getItem(position);
+            bindDaySelection(holder, item.getDays());
+            holder.tvScheduleSummary.setText(createSummary(item, holder.selectedDays));
+            bindDayRelatedState(holder, item);
+            return;
         }
+        super.onBindViewHolder(holder, position, payloads);
+    }
+
+    private void bindDayRelatedState(ViewHolder holder, TimeSlotItem item) {
+        boolean conflict = item.isConflict();
+        boolean needsCheck = item.getFlagHintText() != null
+                || item.getScheduleError() != null
+                || item.getSubjectError() != null || item.getStartTimeError() != null
+                || item.getEndTimeError() != null;
+        holder.itemView.setBackground(createCardBackground(conflict));
+        holder.tvStatus.setText(conflict ? "Conflict" : needsCheck ? "Check" : "OK");
+        holder.tvStatus.setBackground(createStatusBackground(conflict
+                ? R.color.brand_raspberry : needsCheck ? R.color.ws_surface2 : R.color.schedule_emerald));
+        holder.tvStatus.setTextColor(ContextCompat.getColor(context,
+                conflict ? R.color.ws_on_brand : R.color.text_primary));
+        String conflictReason = item.getConflictReason();
+        holder.tvConflictReason.setText(conflictReason == null ? "" : conflictReason);
+        holder.tvConflictReason.setVisibility(conflictReason == null ? View.GONE : View.VISIBLE);
+        String crossTabWarning = item.getCrossTabWarning();
+        holder.tvCrossTabWarning.setText(crossTabWarning == null ? "" : crossTabWarning);
+        holder.tvCrossTabWarning.setVisibility(crossTabWarning == null ? View.GONE : View.VISIBLE);
+        holder.tvScheduleError.setText(item.getScheduleError());
+        holder.tvScheduleError.setVisibility(item.getScheduleError() == null
+                ? View.GONE : View.VISIBLE);
+    }
+
+    private int findStablePosition(long stableId) {
+        for (int i = 0; i < getCurrentList().size(); i++) {
+            if (getItem(i).getStableId() == stableId) return i;
+        }
+        return RecyclerView.NO_POSITION;
+    }
+
+    private GradientDrawable createCardBackground(boolean invalid) {
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(ContextCompat.getColor(context, R.color.ws_surface));
+        background.setCornerRadius(dp(12));
+        background.setStroke(dp(invalid ? 2 : 1), ContextCompat.getColor(context,
+                invalid ? R.color.brand_raspberry : R.color.ws_border));
+        return background;
+    }
+
+    private GradientDrawable createStatusBackground(int color) {
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(ContextCompat.getColor(context, color));
+        background.setCornerRadius(dp(16));
+        return background;
     }
 
     private void bindDays(ViewHolder holder, TimeSlotItem item, Set<String> selectedElsewhere) {
         holder.daySelector.removeAllViews();
+        holder.daySelector.setOrientation(LinearLayout.VERTICAL);
+        holder.selectedDays.clear();
+        holder.selectedDays.addAll(item.getDays());
+        holder.assignedElsewhereDays.clear();
+        holder.assignedElsewhereDays.addAll(selectedElsewhere);
+        holder.dayToggles = new ToggleButton[DAY_CODES.length];
+        LinearLayout row = null;
         for (int i = 0; i < DAY_CODES.length; i++) {
+            if (i == 0) {
+                row = new LinearLayout(context);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                holder.daySelector.addView(row, new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, dp(40)));
+            }
             String day = DAY_CODES[i];
-            boolean selected = item.getDays().contains(day);
             boolean assignedElsewhere = selectedElsewhere.contains(day);
 
             FrameLayout cell = new FrameLayout(context);
             LinearLayout.LayoutParams cellParams =
-                    new LinearLayout.LayoutParams(0, dp(48), 1f);
-            holder.daySelector.addView(cell, cellParams);
+                    new LinearLayout.LayoutParams(0, dp(40), 1f);
+            row.addView(cell, cellParams);
 
             ToggleButton toggle = new ToggleButton(context);
+            holder.dayToggles[i] = toggle;
             toggle.setTextOn(DAY_LABELS[i]);
             toggle.setTextOff(DAY_LABELS[i]);
-            toggle.setChecked(selected);
             toggle.setAllCaps(false);
-            toggle.setTextSize(12);
+            toggle.setTextSize(10);
             toggle.setMinWidth(0);
-            toggle.setMinimumWidth(dp(44));
-            toggle.setMinHeight(dp(48));
+            toggle.setMinimumWidth(0);
+            toggle.setMinHeight(dp(40));
             toggle.setPadding(0, 0, 0, 0);
-            toggle.setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
-            toggle.setTextColor(ContextCompat.getColor(context,
-                    selected ? R.color.schedule_day_on : R.color.ws_text));
-            toggle.setBackground(dayBackground(selected));
             FrameLayout.LayoutParams toggleParams = new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(48));
+                    dp(36), dp(36), android.view.Gravity.CENTER);
             cell.addView(toggle, toggleParams);
-            toggle.setContentDescription(DAY_NAMES[i] + (selected
-                    ? ", selected" : assignedElsewhere ? ", assigned to another block" : ""));
-            toggle.setOnCheckedChangeListener((button, checked) ->
-                    onItemChanged(item, updated -> {
-                        if (checked) updated.getDays().add(day);
-                        else updated.getDays().remove(day);
-                    }));
+            toggle.setTag(day);
+            updateDayToggle(holder, i);
+            toggle.setOnClickListener(v -> {
+                setDaySelected(holder, item, day, !holder.selectedDays.contains(day));
+            });
+            toggle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_UP && !holder.dragStarted) {
+                    v.performClick();
+                }
+                return handleDayTouch(holder, item, day, event);
+            });
 
             View dot = new View(context);
             dot.setBackground(createCircle(R.color.brand_raspberry));
@@ -290,6 +405,108 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
             dot.setVisibility(assignedElsewhere ? View.VISIBLE : View.GONE);
             dot.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         }
+    }
+
+    private boolean handleDayTouch(ViewHolder holder, TimeSlotItem item, String day,
+                                   MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                holder.initialTouchDay = day;
+                holder.dragSelectState = !holder.selectedDays.contains(day);
+                holder.dragStarted = false;
+                holder.lastTouchX = event.getRawX();
+                holder.lastTouchY = event.getRawY();
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                float rawX = event.getRawX();
+                float rawY = event.getRawY();
+                float deltaX = rawX - holder.lastTouchX;
+                float deltaY = rawY - holder.lastTouchY;
+                float distance = (float) Math.hypot(deltaX, deltaY);
+                int steps = Math.max(1, (int) (distance / Math.max(1, dp(8))));
+                for (int step = 1; step <= steps; step++) {
+                    float fraction = (float) step / steps;
+                    String crossedDay = findDayAt(holder,
+                            holder.lastTouchX + deltaX * fraction,
+                            holder.lastTouchY + deltaY * fraction);
+                    if (crossedDay == null) continue;
+                    if (!holder.dragStarted && !crossedDay.equals(holder.initialTouchDay)) {
+                        holder.dragStarted = true;
+                        setDaySelected(holder, item, holder.initialTouchDay, holder.dragSelectState);
+                    }
+                    if (holder.dragStarted) {
+                        setDaySelected(holder, item, crossedDay, holder.dragSelectState);
+                    }
+                }
+                holder.lastTouchX = rawX;
+                holder.lastTouchY = rawY;
+                return true;
+            case MotionEvent.ACTION_UP:
+                holder.initialTouchDay = null;
+                holder.dragStarted = false;
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                holder.initialTouchDay = null;
+                holder.dragStarted = false;
+                return true;
+            default:
+                return false;
+            }
+    }
+
+    private String findDayAt(ViewHolder holder, float rawX, float rawY) {
+        for (int i = 0; i < holder.dayToggles.length; i++) {
+            ToggleButton toggle = holder.dayToggles[i];
+            if (toggle == null) continue;
+            int[] location = new int[2];
+            toggle.getLocationOnScreen(location);
+            if (rawX >= location[0] && rawX < location[0] + toggle.getWidth()
+                    && rawY >= location[1] && rawY < location[1] + toggle.getHeight()) {
+                return DAY_CODES[i];
+            }
+        }
+        return null;
+    }
+
+    private void setDaySelected(ViewHolder holder, TimeSlotItem item, String day,
+                                boolean selected) {
+        boolean changed = selected ? holder.selectedDays.add(day) : holder.selectedDays.remove(day);
+        if (!changed) return;
+        updateDayToggle(holder, indexOfDay(day));
+        holder.tvScheduleSummary.setText(createSummary(item, holder.selectedDays));
+        Set<String> selectedDays = new HashSet<>(holder.selectedDays);
+        onItemChanged(item, updated -> updated.setDays(selectedDays));
+    }
+
+    private void bindDaySelection(ViewHolder holder, Set<String> selectedDays) {
+        holder.selectedDays.clear();
+        holder.selectedDays.addAll(selectedDays);
+        for (int i = 0; i < holder.dayToggles.length; i++) {
+            updateDayToggle(holder, i);
+        }
+    }
+
+    private void updateDayToggle(ViewHolder holder, int index) {
+        if (index < 0 || index >= holder.dayToggles.length) return;
+        ToggleButton toggle = holder.dayToggles[index];
+        if (toggle == null) return;
+        String day = DAY_CODES[index];
+        boolean selected = holder.selectedDays.contains(day);
+        toggle.setChecked(selected);
+        toggle.setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
+        toggle.setTextColor(ContextCompat.getColor(context,
+                selected ? R.color.schedule_day_on : R.color.ws_text));
+        toggle.setBackground(dayBackground(selected));
+        boolean assignedElsewhere = holder.assignedElsewhereDays.contains(day);
+        toggle.setContentDescription(DAY_NAMES[index] + (selected
+                ? ", selected" : assignedElsewhere ? ", assigned to another block" : ""));
+    }
+
+    private int indexOfDay(String day) {
+        for (int i = 0; i < DAY_CODES.length; i++) {
+            if (DAY_CODES[i].equals(day)) return i;
+        }
+        return -1;
     }
 
     private void bindDayShortcut(TextView button, TimeSlotItem item, String[] days) {
@@ -305,20 +522,25 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
     }
 
     private String createSummary(TimeSlotItem item) {
+        return createSummary(item, item.getDays());
+    }
+
+    private String createSummary(TimeSlotItem item, Set<String> days) {
         StringBuilder summary = new StringBuilder();
         for (int i = 0; i < SUMMARY_DAY_CODES.length; i++) {
             String day = SUMMARY_DAY_CODES[i];
-            if (!item.getDays().contains(day)) continue;
+            if (!days.contains(day)) continue;
             if (summary.length() > 0) summary.append(", ");
             summary.append(SUMMARY_DAY_NAMES[i]);
         }
         if (summary.length() == 0) summary.append("No days selected");
-        return summary + " · " + item.getStartTime() + " to " + item.getEndTime();
+        return summary + " · " + TimeFormatPreference.formatTime(context, item.getStartTime())
+                + " to " + TimeFormatPreference.formatTime(context, item.getEndTime());
     }
 
     private GradientDrawable dayBackground(boolean selected) {
         GradientDrawable background = new GradientDrawable();
-        background.setCornerRadius(dp(8));
+        background.setShape(GradientDrawable.OVAL);
         background.setColor(ContextCompat.getColor(context,
                 selected ? R.color.ws_accent : R.color.ws_surface));
         if (!selected) {
@@ -336,20 +558,6 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
 
     private int dp(int value) {
         return Math.round(value * context.getResources().getDisplayMetrics().density);
-    }
-
-    private void updateTypeToggleUI(ViewHolder holder, boolean isWork) {
-        if (isWork) {
-            holder.btnTypeWork.setBackgroundResource(R.drawable.bg_toggle_selected);
-            holder.btnTypeWork.setTextColor(ContextCompat.getColor(context, R.color.ws_on_brand));
-            holder.btnTypeSchool.setBackgroundResource(R.drawable.bg_toggle_unselected);
-            holder.btnTypeSchool.setTextColor(ContextCompat.getColor(context, R.color.ws_text2));
-        } else {
-            holder.btnTypeSchool.setBackgroundResource(R.drawable.bg_toggle_selected);
-            holder.btnTypeSchool.setTextColor(ContextCompat.getColor(context, R.color.ws_on_brand));
-            holder.btnTypeWork.setBackgroundResource(R.drawable.bg_toggle_unselected);
-            holder.btnTypeWork.setTextColor(ContextCompat.getColor(context, R.color.ws_text2));
-        }
     }
 
     private void setupPalette(ViewHolder holder, TimeSlotItem item) {
@@ -392,10 +600,6 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
                 ContextCompat.getColor(context, colorResource) & 0xFFFFFF);
     }
 
-    private boolean isColor(TimeSlotItem item, int colorResource) {
-        return getColorHex(colorResource).equalsIgnoreCase(item.getColorHex());
-    }
-
     private void showInlineError(TextView errorView, String message) {
         errorView.setText(message);
         errorView.setVisibility(message == null || message.isEmpty() ? View.GONE : View.VISIBLE);
@@ -406,16 +610,19 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
         Calendar calendar = Calendar.getInstance();
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
-
-        TimePickerDialog timePickerDialog = new TimePickerDialog(context, (view, hourOfDay, minuteOfHour) -> {
-            String amPm = hourOfDay >= 12 ? "PM" : "AM";
-            int hour12 = hourOfDay % 12;
-            if (hour12 == 0) hour12 = 12;
-
-            String formattedTime = String.format(Locale.getDefault(), "%d:%02d %s", hour12, minuteOfHour, amPm);
+        MaterialTimePicker picker = new MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormatPreference.is24Hour(context)
+                        ? TimeFormat.CLOCK_24H : TimeFormat.CLOCK_12H)
+                .setInputMode(MaterialTimePicker.INPUT_MODE_KEYBOARD)
+                .setHour(hour)
+                .setMinute(minute)
+                .build();
+        picker.addOnPositiveButtonClickListener(view -> {
+            int hourOfDay = picker.getHour();
+            int minuteOfHour = picker.getMinute();
+            String formattedTime = TimeFormatPreference.formatTime(context, hourOfDay, minuteOfHour);
             targetView.setText(formattedTime);
             showInlineError(errorView, null);
-
             onItemChanged(item, updated -> {
                 if (isStart) {
                     updated.setStartTime(formattedTime);
@@ -425,20 +632,31 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
                     updated.setEndTimeError(null);
                 }
             });
-        }, hour, minute, false);
-
-        timePickerDialog.show();
+        });
+        picker.show(((androidx.fragment.app.FragmentActivity) context).getSupportFragmentManager(),
+                "schedule_time_picker");
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         EditText etSubject, etStart, etEnd;
         LinearLayout daySelector;
-        ImageView btnDelete;
-        TextView btnTypeSchool, btnTypeWork;
+        ToggleButton[] dayToggles = new ToggleButton[DAY_CODES.length];
+        final Set<String> selectedDays = new HashSet<>();
+        final Set<String> assignedElsewhereDays = new HashSet<>();
+        String initialTouchDay;
+        boolean dragSelectState;
+        boolean dragStarted;
+        float lastTouchX;
+        float lastTouchY;
+        View expandedFields;
+        View cardHeader;
+        View btnDelete;
         TextView tvBlockTitle, tvScheduleSummary, tvScheduleError;
+        TextView tvStatus, tvConflictReason, tvCrossTabWarning;
+        android.widget.ImageView ivExpandIndicator;
         TextView btnWeekdays, btnEveryDay, btnClearDays;
         TextView tvSubjectError, tvStartError, tvEndError, tvSlotFlags;
-        View layoutColorPalette;
+        View btnAddAnother;
         View[] colorDots = new View[6];
         FrameLayout[] colorWrappers = new FrameLayout[6];
         TextWatcher subjectWatcher;
@@ -446,6 +664,12 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvBlockTitle = itemView.findViewById(R.id.tvBlockTitle);
+            tvStatus = itemView.findViewById(R.id.tvStatus);
+            ivExpandIndicator = itemView.findViewById(R.id.ivExpandIndicator);
+            tvConflictReason = itemView.findViewById(R.id.tvConflictReason);
+            tvCrossTabWarning = itemView.findViewById(R.id.tvCrossTabWarning);
+            expandedFields = itemView.findViewById(R.id.layoutExpandedFields);
+            cardHeader = itemView.findViewById(R.id.layoutCardHeader);
             tvSlotFlags = itemView.findViewById(R.id.tvSlotFlags);
             etSubject = itemView.findViewById(R.id.etRowSubject);
             etStart = itemView.findViewById(R.id.etRowStart);
@@ -460,9 +684,7 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
             btnEveryDay = itemView.findViewById(R.id.btnEveryDay);
             btnClearDays = itemView.findViewById(R.id.btnClearDays);
             btnDelete = itemView.findViewById(R.id.btnDeleteSlot);
-            btnTypeSchool = itemView.findViewById(R.id.btnTypeSchool);
-            btnTypeWork = itemView.findViewById(R.id.btnTypeWork);
-            layoutColorPalette = itemView.findViewById(R.id.layoutColorPalette);
+            btnAddAnother = itemView.findViewById(R.id.btnAddAnotherTime);
 
             colorWrappers[0] = itemView.findViewById(R.id.wrapperColor1);
             colorWrappers[1] = itemView.findViewById(R.id.wrapperColor2);

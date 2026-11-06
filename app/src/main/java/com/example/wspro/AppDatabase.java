@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 @Database(
         entities = {ScheduleItem.class, AssignmentItem.class, SyncChange.class, UserProfile.class, NotificationItem.class},
-        version = 8,
+        version = 9,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -76,6 +76,13 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    private static final Migration MIGRATION_8_9 = new Migration(8, 9) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE assignment_table ADD COLUMN taskType TEXT DEFAULT 'SCHOOL'");
+        }
+    };
+
     private static volatile AppDatabase INSTANCE;
 
     public abstract ScheduleDao scheduleDao();
@@ -90,7 +97,8 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "work_study_pro_db")
-                            .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                            .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
+                                    MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                             .fallbackToDestructiveMigration()
                             .build();
                 }

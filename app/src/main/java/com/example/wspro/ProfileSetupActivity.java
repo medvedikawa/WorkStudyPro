@@ -20,9 +20,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
+
 public class ProfileSetupActivity extends AppCompatActivity {
 
-    private EditText etProfileName, etProfileEmail, etProfilePassword, etProfileCourse;
+    private EditText etProfileName, etProfileEmail, etProfilePassword;
+    private MaterialAutoCompleteTextView etProfileCourse;
     private TextView tvNameError, tvEmailError, tvPasswordError;
     private Button btnCompleteSetup;
     private boolean validationAttempted;
@@ -45,7 +48,9 @@ public class ProfileSetupActivity extends AppCompatActivity {
         etProfileName = findViewById(R.id.etProfileName);
         etProfileEmail = findViewById(R.id.etProfileEmail);
         etProfilePassword = findViewById(R.id.etProfilePassword);
+        PasswordVisibilityToggle.bind(etProfilePassword, findViewById(R.id.btnToggleProfilePassword));
         etProfileCourse = findViewById(R.id.etProfileCourse);
+        ProgramCourseDropdown.bind(this, etProfileCourse);
         tvNameError = findViewById(R.id.tvNameError);
         tvEmailError = findViewById(R.id.tvEmailError);
         tvPasswordError = findViewById(R.id.tvPasswordError);
@@ -89,7 +94,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
             public void onSuccess(String userId, String userEmail, String accessToken) {
                 SupabaseClient client = SupabaseClient.getInstance(ProfileSetupActivity.this);
                 client.updateProfileData(ProfileSetupActivity.this, name, course, null,
-                        new SupabaseClient.DataCallback<Boolean>() {
+                        new SupabaseClient.DataCallback<>() {
                             @Override
                             public void onSuccess(Boolean result) {
                                 finishAccountCreation(name, null);

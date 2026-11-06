@@ -1,7 +1,6 @@
 package com.example.wspro;
 
 import android.content.Context;
-import android.graphics.Color;
 import androidx.core.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;

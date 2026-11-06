@@ -17,6 +17,13 @@ public class PriorityEngine {
         long now = System.currentTimeMillis();
 
         for (AssignmentItem item : result) {
+            if (item.isWorkTask()) {
+                item.setHasWorkCollision(false);
+                item.setPriorityScore(0);
+                item.setPriorityReason(null);
+                continue;
+            }
+
             double score = 0;
             StringBuilder reasonBuilder = new StringBuilder();
 
@@ -87,6 +94,12 @@ public class PriorityEngine {
         Collections.sort(result, (a, b) -> {
             if (a.isCompleted() != b.isCompleted()) {
                 return a.isCompleted() ? 1 : -1;
+            }
+            if (a.isWorkTask() != b.isWorkTask()) {
+                return a.isWorkTask() ? 1 : -1;
+            }
+            if (a.isWorkTask()) {
+                return Long.compare(a.getDueTimestamp(), b.getDueTimestamp());
             }
             return Double.compare(b.getPriorityScore(), a.getPriorityScore());
         });

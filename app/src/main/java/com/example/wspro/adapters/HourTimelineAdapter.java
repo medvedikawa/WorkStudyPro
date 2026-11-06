@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.wspro.ConflictChecker;
 import com.example.wspro.R;
 import com.example.wspro.ScheduleItem;
+import com.example.wspro.TimeFormatPreference;
 import java.util.List;
 import java.util.Locale;
 
@@ -56,7 +57,10 @@ public class HourTimelineAdapter extends RecyclerView.Adapter<HourTimelineAdapte
                             tvTitle.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.text_primary));
                         }
                         if (tvTime != null) {
-                            tvTime.setText(item.getStartTime() + " - " + item.getEndTime());
+                            tvTime.setText(TimeFormatPreference.formatTime(holder.itemView.getContext(),
+                                    item.getStartTime()) + " - "
+                                    + TimeFormatPreference.formatTime(holder.itemView.getContext(),
+                                    item.getEndTime()));
                             tvTime.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.text_secondary));
                         }
 

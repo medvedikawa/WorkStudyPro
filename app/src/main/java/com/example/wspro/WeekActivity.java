@@ -2,11 +2,9 @@ package com.example.wspro;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -43,38 +41,19 @@ public class WeekActivity extends AppCompatActivity {
         });
 
         TextView btnEditWeekSchedule = findViewById(R.id.btnEditWeekSchedule);
-        btnEditWeekSchedule.setOnClickListener(v -> showScheduleCategoryChooser());
+        btnEditWeekSchedule.setOnClickListener(v -> launchScheduleEditor());
 
         BottomNavHelper.setup(this, BottomNavHelper.Tab.WEEK, scanButtonHelper);
     }
 
-    private void showScheduleCategoryChooser() {
-        View chooser = getLayoutInflater().inflate(R.layout.dialog_schedule_category, null);
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setView(chooser)
-                .setNegativeButton("Cancel", null)
-                .create();
-
-        chooser.findViewById(R.id.btnEditSchoolSchedule).setOnClickListener(v -> {
-            dialog.dismiss();
-            launchScheduleEditor(false);
-        });
-        chooser.findViewById(R.id.btnEditWorkSchedule).setOnClickListener(v -> {
-            dialog.dismiss();
-            launchScheduleEditor(true);
-        });
-        dialog.show();
-    }
-
-    private void launchScheduleEditor(boolean isWork) {
+    private void launchScheduleEditor() {
         Intent intent = new Intent(this, EditScheduleActivity.class);
         intent.putExtra(EditScheduleActivity.EXTRA_EDIT_MODE, true);
-        intent.putExtra(EditScheduleActivity.EXTRA_CATEGORY, isWork ? "work" : "school");
         startActivity(intent);
     }
 
     private void loadSavedSchedules(String day) {
-        this.selectedDay = EditScheduleActivity.normalizeDay(day);
+        this.selectedDay = ScheduleTimeValidator.normalizeDay(day);
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
 
         if (activeLiveData != null) {
@@ -87,7 +66,7 @@ public class WeekActivity extends AppCompatActivity {
             adapter.updateData(list);
 
             if (list.isEmpty() && SupabaseClient.getInstance(getApplicationContext()).isLoggedIn()) {
-                SupabaseClient.getInstance(getApplicationContext()).fetchSchedulesFromCloud(new SupabaseClient.DataCallback<List<ScheduleItem>>() {
+                SupabaseClient.getInstance(getApplicationContext()).fetchSchedulesFromCloud(new SupabaseClient.DataCallback<>() {
                     @Override
                     public void onSuccess(List<ScheduleItem> cloudItems) {
                         if (cloudItems != null && !cloudItems.isEmpty()) {

@@ -19,7 +19,7 @@
         android:id="@+id/btnAddAsClass"
         android:layout_width="wrap_content"
         android:layout_height="32dp"
-        android:text="+ Add as class"
+        android:text="+ Add"
         android:textSize="11sp"
         android:textStyle="bold"
         android:textColor="@color/ws_accent"
@@ -27,5 +27,17 @@
         android:paddingHorizontal="10dp"
         android:minWidth="0dp"
         android:minHeight="0dp" />
+
+    <TextView
+        android:id="@+id/btnDismissSkippedLine"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:paddingHorizontal="8dp"
+        android:text="Dismiss"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:clickable="true"
+        android:focusable="true" />
 
 </LinearLayout>

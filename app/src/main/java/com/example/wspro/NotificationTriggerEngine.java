@@ -74,8 +74,12 @@ public class NotificationTriggerEngine {
                     String dedupeKey = "deadline_2h_" + task.getId() + "_" + due;
                     if (!db.notificationDao().existsByDedupeKey(dedupeKey)) {
                         String title = "Urgent: " + task.getTitle() + " due soon";
-                        String timeStr = task.getDueTime() != null ? task.getDueTime() : "soon";
-                        String message = task.getTitle() + " (" + task.getSubject() + ") is due in less than 2 hours (" + timeStr + ").";
+                        String timeStr = task.getDueTime() != null
+                                ? TimeFormatPreference.formatTime(context, task.getDueTime()) : "soon";
+                        String subject = task.isWorkTask() || task.getSubject() == null
+                                || task.getSubject().isEmpty() ? "" : " (" + task.getSubject() + ")";
+                        String message = task.getTitle() + subject
+                                + " is due in less than 2 hours (" + timeStr + ").";
 
                         NotificationItem item = new NotificationItem(
                                 NotificationItem.TYPE_DEADLINE,
@@ -104,8 +108,11 @@ public class NotificationTriggerEngine {
                     String dedupeKey = "deadline_24h_" + task.getId() + "_" + due;
                     if (!db.notificationDao().existsByDedupeKey(dedupeKey)) {
                         String title = "Upcoming Deadline: " + task.getTitle();
-                        String timeStr = task.getDueTime() != null ? task.getDueTime() : "";
-                        String message = task.getTitle() + " (" + task.getSubject() + ") is due in less than 24 hours"
+                        String timeStr = task.getDueTime() != null
+                                ? TimeFormatPreference.formatTime(context, task.getDueTime()) : "";
+                        String subject = task.isWorkTask() || task.getSubject() == null
+                                || task.getSubject().isEmpty() ? "" : " (" + task.getSubject() + ")";
+                        String message = task.getTitle() + subject + " is due in less than 24 hours"
                                 + (timeStr.isEmpty() ? "." : " at " + timeStr + ".");
 
                         NotificationItem item = new NotificationItem(
@@ -159,8 +166,11 @@ public class NotificationTriggerEngine {
                         if (!db.notificationDao().existsByDedupeKey(dedupeKey)) {
                             String title = "Schedule Conflict: " + day;
                             String message = s1.getSubject() + " and " + s2.getSubject()
-                                    + " overlap on " + day + " (" + s1.getStartTime() + " - " + s1.getEndTime()
-                                    + " and " + s2.getStartTime() + " - " + s2.getEndTime() + ").";
+                                    + " overlap on " + day + " ("
+                                    + TimeFormatPreference.formatTime(context, s1.getStartTime()) + " - "
+                                    + TimeFormatPreference.formatTime(context, s1.getEndTime()) + " and "
+                                    + TimeFormatPreference.formatTime(context, s2.getStartTime()) + " - "
+                                    + TimeFormatPreference.formatTime(context, s2.getEndTime()) + ").";
 
                             NotificationItem item = new NotificationItem(
                                     NotificationItem.TYPE_CONFLICT,

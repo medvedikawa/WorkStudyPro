@@ -333,4 +333,112 @@ public class ScheduleTableParserTest {
         assertEquals("9:00 AM", result.meetings.get(1).startTime);
         assertEquals("10:00 AM", result.meetings.get(1).endTime);
     }
+
+    @Test
+    public void testDayTokenIsolation_NoDayParsedFromCourseCodesOrNames() {
+        assertTrue("Course code IT401 must yield no day tokens", ScheduleTableParser.extractDays("IT401").isEmpty());
+        assertTrue("Course name Software must yield no day tokens", ScheduleTableParser.extractDays("Software").isEmpty());
+        assertTrue("Course name Information must yield no day tokens", ScheduleTableParser.extractDays("Information").isEmpty());
+        assertTrue("Course code RM106 must yield no day tokens", ScheduleTableParser.extractDays("RM106").isEmpty());
+
+        List<String> standaloneM = ScheduleTableParser.extractDays("M");
+        assertEquals(1, standaloneM.size());
+        assertEquals("MON", standaloneM.get(0));
+
+        List<String> standaloneTu = ScheduleTableParser.extractDays("Tu");
+        assertEquals(1, standaloneTu.size());
+        assertEquals("TUE", standaloneTu.get(0));
+
+        List<String> tth = ScheduleTableParser.extractDays("TTh");
+        assertEquals(2, tth.size());
+        assertEquals("TUE", tth.get(0));
+        assertEquals("THU", tth.get(1));
+    }
+
+    @Test
+    public void testMultiLineCourseContinuity_InheritsTitleFromActiveAnchorAbove() {
+        List<ScheduleTableParser.Word> words = new ArrayList<>();
+        int y = 50;
+
+        addRowWords(words, "Course Title", 50, y);
+        addRowWords(words, "Units", 250, y);
+        addRowWords(words, "Sec", 320, y);
+        addRowWords(words, "Day", 400, y);
+        addRowWords(words, "Time", 480, y);
+        y += 35;
+
+        addRowWords(words, "Software Architecture", 50, y);
+        addRowWords(words, "3.00", 250, y);
+        addRowWords(words, "CS401", 320, y);
+        addRowWords(words, "MON", 400, y);
+        addRowWords(words, "8:00 AM - 10:00 AM", 480, y);
+        y += 30;
+
+        addRowWords(words, "WED", 400, y);
+        addRowWords(words, "8:00 AM - 10:00 AM", 480, y);
+        y += 30;
+
+        addRowWords(words, "FRI", 400, y);
+        addRowWords(words, "8:00 AM - 10:00 AM", 480, y);
+
+        ScheduleTableParser.ParseResult result = ScheduleTableParser.parse(words);
+
+        assertFalse("Quality gate should pass", result.qualityGateFailed);
+        assertEquals("Should extract 3 meetings for the multi-row course", 3, result.meetings.size());
+
+        for (ScheduleTableParser.ParsedMeeting meeting : result.meetings) {
+            assertEquals("Software Architecture", meeting.subject);
+        }
+    }
+
+    @Test
+    public void testStrictTimeRegexBoundaries_ExcludesSectionNumbersRoomCodesAndIDs() {
+        assertNull("Section range IT401 - IT402 must not be parsed as time range",
+                ScheduleTableParser.extractTimeRange("IT401 - IT402", false));
+        assertNull("Room range RM106 - RM107 must not be parsed as time range",
+                ScheduleTableParser.extractTimeRange("RM106 - RM107", false));
+        assertNull("ID range 200012345 - 200012346 must not be parsed as time range",
+                ScheduleTableParser.extractTimeRange("200012345 - 200012346", false));
+        assertNull("Year range 2026-2027 must not be parsed as time range",
+                ScheduleTableParser.extractTimeRange("2026-2027", false));
+
+        String[] valid1 = ScheduleTableParser.extractTimeRange("3:00 PM - 5:00 PM", false);
+        assertNotNull("Valid 12h time with PM should be parsed", valid1);
+        assertEquals("3:00 PM", valid1[0]);
+        assertEquals("5:00 PM", valid1[1]);
+
+        String[] valid2 = ScheduleTableParser.extractTimeRange("13:00 - 14:00", false);
+        assertNotNull("Valid 24h time should be parsed", valid2);
+        assertEquals("1:00 PM", valid2[0]);
+        assertEquals("2:00 PM", valid2[1]);
+    }
+
+    @Test
+    public void testBoundaryFiltering_ExcludesFinancialAndPaymentRows() {
+        List<ScheduleTableParser.Word> words = new ArrayList<>();
+        int y = 50;
+
+        addRowWords(words, "Course Title", 50, y);
+        addRowWords(words, "Units", 250, y);
+        addRowWords(words, "Days", 320, y);
+        addRowWords(words, "Time", 400, y);
+        y += 35;
+
+        addRowWords(words, "Data Structures", 50, y);
+        addRowWords(words, "3.00", 250, y);
+        addRowWords(words, "MON", 320, y);
+        addRowWords(words, "9:00 AM - 11:00 AM", 400, y);
+        y += 40;
+
+        addRowWords(words, "Total Units: 3.00", 50, y); y += 30;
+        addRowWords(words, "CHARGES for 2026-2027/1st Term", 50, y); y += 30;
+        addRowWords(words, "Assessment Date: 2026-08-15 Payment Due: 2026-09-01", 50, y); y += 30;
+        addRowWords(words, "Tuition Fee 15000.00 Balance 5000.00", 50, y);
+
+        ScheduleTableParser.ParseResult result = ScheduleTableParser.parse(words);
+
+        assertFalse("Quality gate should pass", result.qualityGateFailed);
+        assertEquals("Only 1 course meeting should be parsed", 1, result.meetings.size());
+        assertEquals("Data Structures", result.meetings.get(0).subject);
+    }
 }

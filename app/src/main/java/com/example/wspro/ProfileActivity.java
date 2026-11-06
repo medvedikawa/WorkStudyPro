@@ -7,11 +7,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.gson.JsonObject;
 import androidx.appcompat.widget.SwitchCompat;
 
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class ProfileActivity extends AppCompatActivity {
         setContentView(R.layout.activity_profile);
 
         client = SupabaseClient.getInstance(this);
-        AppearanceSetting.bind(this, (Spinner) findViewById(R.id.spinnerAppearance), client);
+        AppearanceSetting.bind(this, findViewById(R.id.spinnerAppearance), client);
 
         View profileHeader = findViewById(R.id.layoutProfileHeader);
         TextView tvProfileEditLabel = findViewById(R.id.tvProfileEditLabel);
@@ -77,10 +78,14 @@ public class ProfileActivity extends AppCompatActivity {
         refreshLastSynced();
         btnSyncNow.setOnClickListener(v -> syncNow());
 
+        Button adminButton = findViewById(R.id.btnAdminConsole);
+        adminButton.setOnClickListener(v ->
+                startActivity(new Intent(this, AdminActivity.class)));
+
         findViewById(R.id.btnLogOut).setOnClickListener(v -> {
             View logoutButton = findViewById(R.id.btnLogOut);
             logoutButton.setEnabled(false);
-            client.clearUserData(this, new SupabaseClient.DataCallback<Boolean>() {
+            client.clearUserData(this, new SupabaseClient.DataCallback<>() {
                 @Override
                 public void onSuccess(Boolean result) {
                     navigateToLogin();
@@ -103,7 +108,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void refreshProfileFromCloud() {
         if (!client.isLoggedIn() || client.isDemoSession()) return;
-        client.loadProfileFromSupabase(this, new SupabaseClient.DataCallback<UserProfile>() {
+        client.loadProfileFromSupabase(this, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(UserProfile profile) {
                 if (profile != null && !isFinishing()) renderProfileInfo();
@@ -141,6 +146,30 @@ public class ProfileActivity extends AppCompatActivity {
         refreshLastSynced();
         renderSummary();
         renderProfileInfo();
+        refreshAdminAccess();
+    }
+
+    private void refreshAdminAccess() {
+        Button adminButton = findViewById(R.id.btnAdminConsole);
+        if (!client.isLoggedIn() || client.isDemoSession()) {
+            adminButton.setVisibility(View.GONE);
+            return;
+        }
+        JsonObject request = new JsonObject();
+        request.addProperty("action", "check_role");
+        client.invokeAdminFunction(request, new SupabaseClient.DataCallback<>() {
+            @Override
+            public void onSuccess(JsonObject result) {
+                if (isFinishing()) return;
+                boolean isAdmin = result.has("is_admin") && result.get("is_admin").getAsBoolean();
+                adminButton.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                if (!isFinishing()) adminButton.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void renderProfileInfo() {
@@ -161,7 +190,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         if (ivAvatar != null) {
             ivAvatar.setVisibility(View.GONE);
-            client.loadProfileAvatar(this, new SupabaseClient.DataCallback<Bitmap>() {
+            client.loadProfileAvatar(this, new SupabaseClient.DataCallback<>() {
                 @Override
                 public void onSuccess(Bitmap bitmap) {
                     if (isFinishing()) return;
@@ -213,7 +242,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
         btnSyncNow.setEnabled(false);
         btnSyncNow.setText("Syncing...");
-        client.syncAllLocalDataToCloud(this, new SupabaseClient.DataCallback<Boolean>() {
+        client.syncAllLocalDataToCloud(this, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {
                 btnSyncNow.setEnabled(true);

@@ -13,21 +13,58 @@
 
         <!-- Title -->
         <TextView
+            android:id="@+id/tvAssignmentDialogTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Add Academic Task"
+            android:text="Add Task"
             android:textColor="@color/text_primary"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginBottom="4dp" />
 
         <TextView
+            android:id="@+id/tvAssignmentDialogSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Prioritized automatically against your work shifts."
+            android:text="Choose School or Work, then set a deadline."
             android:textColor="@color/text_muted"
             android:textSize="12sp"
             android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TASK TYPE"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/rgTaskType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="14dp">
+
+            <RadioButton
+                android:id="@+id/radioSchoolTask"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:buttonTint="@color/ws_accent"
+                android:checked="true"
+                android:text="School"
+                android:textColor="@color/text_primary" />
+
+            <RadioButton
+                android:id="@+id/radioWorkTask"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginStart="24dp"
+                android:buttonTint="@color/ws_accent"
+                android:text="Work"
+                android:textColor="@color/text_primary" />
+        </RadioGroup>
 
         <!-- Title Input -->
         <TextView
@@ -53,53 +90,59 @@
             android:inputType="textCapSentences"
             android:layout_marginBottom="14dp" />
 
-        <!-- Subject Input -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="COURSE / SUBJECT"
-            android:textColor="@color/text_secondary"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.06"
-            android:layout_marginBottom="6dp" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilAssignmentSubject"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        <LinearLayout
+            android:id="@+id/layoutSchoolTaskDetails"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="14dp"
-            app:boxStrokeColor="@color/ws_accent"
-            app:endIconMode="dropdown_menu">
+            android:orientation="vertical">
 
-            <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                android:id="@+id/etAssignmentSubject"
+            <!-- Subject Input -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="COURSE / SUBJECT"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.06"
+                android:layout_marginBottom="6dp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilAssignmentSubject"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="e.g. Database Systems"
-                android:inputType="textCapWords"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_muted"
-                android:textSize="14sp" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:layout_marginBottom="14dp"
+                app:boxStrokeColor="@color/ws_accent"
+                app:endIconMode="dropdown_menu">
 
-        <!-- Category Selector -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="TASK CATEGORY (FOR WEIGHTED GWA IMPACT)"
-            android:textColor="@color/text_secondary"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.06"
-            android:layout_marginBottom="8dp" />
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/etAssignmentSubject"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="e.g. Database Systems"
+                    android:inputType="textCapWords"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_muted"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:layout_marginBottom="16dp">
+            <!-- Category Selector -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TASK CATEGORY (FOR WEIGHTED GWA IMPACT)"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.06"
+                android:layout_marginBottom="8dp" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:layout_marginBottom="16dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -165,7 +208,8 @@
                     android:clickable="true"
                     android:focusable="true" />
             </LinearLayout>
-        </HorizontalScrollView>
+            </HorizontalScrollView>
+        </LinearLayout>
 
         <!-- Due Date (Calendar Pick) & Time (Clock Pick) -->
         <LinearLayout

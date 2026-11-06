@@ -33,7 +33,7 @@ public class ConflictChecker {
     }
 
     public static String getNextDay(String rawDay) {
-        String d = EditScheduleActivity.normalizeDay(rawDay);
+        String d = ScheduleTimeValidator.normalizeDay(rawDay);
         switch (d) {
             case "MON": return "TUE";
             case "TUE": return "WED";
@@ -52,8 +52,8 @@ public class ConflictChecker {
     public static boolean hasConflict(String dayA, String startA, String endA, String dayB, String startB, String endB) {
         if (dayA == null || dayB == null) return false;
 
-        String normDayA = EditScheduleActivity.normalizeDay(dayA);
-        String normDayB = EditScheduleActivity.normalizeDay(dayB);
+        String normDayA = ScheduleTimeValidator.normalizeDay(dayA);
+        String normDayB = ScheduleTimeValidator.normalizeDay(dayB);
 
         int startMinA = timeToMinutes(startA);
         int endMinA = timeToMinutes(endA);

@@ -37,6 +37,7 @@ public class LoginActivity extends AppCompatActivity {
 
         etLoginId = findViewById(R.id.etLoginId);
         etLoginPass = findViewById(R.id.etLoginPass);
+        PasswordVisibilityToggle.bind(etLoginPass, findViewById(R.id.btnToggleLoginPass));
         cbRemember = findViewById(R.id.cbRemember);
         btnLogin = findViewById(R.id.btnLogin);
         Button btnCreateAccountNav = findViewById(R.id.btnCreateAccountNav);
@@ -127,13 +128,13 @@ public class LoginActivity extends AppCompatActivity {
             navigateToDashboard();
             return;
         }
-        supabaseClient.loadProfileFromSupabase(this, new SupabaseClient.DataCallback<UserProfile>() {
+        supabaseClient.loadProfileFromSupabase(this, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(UserProfile profile) {
                 if (profile == null) {
                     supabaseClient.updateProfileData(LoginActivity.this,
                             supabaseClient.getUserName(), supabaseClient.getUserCourse(),
-                            supabaseClient.getAvatarUrl(), new SupabaseClient.DataCallback<Boolean>() {
+                            supabaseClient.getAvatarUrl(), new SupabaseClient.DataCallback<>() {
                                 @Override
                                 public void onSuccess(Boolean result) {
                                     navigateToDashboard();

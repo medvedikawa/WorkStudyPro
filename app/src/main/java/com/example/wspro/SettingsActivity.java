@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,7 +24,8 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
 
         client = SupabaseClient.getInstance(this);
-        AppearanceSetting.bind(this, (Spinner) findViewById(R.id.spinnerAppearance), client);
+        AppearanceSetting.bind(this, findViewById(R.id.spinnerAppearance), client);
+        TimeFormatPreference.bind(this, findViewById(R.id.spinnerTimeFormat));
         EditText etWeeklyLimit = findViewById(R.id.etWeeklyHoursLimit);
         etWeeklyLimit.setText(String.valueOf(client.getWeeklyHoursLimit()));
         tvLastSynced = findViewById(R.id.tvLastSynced);
@@ -82,7 +82,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         btnSyncNow.setEnabled(false);
         btnSyncNow.setText("Syncing...");
-        client.syncAllLocalDataToCloud(this, new SupabaseClient.DataCallback<Boolean>() {
+        client.syncAllLocalDataToCloud(this, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {
                 btnSyncNow.setEnabled(true);

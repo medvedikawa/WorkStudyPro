@@ -10,6 +10,7 @@
 
     <!-- Header: Category Chip + Collision/Urgency Badge -->
     <LinearLayout
+        android:id="@+id/layoutAssignmentBadges"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"

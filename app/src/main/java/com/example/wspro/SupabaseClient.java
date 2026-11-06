@@ -1,6 +1,7 @@
 package com.example.wspro;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,11 +12,11 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.util.Base64;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -23,6 +24,7 @@ import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -32,11 +34,14 @@ import java.util.Locale;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class SupabaseClient {
 
@@ -46,7 +51,10 @@ public class SupabaseClient {
 
     private static final String PREFS_NAME = "WorkStudySupabasePrefs";
     private static final String KEY_ACCESS_TOKEN = "access_token";
+    private static final String KEY_ACCESS_TOKEN_EXPIRY = "access_token_expiry_millis";
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
+    private static final String KEY_SESSION_EXPIRY_HANDLED = "session_expiry_handled";
+    private static final long TOKEN_REFRESH_WINDOW_MILLIS = 5 * 60 * 1000L;
     private static final String KEY_USER_ID = "user_id";
     private static final String KEY_USER_EMAIL = "user_email";
     private static final String KEY_USER_NAME = "user_name";
@@ -70,9 +78,11 @@ public class SupabaseClient {
     private static volatile SupabaseClient INSTANCE;
     private final Context context;
     private final OkHttpClient httpClient;
-    private final Gson gson;
     private final SharedPreferences prefs;
     private final Handler mainHandler;
+    private String lastRefreshedAccessToken;
+    private String lastRefreshUserId;
+    private long lastTokenRefreshAt;
 
     public interface AuthCallback {
         void onSuccess(String userId, String email, String accessToken);
@@ -92,6 +102,7 @@ public class SupabaseClient {
     private SupabaseClient(Context context) {
         this.context = context.getApplicationContext();
         this.httpClient = new OkHttpClient.Builder()
+                .addInterceptor(new SessionTokenInterceptor())
                 .addInterceptor(chain -> {
                     try {
                         Response response = chain.proceed(chain.request());
@@ -111,7 +122,6 @@ public class SupabaseClient {
                     }
                 })
                 .build();
-        this.gson = new Gson();
         this.prefs = this.context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         this.mainHandler = new Handler(Looper.getMainLooper());
     }
@@ -144,10 +154,6 @@ public class SupabaseClient {
         }
     }
 
-    public boolean isNetworkAvailable() {
-        return isNetworkAvailable(context);
-    }
-
     // --- SESSION & PREFERENCE HELPERS ---
 
     public boolean isLoggedIn() {
@@ -178,36 +184,12 @@ public class SupabaseClient {
         return prefs.getString(userScopedKey(KEY_USER_COURSE), "College Program");
     }
 
-    public String getUserWorkplace() {
-        return prefs.getString(userScopedKey(KEY_USER_WORKPLACE), "Part-time Worker");
-    }
-
-    public void setUserWorkplace(String workplace) {
-        prefs.edit().putString(userScopedKey(KEY_USER_WORKPLACE), workplace).apply();
-    }
-
-    public void updateProfile(String name, String course, String workplace) {
-        prefs.edit()
-                .putString(userScopedKey(KEY_USER_NAME), name)
-                .putString(userScopedKey(KEY_USER_COURSE), course)
-                .putString(userScopedKey(KEY_USER_WORKPLACE), workplace)
-                .apply();
-    }
-
-    public String getAvatarPath() {
-        return prefs.getString(userScopedKey(KEY_AVATAR_PATH), null);
-    }
-
     public void setAvatarPath(String path) {
         prefs.edit().putString(userScopedKey(KEY_AVATAR_PATH), path).apply();
     }
 
     public String getAvatarUrl() {
         return prefs.getString(userScopedKey(KEY_AVATAR_URL), null);
-    }
-
-    public void setAvatarUrl(String url) {
-        prefs.edit().putString(userScopedKey(KEY_AVATAR_URL), url).apply();
     }
 
     public File getAvatarCacheFile() {
@@ -276,10 +258,6 @@ public class SupabaseClient {
         }).start();
     }
 
-    public boolean hasUnsyncedChanges() {
-        return prefs.getBoolean(KEY_HAS_UNSYNCED_CHANGES, false);
-    }
-
     public void setHasUnsyncedChanges(boolean hasChanges) {
         prefs.edit().putBoolean(KEY_HAS_UNSYNCED_CHANGES, hasChanges).apply();
     }
@@ -291,7 +269,7 @@ public class SupabaseClient {
     public String getLastSyncTimeString() {
         long time = prefs.getLong(KEY_LAST_SYNC_TIME, 0);
         if (time <= 0) return "Not synced yet";
-        return new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault()).format(new Date(time));
+        return TimeFormatPreference.formatTimestamp(context, time, "MMM dd, ");
     }
 
     public int getWeeklyHoursLimit() {
@@ -350,9 +328,14 @@ public class SupabaseClient {
     }
 
     public void saveSession(String accessToken, String refreshToken, String userId, String email, String name, String course) {
+        lastRefreshedAccessToken = null;
+        lastRefreshUserId = null;
+        lastTokenRefreshAt = 0L;
         SharedPreferences.Editor editor = prefs.edit()
                 .putBoolean(KEY_IS_LOGGED_IN, true)
                 .putString(KEY_ACCESS_TOKEN, accessToken)
+                .putLong(KEY_ACCESS_TOKEN_EXPIRY, tokenExpirationMillis(accessToken))
+                .remove(KEY_SESSION_EXPIRY_HANDLED)
                 .putString(KEY_USER_ID, userId)
                 .putString(KEY_USER_EMAIL, email)
                 .remove(KEY_USER_NAME)
@@ -386,6 +369,7 @@ public class SupabaseClient {
         SharedPreferences.Editor editor = prefs.edit()
                 .remove(KEY_IS_LOGGED_IN)
                 .remove(KEY_ACCESS_TOKEN)
+                .remove(KEY_ACCESS_TOKEN_EXPIRY)
                 .remove(KEY_REFRESH_TOKEN)
                 .remove(KEY_USER_ID)
                 .remove(KEY_USER_EMAIL)
@@ -600,7 +584,7 @@ public class SupabaseClient {
 
     // --- AUTHENTICATION: FORGOT PASSWORD / PASSWORD RECOVERY ---
 
-    public void resetPassword(String email, AuthCallback callback) {
+    public void resetPasswordForEmail(String email, AuthCallback callback) {
         JsonObject bodyJson = new JsonObject();
         bodyJson.addProperty("email", email.trim());
 
@@ -627,10 +611,6 @@ public class SupabaseClient {
                 }
             }
         });
-    }
-
-    public void resetPasswordForEmail(String email, AuthCallback callback) {
-        resetPassword(email, callback);
     }
 
     public void verifyOtp(String email, String token, String type, RecoveryCallback callback) {
@@ -752,10 +732,6 @@ public class SupabaseClient {
         });
     }
 
-    public void updateUser(String newPassword, DataCallback<Boolean> callback) {
-        updateUser(newPassword, null, callback);
-    }
-
     private String signUpError(int responseCode, String responseBody) {
         String lowerBody = responseBody.toLowerCase(Locale.ROOT);
         if (lowerBody.contains("already registered") || lowerBody.contains("already exists")
@@ -780,10 +756,6 @@ public class SupabaseClient {
         if (responseCode == 429) return "Too many attempts. Please wait a moment and try again.";
         if (responseCode >= 500) return "The service is temporarily unavailable. Please try again later.";
         return extractErrorMessage(responseBody, "Couldn't send password reset instructions. Check your email and try again.");
-    }
-
-    private String recoveryError(int responseCode) {
-        return recoveryError(responseCode, "");
     }
 
     private String otpError(int responseCode, String responseBody) {
@@ -969,7 +941,13 @@ public class SupabaseClient {
         }
     }
 
-    private synchronized boolean refreshSessionToken() {
+    private synchronized boolean refreshSessionToken(String tokenToReplace) {
+        String currentAccessToken = getAccessToken();
+        if (currentAccessToken == null || currentAccessToken.isEmpty()) return false;
+        if (!currentAccessToken.equals(tokenToReplace)) {
+            return wasRecentlyRefreshed(tokenToReplace);
+        }
+
         String refreshToken = prefs.getString(KEY_REFRESH_TOKEN, null);
         if (refreshToken == null || refreshToken.isEmpty()) return false;
 
@@ -993,7 +971,12 @@ public class SupabaseClient {
                         ? json.get("refresh_token").getAsString() : null;
 
                 if (newAccess != null && !newAccess.isEmpty()) {
-                    SharedPreferences.Editor editor = prefs.edit().putString(KEY_ACCESS_TOKEN, newAccess);
+                    lastRefreshedAccessToken = currentAccessToken;
+                    lastRefreshUserId = getUserId();
+                    lastTokenRefreshAt = System.currentTimeMillis();
+                    SharedPreferences.Editor editor = prefs.edit()
+                            .putString(KEY_ACCESS_TOKEN, newAccess)
+                            .putLong(KEY_ACCESS_TOKEN_EXPIRY, tokenExpirationMillis(json, newAccess));
                     if (newRefresh != null && !newRefresh.isEmpty()) {
                         editor.putString(KEY_REFRESH_TOKEN, newRefresh);
                     }
@@ -1001,25 +984,17 @@ public class SupabaseClient {
                     return true;
                 }
             }
-        } catch (IOException ignored) { }
+            Log.e(TAG, "Supabase session refresh failed with status " + response.code());
+        } catch (IOException | com.google.gson.JsonParseException | IllegalStateException
+                 | NumberFormatException e) {
+        Log.e(TAG, "Supabase session refresh failed", e);
+        }
         return false;
     }
 
     private String executeSyncRequest(String path, String method, JsonObject body) throws IOException {
         Request request = buildSyncRequest(path, method, body);
         try (Response response = httpClient.newCall(request).execute()) {
-            if (response.code() == 401) {
-                if (refreshSessionToken()) {
-                    Request retryRequest = buildSyncRequest(path, method, body);
-                    try (Response retryResponse = httpClient.newCall(retryRequest).execute()) {
-                        String retryBody = retryResponse.body() != null ? retryResponse.body().string() : "";
-                        if (!retryResponse.isSuccessful()) {
-                            throw new IOException("Cloud sync request failed with status " + retryResponse.code());
-                        }
-                        return retryBody;
-                    }
-                }
-            }
             String responseBody = response.body() != null ? response.body().string() : "";
             if (!response.isSuccessful()) {
                 throw new IOException("Cloud sync request failed with status " + response.code());
@@ -1043,6 +1018,126 @@ public class SupabaseClient {
                     .addHeader("Content-Type", "application/json");
         }
         return builder.build();
+    }
+
+    private long tokenExpirationMillis(JsonObject response, String accessToken) {
+        if (response.has("expires_in") && !response.get("expires_in").isJsonNull()) {
+            try {
+                long expiresInSeconds = response.get("expires_in").getAsLong();
+                if (expiresInSeconds > 0) return System.currentTimeMillis() + expiresInSeconds * 1000L;
+            } catch (NumberFormatException | IllegalStateException ignored) {
+            }
+        }
+        return tokenExpirationMillis(accessToken);
+    }
+
+    private long tokenExpirationMillis(String accessToken) {
+        if (accessToken == null) return 0L;
+        String[] parts = accessToken.split("\\.");
+        if (parts.length < 2) return 0L;
+        try {
+            byte[] payload = Base64.decode(parts[1],
+                    Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+            JsonObject claims = JsonParser.parseString(
+                    new String(payload, StandardCharsets.UTF_8)).getAsJsonObject();
+            return claims.has("exp") ? claims.get("exp").getAsLong() * 1000L : 0L;
+        } catch (IllegalArgumentException | com.google.gson.JsonParseException
+                 | IllegalStateException e) {
+            return 0L;
+        }
+    }
+
+    private long accessTokenExpiryMillis() {
+        long storedExpiry = prefs.getLong(KEY_ACCESS_TOKEN_EXPIRY, 0L);
+        if (storedExpiry > 0) return storedExpiry;
+        long parsedExpiry = tokenExpirationMillis(getAccessToken());
+        if (parsedExpiry > 0) {
+            prefs.edit().putLong(KEY_ACCESS_TOKEN_EXPIRY, parsedExpiry).apply();
+        }
+        return parsedExpiry;
+    }
+
+    private boolean isExpiredResponse(Response response) throws IOException {
+        if (response.isSuccessful()) return false;
+        if (response.code() == 401) return true;
+        return response.peekBody(8192L).string().toLowerCase(Locale.ROOT).contains("jwt expired");
+    }
+
+    private Response sessionExpiredResponse(Request request) {
+        return new Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(401)
+                .message("Session expired")
+                .body(ResponseBody.create(
+                        "{\"message\":\"Your session expired. Please sign in again.\"}", JSON))
+                .build();
+    }
+
+    private synchronized boolean wasRecentlyRefreshed(String token) {
+        return token != null && token.equals(lastRefreshedAccessToken)
+                && java.util.Objects.equals(lastRefreshUserId, getUserId())
+                && System.currentTimeMillis() - lastTokenRefreshAt <= 60_000L;
+    }
+
+    private synchronized void expireSessionAndOpenLogin(String failedToken) {
+        if (!prefs.getBoolean(KEY_IS_LOGGED_IN, false) || isDemoSession()
+                || prefs.getBoolean(KEY_SESSION_EXPIRY_HANDLED, false)) return;
+        String currentToken = getAccessToken();
+        if (currentToken != null && !currentToken.equals(failedToken)
+                && !wasRecentlyRefreshed(failedToken)) return;
+        clearSession();
+        prefs.edit().putBoolean(KEY_SESSION_EXPIRY_HANDLED, true).apply();
+        Intent intent = new Intent(context, LoginActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        context.startActivity(intent);
+    }
+
+    private final class SessionTokenInterceptor implements Interceptor {
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+            String authorization = request.header("Authorization");
+            if (!request.url().host().equals(HttpUrl.get(SUPABASE_URL).host())
+                    || authorization == null || !authorization.startsWith("Bearer ")
+                    || isDemoSession()) {
+                return chain.proceed(request);
+            }
+
+            String requestToken = authorization.substring("Bearer ".length());
+            if (requestToken.equals(getAccessToken())
+                    && accessTokenExpiryMillis() > 0
+                    && accessTokenExpiryMillis() - System.currentTimeMillis()
+                    <= TOKEN_REFRESH_WINDOW_MILLIS) {
+                if (!refreshSessionToken(requestToken)) {
+                        expireSessionAndOpenLogin(requestToken);
+                    return sessionExpiredResponse(request);
+                }
+                request = request.newBuilder()
+                        .header("Authorization", "Bearer " + getAccessToken())
+                        .build();
+            }
+
+            Response response = chain.proceed(request);
+            if (!isExpiredResponse(response)) return response;
+
+            String failedToken = request.header("Authorization").substring("Bearer ".length());
+            response.close();
+            if (!refreshSessionToken(failedToken)) {
+                expireSessionAndOpenLogin(failedToken);
+                return sessionExpiredResponse(request);
+            }
+
+            Request retry = request.newBuilder()
+                    .header("Authorization", "Bearer " + getAccessToken())
+                    .build();
+            Response retryResponse = chain.proceed(retry);
+            if (isExpiredResponse(retryResponse)) {
+                retryResponse.close();
+                return sessionExpiredResponse(retry);
+            }
+            return retryResponse;
+        }
     }
 
     private String withIdFilter(String path, String cloudId) {
@@ -1084,6 +1179,7 @@ public class SupabaseClient {
 
     private boolean sameAssignment(AssignmentItem first, AssignmentItem second) {
         return java.util.Objects.equals(first.getTitle(), second.getTitle())
+                && java.util.Objects.equals(first.getTaskType(), second.getTaskType())
                 && java.util.Objects.equals(first.getSubject(), second.getSubject())
                 && java.util.Objects.equals(first.getCategory(), second.getCategory())
                 && java.util.Objects.equals(first.getDueDate(), second.getDueDate())
@@ -1103,6 +1199,7 @@ public class SupabaseClient {
 
     private void copyAssignmentValues(AssignmentItem source, AssignmentItem target) {
         target.setTitle(source.getTitle());
+        target.setTaskType(source.getTaskType());
         target.setSubject(source.getSubject());
         target.setCategory(source.getCategory());
         target.setDueDate(source.getDueDate());
@@ -1126,6 +1223,7 @@ public class SupabaseClient {
     private JsonObject assignmentJson(AssignmentItem item) {
         JsonObject row = new JsonObject();
         row.addProperty("title", item.getTitle());
+        row.addProperty("task_type", item.getTaskType());
         row.addProperty("subject", item.getSubject());
         row.addProperty("category", item.getCategory());
         row.addProperty("due_date", item.getDueDate());
@@ -1157,75 +1255,20 @@ public class SupabaseClient {
 
     private AssignmentItem parseAssignment(JsonObject row) {
         String title = row.has("title") ? row.get("title").getAsString() : "";
-        String subject = row.has("subject") ? row.get("subject").getAsString() : "";
-        String category = row.has("category") ? row.get("category").getAsString() : "Assignment";
+        String taskType = row.has("task_type") && !row.get("task_type").isJsonNull()
+                ? row.get("task_type").getAsString() : AssignmentItem.TYPE_SCHOOL;
+        boolean workTask = AssignmentItem.TYPE_WORK.equalsIgnoreCase(taskType);
+        String subject = !workTask && row.has("subject") ? row.get("subject").getAsString() : "";
+        String category = !workTask && row.has("category")
+                ? row.get("category").getAsString() : (workTask ? "" : "Assignment");
         String dueDate = row.has("due_date") ? row.get("due_date").getAsString() : "";
         String dueTime = row.has("due_time") ? row.get("due_time").getAsString() : "";
         long dueTimestamp = row.has("due_timestamp") ? row.get("due_timestamp").getAsLong() : 0L;
         boolean completed = row.has("is_completed") && row.get("is_completed").getAsBoolean();
-        AssignmentItem item = new AssignmentItem(title, subject, category, dueDate, dueTime, dueTimestamp, completed);
+        AssignmentItem item = new AssignmentItem(title, subject, category, dueDate, dueTime,
+                dueTimestamp, completed, taskType);
         item.setCloudId(getCloudId(row));
         return item;
-    }
-
-    // --- SCHEDULES: SYNC / INSERT TO CLOUD ---
-
-    public void syncSchedulesToCloud(List<ScheduleItem> items, DataCallback<Integer> callback) {
-        String token = getAccessToken();
-        String userId = getUserId();
-
-        if (token == null || token.isEmpty()) {
-            if (callback != null) callback.onError("User is not signed in.");
-            return;
-        }
-
-        JsonArray array = new JsonArray();
-        for (ScheduleItem item : items) {
-            JsonObject obj = new JsonObject();
-            if (userId != null && !userId.isEmpty()) {
-                obj.addProperty("user_id", userId);
-            }
-            obj.addProperty("subject", item.getSubject());
-            obj.addProperty("day", item.getDay());
-            obj.addProperty("start_time", item.getStartTime());
-            obj.addProperty("end_time", item.getEndTime());
-            obj.addProperty("is_work", item.isWork());
-            obj.addProperty("color_hex", item.getColorHex());
-            array.add(obj);
-        }
-
-        Request request = new Request.Builder()
-                .url(SUPABASE_URL + "/rest/v1/schedules")
-                .addHeader("apikey", SUPABASE_ANON_KEY)
-                .addHeader("Authorization", "Bearer " + token)
-                .addHeader("Content-Type", "application/json")
-                .addHeader("Prefer", "return=representation")
-                .post(RequestBody.create(array.toString(), JSON))
-                .build();
-
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                if (callback != null) {
-                    mainHandler.post(() -> callback.onError("Network error: " + e.getMessage()));
-                }
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                String responseBody = response.body() != null ? response.body().string() : "";
-                if (response.isSuccessful()) {
-                    setLastSyncTime(System.currentTimeMillis());
-                    if (callback != null) {
-                        mainHandler.post(() -> callback.onSuccess(items.size()));
-                    }
-                } else {
-                    if (callback != null) {
-                        mainHandler.post(() -> callback.onError(extractErrorMessage(responseBody, "Cloud sync failed (" + response.code() + ")")));
-                    }
-                }
-            }
-        });
     }
 
     // --- SCHEDULES: FETCH FROM CLOUD ---
@@ -1277,70 +1320,6 @@ public class SupabaseClient {
                 }
             }
         });
-    }
-
-    // --- ASSIGNMENTS: SYNC BATCH TO CLOUD ---
-
-    public void syncAssignmentsBatch(List<AssignmentItem> items, DataCallback<Boolean> callback) {
-        String token = getAccessToken();
-        String userId = getUserId();
-
-        if (token == null || token.isEmpty()) {
-            if (callback != null) callback.onError("User is not signed in.");
-            return;
-        }
-
-        JsonArray array = new JsonArray();
-        for (AssignmentItem item : items) {
-            JsonObject obj = new JsonObject();
-            if (userId != null && !userId.isEmpty()) {
-                obj.addProperty("user_id", userId);
-            }
-            obj.addProperty("title", item.getTitle());
-            obj.addProperty("subject", item.getSubject());
-            obj.addProperty("category", item.getCategory());
-            obj.addProperty("due_date", item.getDueDate());
-            obj.addProperty("due_time", item.getDueTime());
-            obj.addProperty("due_timestamp", item.getDueTimestamp());
-            obj.addProperty("is_completed", item.isCompleted());
-            array.add(obj);
-        }
-
-        Request request = new Request.Builder()
-                .url(SUPABASE_URL + "/rest/v1/assignments")
-                .addHeader("apikey", SUPABASE_ANON_KEY)
-                .addHeader("Authorization", "Bearer " + token)
-                .addHeader("Content-Type", "application/json")
-                .addHeader("Prefer", "return=representation")
-                .post(RequestBody.create(array.toString(), JSON))
-                .build();
-
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                if (callback != null) {
-                    mainHandler.post(() -> callback.onError("Network error: " + e.getMessage()));
-                }
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
-                } else {
-                    String responseBody = response.body() != null ? response.body().string() : "";
-                    if (callback != null) {
-                        mainHandler.post(() -> callback.onError(extractErrorMessage(responseBody, "Failed to upload tasks (" + response.code() + ")")));
-                    }
-                }
-            }
-        });
-    }
-
-    public void syncAssignmentToCloud(AssignmentItem item, DataCallback<Boolean> callback) {
-        List<AssignmentItem> list = new ArrayList<>();
-        list.add(item);
-        syncAssignmentsBatch(list, callback);
     }
 
     // --- ASSIGNMENTS: FETCH FROM CLOUD ---
@@ -1403,25 +1382,6 @@ public class SupabaseClient {
         } catch (Exception e) {
             Log.e(TAG, "Could not cache profile in Room", e);
         }
-    }
-
-    public void loadUserProfileFromRoom(Context context, String userId, DataCallback<UserProfile> callback) {
-        if (context == null || userId == null) {
-            if (callback != null) mainHandler.post(() -> callback.onError("Invalid user"));
-            return;
-        }
-        new Thread(() -> {
-            try {
-                UserProfile profile = AppDatabase.getInstance(context).userProfileDao().getUserProfile(userId);
-                if (callback != null) {
-                    mainHandler.post(() -> callback.onSuccess(profile));
-                }
-            } catch (Exception e) {
-                if (callback != null) {
-                    mainHandler.post(() -> callback.onError(e.getLocalizedMessage()));
-                }
-            }
-        }).start();
     }
 
     public void loadProfileFromSupabase(Context context, DataCallback<UserProfile> callback) {
@@ -1627,6 +1587,49 @@ public class SupabaseClient {
                     if (callback != null) {
                         mainHandler.post(() -> callback.onError(extractErrorMessage(responseBody, "Failed to send email confirmation (" + response.code() + ")")));
                     }
+                }
+            }
+        });
+    }
+
+    public void invokeAdminFunction(JsonObject payload, DataCallback<JsonObject> callback) {
+        String token = getAccessToken();
+        if (token == null || token.isEmpty() || isDemoSession()) {
+            if (callback != null) mainHandler.post(() -> callback.onError("Admin access is unavailable."));
+            return;
+        }
+
+        Request request = new Request.Builder()
+                .url(SUPABASE_URL + "/functions/v1/admin-console")
+                .addHeader("apikey", SUPABASE_ANON_KEY)
+                .addHeader("Authorization", "Bearer " + token)
+                .post(RequestBody.create(payload.toString(), JSON))
+                .build();
+
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                if (callback != null) mainHandler.post(() ->
+                        callback.onError("Couldn't connect to the admin service."));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                String body = response.body() != null ? response.body().string() : "";
+                if (!response.isSuccessful()) {
+                    if (callback != null) mainHandler.post(() ->
+                            callback.onError("Unable to complete the admin request."));
+                    return;
+                }
+                try {
+                    JsonElement parsed = JsonParser.parseString(body);
+                    if (!parsed.isJsonObject()) throw new IllegalStateException("Invalid response");
+                    JsonObject result = parsed.getAsJsonObject();
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(result));
+                } catch (RuntimeException e) {
+                    Log.e(TAG, "Invalid response from admin service", e);
+                    if (callback != null) mainHandler.post(() ->
+                            callback.onError("The admin service returned an invalid response."));
                 }
             }
         });

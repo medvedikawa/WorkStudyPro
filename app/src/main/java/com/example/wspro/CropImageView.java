@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -23,6 +24,7 @@ public class CropImageView extends View {
 
     private final RectF mImageRect = new RectF();
     private final RectF mCropRect = new RectF();
+    private final Path mCircularScrimPath = new Path();
 
     private final Paint mBitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
     private final Paint mScrimPaint = new Paint();
@@ -377,11 +379,12 @@ public class CropImageView extends View {
         canvas.drawBitmap(mRotatedBitmap, null, mImageRect, mBitmapPaint);
 
         if (mIsCircular) {
-            android.graphics.Path path = new android.graphics.Path();
-            path.addRect(0, 0, getWidth(), getHeight(), android.graphics.Path.Direction.CW);
+            mCircularScrimPath.reset();
+            mCircularScrimPath.addRect(0, 0, getWidth(), getHeight(), Path.Direction.CW);
             float radius = Math.min(mCropRect.width(), mCropRect.height()) / 2f;
-            path.addCircle(mCropRect.centerX(), mCropRect.centerY(), radius, android.graphics.Path.Direction.CCW);
-            canvas.drawPath(path, mScrimPaint);
+            mCircularScrimPath.addCircle(
+                    mCropRect.centerX(), mCropRect.centerY(), radius, Path.Direction.CCW);
+            canvas.drawPath(mCircularScrimPath, mScrimPaint);
 
             canvas.drawCircle(mCropRect.centerX(), mCropRect.centerY(), radius, mFramePaint);
         } else {
@@ -417,11 +420,9 @@ public class CropImageView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (mScaleDetector != null) {
-            mScaleDetector.onTouchEvent(event);
-        }
+        mScaleDetector.onTouchEvent(event);
 
-        if (mScaleDetector != null && mScaleDetector.isInProgress()) {
+        if (mScaleDetector.isInProgress()) {
             mTouchMode = TOUCH_NONE;
             return true;
         }
@@ -453,7 +454,7 @@ public class CropImageView extends View {
                         float newL = Math.max(mImageRect.left, Math.min(mImageRect.right - w, mCropRect.left + dx));
                         float newT = Math.max(mImageRect.top, Math.min(mImageRect.bottom - h, mCropRect.top + dy));
                         mCropRect.set(newL, newT, newL + w, newT + h);
-                    } else if (mTouchMode != TOUCH_NONE) {
+                    } else {
                         float delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
                         if (mTouchMode == TOUCH_TOP_LEFT || mTouchMode == TOUCH_BOTTOM_LEFT) {
                             delta = -delta;

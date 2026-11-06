@@ -134,7 +134,8 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 return "Yesterday";
             }
 
-            return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(new Date(timestamp));
+            return TimeFormatPreference.formatTimestamp(
+                    itemView.getContext(), timestamp, "MMM d, ");
         }
     }
 }

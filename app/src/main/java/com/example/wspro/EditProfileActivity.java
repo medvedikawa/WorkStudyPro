@@ -21,6 +21,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,7 +39,8 @@ public class EditProfileActivity extends AppCompatActivity {
     private ProgressBar pbAvatarLoading;
     private Button btnChangePhoto;
 
-    private EditText etEditName, etEditCourse, etEditEmail;
+    private EditText etEditName, etEditEmail;
+    private MaterialAutoCompleteTextView etEditCourse;
     private TextView tvNameError, tvCourseError, tvEmailError;
     private Button btnSaveProfileInfo, btnUpdateEmail;
 
@@ -87,6 +90,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
         etEditName = findViewById(R.id.etEditName);
         etEditCourse = findViewById(R.id.etEditCourse);
+        ProgramCourseDropdown.bind(this, etEditCourse);
         etEditEmail = findViewById(R.id.etEditEmail);
 
         tvNameError = findViewById(R.id.tvNameError);
@@ -103,15 +107,17 @@ public class EditProfileActivity extends AppCompatActivity {
         etPasswordNonce = findViewById(R.id.etPasswordNonce);
         etNewPassword = findViewById(R.id.etNewPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
+        PasswordVisibilityToggle.bind(etNewPassword, findViewById(R.id.btnToggleNewPassword));
+        PasswordVisibilityToggle.bind(etConfirmPassword, findViewById(R.id.btnToggleConfirmPassword));
 
         tvNonceError = findViewById(R.id.tvNonceError);
         tvNewPasswordError = findViewById(R.id.tvNewPasswordError);
         tvConfirmPasswordError = findViewById(R.id.tvConfirmPasswordError);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
-        btnChangePhoto.setOnClickListener(v -> checkAndOpenGallery());
-        ivProfileAvatar.setOnClickListener(v -> checkAndOpenGallery());
-        tvAvatarInitial.setOnClickListener(v -> checkAndOpenGallery());
+        btnChangePhoto.setOnClickListener(v -> openGalleryPicker());
+        ivProfileAvatar.setOnClickListener(v -> openGalleryPicker());
+        tvAvatarInitial.setOnClickListener(v -> openGalleryPicker());
 
         btnSaveProfileInfo.setOnClickListener(v -> handleSaveProfileInfo());
         btnUpdateEmail.setOnClickListener(v -> handleUpdateEmail());
@@ -136,7 +142,7 @@ public class EditProfileActivity extends AppCompatActivity {
         tvAvatarInitial.setText(initial);
         tvAvatarInitial.setVisibility(View.VISIBLE);
         ivProfileAvatar.setVisibility(View.GONE);
-        client.loadProfileAvatar(this, new SupabaseClient.DataCallback<Bitmap>() {
+        client.loadProfileAvatar(this, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Bitmap bitmap) {
                 if (isFinishing()) return;
@@ -153,10 +159,6 @@ public class EditProfileActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    private void checkAndOpenGallery() {
-        openGalleryPicker();
     }
 
     private void openGalleryPicker() {
@@ -221,14 +223,14 @@ public class EditProfileActivity extends AppCompatActivity {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
                 byte[] bytes = baos.toByteArray();
 
-                runOnUiThread(() -> client.uploadProfilePicture(bytes, new SupabaseClient.DataCallback<String>() {
+                runOnUiThread(() -> client.uploadProfilePicture(bytes, new SupabaseClient.DataCallback<>() {
                     @Override
                     public void onSuccess(String publicUrl) {
                         pbAvatarLoading.setVisibility(View.GONE);
                         btnChangePhoto.setEnabled(true);
                         client.updateProfileData(EditProfileActivity.this, client.getUserName(),
                                 client.getUserCourse(), publicUrl,
-                                new SupabaseClient.DataCallback<Boolean>() {
+                                new SupabaseClient.DataCallback<>() {
                                     @Override
                                     public void onSuccess(Boolean result) {
                                         Toast.makeText(EditProfileActivity.this,
@@ -272,7 +274,7 @@ public class EditProfileActivity extends AppCompatActivity {
         btnSaveProfileInfo.setEnabled(false);
         btnSaveProfileInfo.setText("Saving...");
 
-        client.updateProfileData(this, name, course, client.getAvatarUrl(), new SupabaseClient.DataCallback<Boolean>() {
+        client.updateProfileData(this, name, course, client.getAvatarUrl(), new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {
                 btnSaveProfileInfo.setEnabled(true);
@@ -298,7 +300,7 @@ public class EditProfileActivity extends AppCompatActivity {
         btnUpdateEmail.setEnabled(false);
         btnUpdateEmail.setText("Sending confirmation...");
 
-        client.updateEmail(this, newEmail, new SupabaseClient.DataCallback<Boolean>() {
+        client.updateEmail(this, newEmail, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {
                 btnUpdateEmail.setEnabled(true);
@@ -321,7 +323,7 @@ public class EditProfileActivity extends AppCompatActivity {
         btnSendPasswordCode.setEnabled(false);
         btnSendPasswordCode.setText("Sending code...");
 
-        client.reauthenticate(new SupabaseClient.DataCallback<Boolean>() {
+        client.reauthenticate(new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {
                 btnSendPasswordCode.setEnabled(true);
@@ -344,8 +346,6 @@ public class EditProfileActivity extends AppCompatActivity {
         validationAttemptedPassword = true;
         String nonce = etPasswordNonce.getText().toString().trim();
         String newPassword = etNewPassword.getText().toString();
-        String confirmPassword = etConfirmPassword.getText().toString();
-
         boolean isNonceValid = validateNonce();
         boolean isNewPasswordValid = validateNewPassword();
         boolean isConfirmValid = validateConfirmPassword();
@@ -354,7 +354,7 @@ public class EditProfileActivity extends AppCompatActivity {
         btnUpdatePassword.setEnabled(false);
         btnUpdatePassword.setText("Updating password...");
 
-        client.updatePasswordWithNonce(newPassword, nonce, new SupabaseClient.DataCallback<Boolean>() {
+        client.updatePasswordWithNonce(newPassword, nonce, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {
                 btnUpdatePassword.setEnabled(true);

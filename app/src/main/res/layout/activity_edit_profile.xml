@@ -162,17 +162,24 @@
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
-                <EditText
-                    android:id="@+id/etEditCourse"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilEditCourse"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:background="@android:color/transparent"
-                    android:hint="Enter your course or degree"
-                    android:inputType="text"
-                    android:textColor="@color/text_primary"
-                    android:textColorHint="@color/text_muted"
-                    android:textSize="15sp" />
+                    app:boxStrokeColor="@color/ws_accent"
+                    app:endIconMode="dropdown_menu">
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/etEditCourse"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Enter your course or degree"
+                        android:inputType="textCapWords"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_muted"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <TextView
                     android:id="@+id/tvCourseError"
@@ -345,17 +352,32 @@
                         android:textSize="13sp"
                         android:textStyle="bold" />
 
-                    <EditText
-                        android:id="@+id/etNewPassword"
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:background="@android:color/transparent"
-                        android:hint="Enter new password (min 8 chars)"
-                        android:inputType="textPassword"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_muted"
-                        android:textSize="15sp" />
+                        android:layout_height="wrap_content">
+                        <EditText
+                            android:id="@+id/etNewPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:background="@android:color/transparent"
+                            android:hint="Enter new password (min 8 chars)"
+                            android:inputType="textPassword"
+                            android:paddingEnd="48dp"
+                            android:textColor="@color/text_primary"
+                            android:textColorHint="@color/text_muted"
+                            android:textSize="15sp" />
+                        <ImageButton
+                            android:id="@+id/btnToggleNewPassword"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_gravity="end|center_vertical"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Show password"
+                            android:padding="8dp"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_eye" />
+                    </FrameLayout>
 
                     <TextView
                         android:id="@+id/tvNewPasswordError"
@@ -375,17 +397,32 @@
                         android:textSize="13sp"
                         android:textStyle="bold" />
 
-                    <EditText
-                        android:id="@+id/etConfirmPassword"
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:background="@android:color/transparent"
-                        android:hint="Re-enter new password"
-                        android:inputType="textPassword"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_muted"
-                        android:textSize="15sp" />
+                        android:layout_height="wrap_content">
+                        <EditText
+                            android:id="@+id/etConfirmPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:background="@android:color/transparent"
+                            android:hint="Re-enter new password"
+                            android:inputType="textPassword"
+                            android:paddingEnd="48dp"
+                            android:textColor="@color/text_primary"
+                            android:textColorHint="@color/text_muted"
+                            android:textSize="15sp" />
+                        <ImageButton
+                            android:id="@+id/btnToggleConfirmPassword"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_gravity="end|center_vertical"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Show password"
+                            android:padding="8dp"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_eye" />
+                    </FrameLayout>
 
                     <TextView
                         android:id="@+id/tvConfirmPasswordError"

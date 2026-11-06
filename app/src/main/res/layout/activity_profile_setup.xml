@@ -117,18 +117,33 @@
             android:textStyle="bold"
             android:layout_marginBottom="6dp" />
 
-        <EditText
-            android:id="@+id/etProfilePassword"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_input"
-            android:hint="•••••••••••"
-            android:textColorHint="@color/ws_muted"
-            android:textColor="@color/ws_text"
-            android:textSize="14sp"
-            android:padding="12dp"
-            android:inputType="textPassword"
-            android:layout_marginBottom="2dp" />
+            android:layout_marginBottom="2dp">
+            <EditText
+                android:id="@+id/etProfilePassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_input"
+                android:hint="•••••••••••"
+                android:textColorHint="@color/ws_muted"
+                android:textColor="@color/ws_text"
+                android:textSize="14sp"
+                android:padding="12dp"
+                android:paddingEnd="52dp"
+                android:inputType="textPassword" />
+            <ImageButton
+                android:id="@+id/btnToggleProfilePassword"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_gravity="end|center_vertical"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Show password"
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_eye" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tvPasswordError"
@@ -150,18 +165,24 @@
             android:textStyle="bold"
             android:layout_marginBottom="6dp" />
 
-        <EditText
-            android:id="@+id/etProfileCourse"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilProfileCourse"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_input"
-            android:hint="e.g. BS Information Technology"
-            android:textColorHint="@color/ws_muted"
-            android:textColor="@color/ws_text"
-            android:textSize="14sp"
-            android:padding="12dp"
-            android:inputType="text"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="24dp"
+            app:boxStrokeColor="@color/ws_accent"
+            app:endIconMode="dropdown_menu">
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/etProfileCourse"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="e.g. BS Information Technology"
+                android:inputType="textCapWords"
+                android:textColor="@color/ws_text"
+                android:textColorHint="@color/ws_muted"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Avatar / Media Upload Container -->
         <LinearLayout

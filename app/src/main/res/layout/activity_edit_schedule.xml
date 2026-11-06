@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scrollContent"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="@color/background">
 
-    <!-- Header Bar -->
     <LinearLayout
         android:id="@+id/editScheduleHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="16dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="10dp"
         android:background="@color/surface">
-
         <ImageButton
             android:id="@+id/btnReturnBack"
             android:layout_width="38dp"
@@ -25,83 +26,74 @@
             app:tint="@color/ws_accent"
             android:contentDescription="Back"
             android:scaleType="centerInside" />
-
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
             android:layout_marginStart="8dp">
-
             <TextView
                 android:id="@+id/tvScheduleTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Verify &amp; Add Schedule"
+                android:text="Review schedule"
                 android:textColor="@color/text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
-
             <TextView
                 android:id="@+id/tvScheduleSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Adjust detected subjects, times, and day assignments."
+                android:text="Check your classes and times before saving."
                 android:textColor="@color/text_secondary"
                 android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Scanned Image Thumbnail Preview Card -->
     <LinearLayout
         android:id="@+id/layoutScannedPreviewCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/editScheduleHeader"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="@drawable/bg_input"
+        android:background="@drawable/bg_schedule_photo_card"
         android:padding="10dp"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="4dp"
         android:visibility="gone">
-
         <ImageView
             android:id="@+id/ivScannedThumbnail"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:scaleType="centerCrop"
-            android:background="@drawable/bg_card" />
-
+            android:background="@drawable/bg_schedule_photo_thumb"
+            android:contentDescription="Scanned schedule preview" />
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
             android:layout_marginStart="10dp">
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cropped Schedule Image"
+                android:text="Schedule photo"
                 android:textColor="@color/text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Verify scanned text below against your source."
+                android:text="Tap the photo to enlarge and compare."
                 android:textColor="@color/text_muted"
                 android:textSize="11sp" />
         </LinearLayout>
-
         <Button
             android:id="@+id/btnReCrop"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:text="⛶ Re-Crop"
+            android:text="Re-crop"
             android:textSize="11sp"
             android:textStyle="bold"
             android:textColor="@color/ws_accent"
@@ -111,117 +103,217 @@
             android:minHeight="0dp" />
     </LinearLayout>
 
-    <!-- Scrollable Content Area -->
     <LinearLayout
-        android:id="@+id/scrollContent"
+        android:id="@+id/layoutScheduleTabs"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/layoutScannedPreviewCard"
-        android:layout_above="@id/layoutBottomActions"
-        android:orientation="vertical"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp">
-
-        <!-- Scan Warning Banner -->
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="5dp">
         <TextView
-            android:id="@+id/tvScanWarning"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="⚠️ Some classes may be missing"
-            android:textColor="@color/brand_raspberry"
-            android:textSize="13sp"
+            android:id="@+id/btnSchoolTab"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:drawableStart="@drawable/ic_schedule_school_selected"
+            android:drawablePadding="6dp"
+            android:text="School"
             android:textStyle="bold"
-            android:background="@drawable/bg_input"
-            android:padding="10dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="12dp"
-            android:visibility="gone" />
-
-        <!-- Time Slots RecyclerView -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerTimeSlots"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <!-- Skipped Lines ("Lines we couldn't place") Card -->
-        <LinearLayout
-            android:id="@+id/layoutSkippedSection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card"
-            android:padding="12dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="12dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/tvSkippedHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Lines we couldn't place ▾"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:paddingBottom="6dp"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <LinearLayout
-                android:id="@+id/layoutSkippedContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingTop="4dp" />
-        </LinearLayout>
+            android:textColor="@color/ws_on_brand"
+            android:background="@drawable/bg_schedule_tab_selected"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/btnWorkTab"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:gravity="center"
+            android:drawableStart="@drawable/ic_schedule_work"
+            android:drawablePadding="6dp"
+            android:text="Work"
+            android:textStyle="bold"
+            android:textColor="@color/text_muted"
+            android:background="@drawable/bg_schedule_tab_unselected"
+            android:clickable="true"
+            android:focusable="true" />
     </LinearLayout>
 
     <TextView
-        android:id="@+id/tvEmptyState"
-        android:layout_width="wrap_content"
+        android:id="@+id/tvScheduleTabHint"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:gravity="center"
-        android:padding="24dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="5dp"
+        android:text="School and work times are checked against each other for conflicts."
         android:textColor="@color/text_secondary"
-        android:textSize="14sp"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/tvConflictBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="2dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
+        android:drawableStart="@drawable/ic_schedule_warning"
+        android:textColor="@color/brand_raspberry"
+        android:textSize="12sp"
+        android:drawablePadding="6dp"
+        android:background="@drawable/bg_schedule_conflict"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/btnJumpToConflict"
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:layout_gravity="end"
+        android:layout_marginHorizontal="24dp"
+        android:drawableStart="@drawable/ic_schedule_jump"
+        android:drawablePadding="5dp"
+        android:text="Go to first conflict"
+        android:textColor="@color/ws_accent"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true" />
+    <TextView
+        android:id="@+id/tvCrossTabWarning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="4dp"
+        android:padding="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="11sp"
+        android:background="@drawable/bg_schedule_warning"
         android:visibility="gone" />
 
-    <!-- Bottom Actions: Add Slot & Save Schedule -->
+    <LinearLayout
+        android:id="@+id/layoutFilterChips"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="5dp">
+        <TextView
+            android:id="@+id/filterAll"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:paddingHorizontal="14dp"
+            android:text="All"
+            android:textColor="@color/ws_on_brand"
+            android:background="@drawable/bg_schedule_filter_selected"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/filterConflicts"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginStart="6dp"
+            android:gravity="center"
+            android:paddingHorizontal="12dp"
+            android:text="Conflicts"
+            android:textColor="@color/text_muted"
+            android:background="@drawable/bg_schedule_filter_unselected"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/filterCheck"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginStart="6dp"
+            android:gravity="center"
+            android:paddingHorizontal="12dp"
+            android:text="Check"
+            android:textColor="@color/text_muted"
+            android:background="@drawable/bg_schedule_filter_unselected"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/filterOk"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginStart="6dp"
+            android:gravity="center"
+            android:paddingHorizontal="12dp"
+            android:text="OK"
+            android:textColor="@color/text_muted"
+            android:background="@drawable/bg_schedule_filter_unselected"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvScanWarning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Some classes may be missing."
+        android:textColor="@color/brand_raspberry"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:background="@drawable/bg_input"
+        android:padding="8dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="4dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvEmptyState"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="14dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerTimeSlots"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="8dp" />
+
     <LinearLayout
         android:id="@+id/layoutBottomActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="12dp"
         android:background="@color/surface"
         android:elevation="8dp">
-
-        <TextView
-            android:id="@+id/btnAddTimeSlot"
+        <Button
+            android:id="@+id/btnAddScheduleEntry"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:gravity="center"
-            android:text="+ Add another time"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="8dp"
+            android:drawableStart="@drawable/ic_schedule_add"
+            android:drawablePadding="6dp"
+            android:text="Add schedule entry"
+            android:textSize="13sp"
             android:textStyle="bold"
-            android:background="@drawable/bg_input"
-            android:clickable="true"
-            android:focusable="true"
-            android:layout_marginBottom="10dp" />
-
+            android:textColor="@color/ws_accent"
+            android:backgroundTint="@color/ws_surface2" />
         <Button
             android:id="@+id/btnSaveSchedule"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="Save Schedule"
+            android:text="Save School Schedule"
             android:textSize="15sp"
             android:textStyle="bold"
             android:textColor="@color/ws_on_brand"
             android:backgroundTint="@color/ws_accent" />
     </LinearLayout>
-
-</RelativeLayout>
+</LinearLayout>

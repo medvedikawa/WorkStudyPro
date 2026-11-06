@@ -23,13 +23,16 @@ public class TimeSlotItem {
     private String startTimeError;
     private String endTimeError;
     private String scheduleError;
+    private boolean conflict;
+    private String conflictReason;
+    private String crossTabWarning;
     private Set<ScheduleTableParser.Flag> flags = new HashSet<>();
 
     public TimeSlotItem(String subject, String day, String startTime, String endTime, boolean isWork, String colorHex) {
         this.subject = subject;
         this.day = day;
         if (day != null && !day.trim().isEmpty()) {
-            this.days.add(EditScheduleActivity.normalizeDay(day));
+            this.days.add(ScheduleTimeValidator.normalizeDay(day));
         }
         this.originalDay = this.day;
         this.startTime = startTime;
@@ -47,18 +50,18 @@ public class TimeSlotItem {
     public void setDay(String day) {
         this.day = day;
         this.days.clear();
-        if (day != null && !day.trim().isEmpty()) this.days.add(EditScheduleActivity.normalizeDay(day));
+        if (day != null && !day.trim().isEmpty()) this.days.add(ScheduleTimeValidator.normalizeDay(day));
     }
     public String getOriginalDay() { return originalDay; }
     public void setOriginalDay(String originalDay) {
-        this.originalDay = EditScheduleActivity.normalizeDay(originalDay);
+        this.originalDay = ScheduleTimeValidator.normalizeDay(originalDay);
     }
     public Set<String> getDays() { return days; }
     public void setDays(Set<String> days) {
         this.days.clear();
         if (days != null) {
             for (String value : days) {
-                String normalized = EditScheduleActivity.normalizeDay(value);
+                String normalized = ScheduleTimeValidator.normalizeDay(value);
                 if (!normalized.isEmpty()) this.days.add(normalized);
             }
         }
@@ -82,6 +85,12 @@ public class TimeSlotItem {
     public void setEndTimeError(String endTimeError) { this.endTimeError = endTimeError; }
     public String getScheduleError() { return scheduleError; }
     public void setScheduleError(String scheduleError) { this.scheduleError = scheduleError; }
+    public boolean isConflict() { return conflict; }
+    public void setConflict(boolean conflict) { this.conflict = conflict; }
+    public String getConflictReason() { return conflictReason; }
+    public void setConflictReason(String conflictReason) { this.conflictReason = conflictReason; }
+    public String getCrossTabWarning() { return crossTabWarning; }
+    public void setCrossTabWarning(String crossTabWarning) { this.crossTabWarning = crossTabWarning; }
 
     public Set<ScheduleTableParser.Flag> getFlags() { return flags; }
     public void setFlags(Set<ScheduleTableParser.Flag> flags) {
@@ -150,6 +159,9 @@ public class TimeSlotItem {
         copy.startTimeError = startTimeError;
         copy.endTimeError = endTimeError;
         copy.scheduleError = scheduleError;
+        copy.conflict = conflict;
+        copy.conflictReason = conflictReason;
+        copy.crossTabWarning = crossTabWarning;
         copy.flags = new HashSet<>(flags);
         return copy;
     }

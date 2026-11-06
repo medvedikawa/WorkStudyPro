@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.4")
     implementation(libs.constraintlayout)
     implementation("com.google.mlkit:text-recognition:16.0.0")
     implementation("androidx.exifinterface:exifinterface:1.4.2")

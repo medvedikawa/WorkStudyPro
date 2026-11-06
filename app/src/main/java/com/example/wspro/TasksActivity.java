@@ -1,7 +1,5 @@
 package com.example.wspro;
 
-import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,6 +12,7 @@ import android.widget.Filterable;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,6 +26,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.DateValidatorPointForward;
+import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.timepicker.MaterialTimePicker;
+import com.google.android.material.timepicker.TimeFormat;
 
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
@@ -34,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class TasksActivity extends AppCompatActivity {
 
@@ -84,8 +89,8 @@ public class TasksActivity extends AppCompatActivity {
         Button btnAddNewTaskHeader = findViewById(R.id.btnAddNewTaskHeader);
         Button btnEmptyAddTask = findViewById(R.id.btnEmptyAddTask);
 
-        btnAddNewTaskHeader.setOnClickListener(v -> showAddAssignmentDialog());
-        btnEmptyAddTask.setOnClickListener(v -> showAddAssignmentDialog());
+        btnAddNewTaskHeader.setOnClickListener(v -> showAssignmentDialog(null));
+        btnEmptyAddTask.setOnClickListener(v -> showAssignmentDialog(null));
         setupTaskFilters();
 
         recyclerTasks.setLayoutManager(new LinearLayoutManager(this));
@@ -101,12 +106,22 @@ public class TasksActivity extends AppCompatActivity {
             }
 
             @Override
+            public void onEdit(AssignmentItem item) {
+                showAssignmentDialog(item);
+            }
+
+            @Override
             public void onDelete(AssignmentItem item) {
-                new Thread(() -> {
-                    LocalDataRepository.deleteAssignment(
-                            AppDatabase.getInstance(getApplicationContext()), item);
-                    ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
-                }).start();
+                new AlertDialog.Builder(TasksActivity.this)
+                        .setTitle("Delete task?")
+                        .setMessage("This task will be removed from your list.")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Delete", (dialog, which) -> new Thread(() -> {
+                            LocalDataRepository.deleteAssignment(
+                                    AppDatabase.getInstance(getApplicationContext()), item);
+                            ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
+                        }).start())
+                        .show();
             }
         });
         recyclerTasks.setAdapter(adapter);
@@ -145,7 +160,7 @@ public class TasksActivity extends AppCompatActivity {
             if (assignments != null && assignments.isEmpty() && !cloudFetchStarted
                     && SupabaseClient.getInstance(getApplicationContext()).isLoggedIn()) {
                 cloudFetchStarted = true;
-                SupabaseClient.getInstance(getApplicationContext()).fetchAssignmentsFromCloud(new SupabaseClient.DataCallback<List<AssignmentItem>>() {
+                SupabaseClient.getInstance(getApplicationContext()).fetchAssignmentsFromCloud(new SupabaseClient.DataCallback<>() {
                     @Override
                     public void onSuccess(List<AssignmentItem> cloudItems) {
                         if (cloudItems != null && !cloudItems.isEmpty()) {
@@ -455,7 +470,7 @@ public class TasksActivity extends AppCompatActivity {
         }
     }
 
-    private void showAddAssignmentDialog() {
+    private void showAssignmentDialog(AssignmentItem editing) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_assignment, null);
         builder.setView(dialogView);
@@ -465,6 +480,8 @@ public class TasksActivity extends AppCompatActivity {
         }
 
         EditText etTitle = dialogView.findViewById(R.id.etAssignmentTitle);
+        TextView dialogTitle = dialogView.findViewById(R.id.tvAssignmentDialogTitle);
+        TextView dialogSubtitle = dialogView.findViewById(R.id.tvAssignmentDialogSubtitle);
         TextInputLayout subjectLayout = dialogView.findViewById(R.id.tilAssignmentSubject);
         MaterialAutoCompleteTextView etSubject = dialogView.findViewById(R.id.etAssignmentSubject);
         configureSubjectDropdown(subjectLayout, etSubject, schoolSubjects);
@@ -481,11 +498,23 @@ public class TasksActivity extends AppCompatActivity {
                 etSubject.setSelection(etSubject.getText().length());
             }
         });
+        etSubject.setOnDismissListener(() -> {
+            if (activeSubjectField != etSubject || activeSubjectAdapter == null) return;
+            SubjectAdapter dismissedAdapter = activeSubjectAdapter;
+            dismissedAdapter.applyPendingSubjects(etSubject.getText().toString());
+            if (dismissedAdapter.hasNoSubjects()) {
+                etSubject.setAdapter(null);
+                subjectLayout.setEndIconMode(TextInputLayout.END_ICON_NONE);
+                activeSubjectAdapter = null;
+            }
+        });
 
         TextView chipTaskPerformance = dialogView.findViewById(R.id.chipTaskPerformance);
         TextView chipGroupWork = dialogView.findViewById(R.id.chipGroupWork);
         TextView chipLaboratory = dialogView.findViewById(R.id.chipLaboratory);
         TextView chipAssignment = dialogView.findViewById(R.id.chipAssignment);
+        RadioGroup taskTypeGroup = dialogView.findViewById(R.id.rgTaskType);
+        View schoolTaskDetails = dialogView.findViewById(R.id.layoutSchoolTaskDetails);
 
         LinearLayout btnPickDate = dialogView.findViewById(R.id.btnPickDate);
         TextView tvSelectedDate = dialogView.findViewById(R.id.tvSelectedDate);
@@ -495,17 +524,35 @@ public class TasksActivity extends AppCompatActivity {
 
         Button btnSave = dialogView.findViewById(R.id.btnSaveAssignment);
         Button btnCancel = dialogView.findViewById(R.id.btnCancelAssignment);
+        if (editing != null) {
+            dialogTitle.setText("Edit Task");
+            dialogSubtitle.setText("Update the task details and deadline.");
+            btnSave.setText("Save Changes");
+            etTitle.setText(editing.getTitle());
+        }
+        taskTypeGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean schoolTask = checkedId == R.id.radioSchoolTask;
+            schoolTaskDetails.setVisibility(schoolTask ? View.VISIBLE : View.GONE);
+            btnSave.setText(editing != null ? "Save Changes"
+                    : schoolTask ? "Save & Prioritize Task" : "Save Task");
+        });
 
         final String[] selectedCategory = {"Task Performance"};
         final Calendar selectedCal = Calendar.getInstance();
-        selectedCal.add(Calendar.DAY_OF_YEAR, 1);
-        selectedCal.set(Calendar.HOUR_OF_DAY, 23);
-        selectedCal.set(Calendar.MINUTE, 59);
+        if (editing != null && editing.getDueTimestamp() > 0) {
+            selectedCal.setTimeInMillis(editing.getDueTimestamp());
+        } else {
+            selectedCal.add(Calendar.DAY_OF_YEAR, 1);
+            selectedCal.set(Calendar.HOUR_OF_DAY, 23);
+            selectedCal.set(Calendar.MINUTE, 59);
+        }
         selectedCal.set(Calendar.SECOND, 0);
+        selectedCal.set(Calendar.MILLISECOND, 0);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         SimpleDateFormat displayDateFormat = new SimpleDateFormat("EEE, MMM dd", Locale.getDefault());
-        SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+        SimpleDateFormat timeFormat = new SimpleDateFormat(
+                TimeFormatPreference.pattern(this), Locale.getDefault());
 
         tvSelectedDate.setText(displayDateFormat.format(selectedCal.getTime()));
         tvSelectedTime.setText(timeFormat.format(selectedCal.getTime()));
@@ -529,24 +576,87 @@ public class TasksActivity extends AppCompatActivity {
         for (TextView chip : chips) {
             chip.setOnClickListener(categoryClick);
         }
+        if (editing != null) {
+            taskTypeGroup.check(editing.isWorkTask() ? R.id.radioWorkTask : R.id.radioSchoolTask);
+            if (!editing.isWorkTask()) {
+                for (int i = 0; i < catNames.length; i++) {
+                    if (catNames[i].equalsIgnoreCase(editing.getCategory())) {
+                        categoryClick.onClick(chips[i]);
+                        break;
+                    }
+                }
+                etSubject.setText(editing.getSubject(), false);
+            }
+        }
 
         btnPickDate.setOnClickListener(v -> {
-            DatePickerDialog dpd = new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-                selectedCal.set(Calendar.YEAR, year);
-                selectedCal.set(Calendar.MONTH, month);
-                selectedCal.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+            Calendar today = Calendar.getInstance();
+            long firstAllowedDate = utcDateMillis(today);
+            Calendar initialDate = (Calendar) selectedCal.clone();
+            if (isBeforeToday(initialDate, today)) initialDate = today;
+            CalendarConstraints constraints = new CalendarConstraints.Builder()
+                    .setValidator(DateValidatorPointForward.from(firstAllowedDate))
+                    .build();
+            MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
+                    .setTitleText("Select due date")
+                    .setCalendarConstraints(constraints)
+                    .setSelection(utcDateMillis(initialDate))
+                    .build();
+            picker.addOnPositiveButtonClickListener(selection -> {
+                Calendar utcSelection = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                utcSelection.setTimeInMillis(selection);
+                selectedCal.set(Calendar.YEAR, utcSelection.get(Calendar.YEAR));
+                selectedCal.set(Calendar.MONTH, utcSelection.get(Calendar.MONTH));
+                selectedCal.set(Calendar.DAY_OF_MONTH, utcSelection.get(Calendar.DAY_OF_MONTH));
+                if (isSameDay(selectedCal, Calendar.getInstance())
+                        && isBeforeCurrentTime(selectedCal)) {
+                    Calendar nextMinute = Calendar.getInstance();
+                    nextMinute.set(Calendar.SECOND, 0);
+                    nextMinute.set(Calendar.MILLISECOND, 0);
+                    nextMinute.add(Calendar.MINUTE, 1);
+                    selectedCal.set(Calendar.HOUR_OF_DAY, nextMinute.get(Calendar.HOUR_OF_DAY));
+                    selectedCal.set(Calendar.MINUTE, nextMinute.get(Calendar.MINUTE));
+                }
                 tvSelectedDate.setText(displayDateFormat.format(selectedCal.getTime()));
-            }, selectedCal.get(Calendar.YEAR), selectedCal.get(Calendar.MONTH), selectedCal.get(Calendar.DAY_OF_MONTH));
-            dpd.show();
+                tvSelectedTime.setText(timeFormat.format(selectedCal.getTime()));
+            });
+            picker.show(getSupportFragmentManager(), "task_due_date_picker");
         });
 
         btnPickTime.setOnClickListener(v -> {
-            TimePickerDialog tpd = new TimePickerDialog(this, (view, hourOfDay, minute) -> {
-                selectedCal.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                selectedCal.set(Calendar.MINUTE, minute);
+            Calendar pickerInitial = (Calendar) selectedCal.clone();
+            if (isSameDay(pickerInitial, Calendar.getInstance())
+                    && isBeforeCurrentTime(pickerInitial)) {
+                Calendar nextMinute = Calendar.getInstance();
+                nextMinute.set(Calendar.SECOND, 0);
+                nextMinute.set(Calendar.MILLISECOND, 0);
+                nextMinute.add(Calendar.MINUTE, 1);
+                pickerInitial.set(Calendar.HOUR_OF_DAY, nextMinute.get(Calendar.HOUR_OF_DAY));
+                pickerInitial.set(Calendar.MINUTE, nextMinute.get(Calendar.MINUTE));
+            }
+            MaterialTimePicker picker = new MaterialTimePicker.Builder()
+                    .setTitleText("Select due time")
+                    .setTimeFormat(TimeFormatPreference.is24Hour(this)
+                            ? TimeFormat.CLOCK_24H : TimeFormat.CLOCK_12H)
+                    .setInputMode(MaterialTimePicker.INPUT_MODE_KEYBOARD)
+                    .setHour(pickerInitial.get(Calendar.HOUR_OF_DAY))
+                    .setMinute(pickerInitial.get(Calendar.MINUTE))
+                    .build();
+            picker.addOnPositiveButtonClickListener(view -> {
+                Calendar candidate = (Calendar) selectedCal.clone();
+                candidate.set(Calendar.HOUR_OF_DAY, picker.getHour());
+                candidate.set(Calendar.MINUTE, picker.getMinute());
+                candidate.set(Calendar.SECOND, 0);
+                candidate.set(Calendar.MILLISECOND, 0);
+                if (isSameDay(candidate, Calendar.getInstance())
+                        && candidate.getTimeInMillis() <= System.currentTimeMillis()) {
+                    Toast.makeText(this, "Choose a future time.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                selectedCal.setTimeInMillis(candidate.getTimeInMillis());
                 tvSelectedTime.setText(timeFormat.format(selectedCal.getTime()));
-            }, selectedCal.get(Calendar.HOUR_OF_DAY), selectedCal.get(Calendar.MINUTE), false);
-            tpd.show();
+            });
+            picker.show(getSupportFragmentManager(), "task_due_time_picker");
         });
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
@@ -560,14 +670,15 @@ public class TasksActivity extends AppCompatActivity {
 
         btnSave.setOnClickListener(v -> {
             String title = etTitle.getText().toString().trim();
-            String subject = etSubject.getText().toString().trim();
+            boolean workTask = taskTypeGroup.getCheckedRadioButtonId() == R.id.radioWorkTask;
+            String subject = workTask ? "" : etSubject.getText().toString().trim();
 
             if (title.isEmpty()) {
                 Toast.makeText(this, "Please enter an assignment title.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if (subject.isEmpty()) {
+            if (!workTask && subject.isEmpty()) {
                 subject = "General Academic";
             }
 
@@ -575,23 +686,31 @@ public class TasksActivity extends AppCompatActivity {
             String timeStr = timeFormat.format(selectedCal.getTime());
             long timestamp = selectedCal.getTimeInMillis();
 
-            AssignmentItem newItem = new AssignmentItem(
-                    title,
-                    subject,
-                    selectedCategory[0],
-                    dateStr,
-                    timeStr,
-                    timestamp,
-                    false
-            );
+            AssignmentItem updatedItem = editing != null ? editing : new AssignmentItem(
+                    title, subject, workTask ? "" : selectedCategory[0], dateStr, timeStr, timestamp,
+                    false, workTask ? AssignmentItem.TYPE_WORK : AssignmentItem.TYPE_SCHOOL);
+            updatedItem.setTitle(title);
+            updatedItem.setSubject(subject);
+            updatedItem.setCategory(workTask ? "" : selectedCategory[0]);
+            updatedItem.setDueDate(dateStr);
+            updatedItem.setDueTime(timeStr);
+            updatedItem.setDueTimestamp(timestamp);
+            updatedItem.setTaskType(workTask ? AssignmentItem.TYPE_WORK : AssignmentItem.TYPE_SCHOOL);
 
             new Thread(() -> {
-                LocalDataRepository.saveAssignment(
-                        AppDatabase.getInstance(getApplicationContext()), newItem);
+                AppDatabase database = AppDatabase.getInstance(getApplicationContext());
+                if (editing == null) {
+                    LocalDataRepository.saveAssignment(database, updatedItem);
+                } else {
+                    LocalDataRepository.updateAssignment(database, updatedItem);
+                }
                 ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
 
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Task added & prioritized!", Toast.LENGTH_SHORT).show();
+                    String message = editing != null ? "Task updated."
+                            : workTask ? "Work task added." : "Task added & prioritized!";
+                    Toast.makeText(this, message,
+                            Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
                 });
             }).start();
@@ -600,11 +719,49 @@ public class TasksActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    private long utcDateMillis(Calendar localDate) {
+        Calendar utcDate = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        utcDate.clear();
+        utcDate.set(localDate.get(Calendar.YEAR), localDate.get(Calendar.MONTH),
+                localDate.get(Calendar.DAY_OF_MONTH));
+        return utcDate.getTimeInMillis();
+    }
+
+    private boolean isBeforeToday(Calendar date, Calendar today) {
+        Calendar dateOnly = (Calendar) date.clone();
+        Calendar todayOnly = (Calendar) today.clone();
+        dateOnly.set(Calendar.HOUR_OF_DAY, 0);
+        dateOnly.set(Calendar.MINUTE, 0);
+        dateOnly.set(Calendar.SECOND, 0);
+        dateOnly.set(Calendar.MILLISECOND, 0);
+        todayOnly.set(Calendar.HOUR_OF_DAY, 0);
+        todayOnly.set(Calendar.MINUTE, 0);
+        todayOnly.set(Calendar.SECOND, 0);
+        todayOnly.set(Calendar.MILLISECOND, 0);
+        return dateOnly.before(todayOnly);
+    }
+
+    private boolean isSameDay(Calendar first, Calendar second) {
+        return first.get(Calendar.YEAR) == second.get(Calendar.YEAR)
+                && first.get(Calendar.DAY_OF_YEAR) == second.get(Calendar.DAY_OF_YEAR);
+    }
+
+    private boolean isBeforeCurrentTime(Calendar date) {
+        Calendar selectedMinute = (Calendar) date.clone();
+        selectedMinute.set(Calendar.SECOND, 0);
+        selectedMinute.set(Calendar.MILLISECOND, 0);
+        return selectedMinute.getTimeInMillis() <= System.currentTimeMillis();
+    }
+
     private void configureSubjectDropdown(TextInputLayout layout,
                                           MaterialAutoCompleteTextView field,
                                           List<String> subjects) {
         String currentText = field.getText().toString();
         if (subjects == null || subjects.isEmpty()) {
+            if (activeSubjectAdapter != null && field.isPopupShowing()) {
+                activeSubjectAdapter.updateSubjects(new ArrayList<>(), currentText, true);
+                return;
+            }
             activeSubjectAdapter = null;
             field.setAdapter(null);
             layout.setEndIconMode(TextInputLayout.END_ICON_NONE);
@@ -617,7 +774,7 @@ public class TasksActivity extends AppCompatActivity {
             field.setAdapter(activeSubjectAdapter);
             field.setThreshold(0);
         } else {
-            activeSubjectAdapter.updateSubjects(subjects, currentText);
+            activeSubjectAdapter.updateSubjects(subjects, currentText, field.isPopupShowing());
         }
     }
 
@@ -629,6 +786,7 @@ public class TasksActivity extends AppCompatActivity {
 
     private static class SubjectAdapter extends ArrayAdapter<String> implements Filterable {
         private final List<String> allSubjects = new ArrayList<>();
+        private List<String> pendingSubjects;
         private String useSubject;
 
         SubjectAdapter(TasksActivity context, List<String> subjects) {
@@ -679,17 +837,62 @@ public class TasksActivity extends AppCompatActivity {
             };
         }
 
-        void updateSubjects(List<String> subjects, String query) {
+        void updateSubjects(List<String> subjects, String query, boolean deferWhileShowing) {
+            if (pendingSubjects != null && pendingSubjects.equals(subjects)) return;
+            if (allSubjects.equals(subjects)) {
+                pendingSubjects = null;
+                return;
+            }
+            if (deferWhileShowing) {
+                pendingSubjects = new ArrayList<>(subjects);
+                return;
+            }
+            replaceSubjects(subjects, query);
+        }
+
+        void applyPendingSubjects(String query) {
+            if (pendingSubjects == null) return;
+            List<String> subjects = pendingSubjects;
+            pendingSubjects = null;
+            replaceSubjects(subjects, query);
+        }
+
+        private void replaceSubjects(List<String> subjects, String query) {
             allSubjects.clear();
             allSubjects.addAll(subjects);
-            getFilter().filter(query);
+            String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+            List<String> matches = new ArrayList<>();
+            for (String subject : allSubjects) {
+                if (subject.toLowerCase(Locale.ROOT).contains(normalizedQuery)) {
+                    matches.add(subject);
+                }
+            }
+            useSubject = !normalizedQuery.isEmpty() && matches.isEmpty() ? query.trim() : null;
+            if (useSubject != null) matches.add("Use '" + useSubject + "'");
+            clear();
+            addAll(matches);
+            notifyDataSetChanged();
         }
 
         void showAllSubjects() {
             useSubject = null;
+            if (getCount() == allSubjects.size()) {
+                boolean allRowsVisible = true;
+                for (int i = 0; i < allSubjects.size(); i++) {
+                    if (!allSubjects.get(i).equals(getItem(i))) {
+                        allRowsVisible = false;
+                        break;
+                    }
+                }
+                if (allRowsVisible) return;
+            }
             clear();
             addAll(allSubjects);
             notifyDataSetChanged();
+        }
+
+        boolean hasNoSubjects() {
+            return allSubjects.isEmpty();
         }
 
         boolean isUseRow(String value) {

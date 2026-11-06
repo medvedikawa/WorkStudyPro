@@ -3,9 +3,7 @@ package com.example.wspro;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -45,20 +43,20 @@ public class CodeInputView extends LinearLayout {
 
     public CodeInputView(Context context) {
         super(context);
-        init(context, null);
+        init();
     }
 
     public CodeInputView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init(context, attrs);
+        init();
     }
 
     public CodeInputView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context, attrs);
+        init();
     }
 
-    private void init(Context context, @Nullable AttributeSet attrs) {
+    private void init() {
         setOrientation(LinearLayout.HORIZONTAL);
         setGravity(Gravity.CENTER);
         buildBoxes();

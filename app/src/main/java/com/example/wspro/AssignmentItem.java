@@ -1,12 +1,15 @@
 package com.example.wspro;
 
 import androidx.room.Entity;
+import androidx.room.ColumnInfo;
 import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "assignment_table", indices = {@Index(value = {"cloudId"}, unique = true)})
 public class AssignmentItem {
+    public static final String TYPE_SCHOOL = "SCHOOL";
+    public static final String TYPE_WORK = "WORK";
 
     @PrimaryKey(autoGenerate = true)
     private int id;
@@ -19,6 +22,8 @@ public class AssignmentItem {
     private boolean isCompleted;
     private String cloudId;
     private boolean isDeleted;
+    @ColumnInfo(defaultValue = "'SCHOOL'")
+    private String taskType = TYPE_SCHOOL;
 
     @Ignore
     private double priorityScore;
@@ -27,7 +32,13 @@ public class AssignmentItem {
     @Ignore
     private boolean hasWorkCollision;
 
+    @Ignore
     public AssignmentItem(String title, String subject, String category, String dueDate, String dueTime, long dueTimestamp, boolean isCompleted) {
+        this(title, subject, category, dueDate, dueTime, dueTimestamp, isCompleted, TYPE_SCHOOL);
+    }
+
+    public AssignmentItem(String title, String subject, String category, String dueDate, String dueTime,
+                          long dueTimestamp, boolean isCompleted, String taskType) {
         this.title = title;
         this.subject = subject;
         this.category = category;
@@ -35,6 +46,7 @@ public class AssignmentItem {
         this.dueTime = dueTime;
         this.dueTimestamp = dueTimestamp;
         this.isCompleted = isCompleted;
+        setTaskType(taskType);
     }
 
     public int getId() { return id; }
@@ -73,4 +85,9 @@ public class AssignmentItem {
     public void setCloudId(String cloudId) { this.cloudId = cloudId; }
     public boolean isDeleted() { return isDeleted; }
     public void setDeleted(boolean deleted) { isDeleted = deleted; }
+    public String getTaskType() { return taskType; }
+    public void setTaskType(String taskType) {
+        this.taskType = TYPE_WORK.equalsIgnoreCase(taskType) ? TYPE_WORK : TYPE_SCHOOL;
+    }
+    public boolean isWorkTask() { return TYPE_WORK.equals(taskType); }
 }
