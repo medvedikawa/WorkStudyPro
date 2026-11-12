@@ -222,7 +222,11 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
         if (holder.subjectWatcher != null) {
             holder.etSubject.removeTextChangedListener(holder.subjectWatcher);
         }
-        holder.etSubject.setText(item.getSubject());
+        String currentSubject = holder.etSubject.getText() != null ? holder.etSubject.getText().toString() : "";
+        String targetSubject = item.getSubject() != null ? item.getSubject() : "";
+        if (!currentSubject.equals(targetSubject)) {
+            holder.etSubject.setText(targetSubject);
+        }
         showInlineError(holder.tvSubjectError, item.getSubjectError());
         holder.subjectWatcher = new TextWatcher() {
             @Override
@@ -261,12 +265,20 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
                 ? View.GONE : View.VISIBLE);
 
         // 3. Time Pickers
-        holder.etStart.setText(TimeFormatPreference.formatTime(context, item.getStartTime()));
+        String formattedStart = TimeFormatPreference.formatTime(context, item.getStartTime());
+        String currentStart = holder.etStart.getText() != null ? holder.etStart.getText().toString() : "";
+        if (!currentStart.equals(formattedStart)) {
+            holder.etStart.setText(formattedStart);
+        }
         showInlineError(holder.tvStartError, item.getStartTimeError());
         holder.etStart.setOnClickListener(v ->
                 showTimePicker(holder.etStart, holder.tvStartError, item, true));
 
-        holder.etEnd.setText(TimeFormatPreference.formatTime(context, item.getEndTime()));
+        String formattedEnd = TimeFormatPreference.formatTime(context, item.getEndTime());
+        String currentEnd = holder.etEnd.getText() != null ? holder.etEnd.getText().toString() : "";
+        if (!currentEnd.equals(formattedEnd)) {
+            holder.etEnd.setText(formattedEnd);
+        }
         showInlineError(holder.tvEndError, item.getEndTimeError());
         holder.etEnd.setOnClickListener(v ->
                 showTimePicker(holder.etEnd, holder.tvEndError, item, false));

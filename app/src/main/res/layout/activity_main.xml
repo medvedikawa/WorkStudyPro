@@ -56,6 +56,13 @@
                         android:textAppearance="@style/WS.Title" />
                 </LinearLayout>
 
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="30dp"
+                    android:layout_marginEnd="12dp"
+                    android:contentDescription="@string/logo_content_description"
+                    android:src="@drawable/logo_mark" />
+
                 <FrameLayout
                     android:id="@+id/btnNotificationContainer"
                     android:layout_width="@dimen/today_notification_size"

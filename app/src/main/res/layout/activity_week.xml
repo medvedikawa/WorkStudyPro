@@ -23,6 +23,13 @@
             android:gravity="center_vertical"
             android:layout_marginBottom="16dp">
 
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="26dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="@string/logo_content_description"
+                android:src="@drawable/logo_mark" />
+
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

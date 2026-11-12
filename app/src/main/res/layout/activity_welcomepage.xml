@@ -12,34 +12,12 @@
         android:gravity="center_vertical"
         android:orientation="vertical">
 
-        <!-- Logo -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="4dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Work"
-                android:textColor="@color/ws_text"
-                android:textSize="26sp"
-                android:textStyle="bold" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Study"
-                android:textColor="@color/ws_accent"
-                android:textSize="26sp"
-                android:textStyle="bold" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pro"
-                android:textColor="@color/ws_text"
-                android:textSize="26sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+        <!-- Logo Lockup -->
+        <com.example.wspro.LogoSvgView
+            android:id="@+id/ivLogoLockup"
+            android:layout_width="210dp"
+            android:layout_height="52dp"
+            android:layout_marginBottom="6dp" />
 
         <!-- Tagline -->
         <TextView

@@ -12,15 +12,32 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <ImageButton
-            android:id="@+id/btnReturnBack"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/back_arrow"
-            app:tint="@color/ws_accent"
-            android:contentDescription="Return back"
-            android:scaleType="centerInside" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <ImageButton
+                android:id="@+id/btnReturnBack"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/back_arrow"
+                app:tint="@color/ws_accent"
+                android:contentDescription="Return back"
+                android:scaleType="centerInside" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.example.wspro.LogoSvgView
+                android:layout_width="120dp"
+                android:layout_height="30dp" />
+        </LinearLayout>
 
         <!-- Title -->
         <TextView

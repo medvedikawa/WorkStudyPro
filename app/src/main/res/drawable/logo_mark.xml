@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="106dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <!-- Base Purple Rounded Rect -->
+    <path
+        android:pathData="M340,190 L460,190 A130,130 0,0,1 590,320 L590,620 A130,130 0,0,1 460,750 L340,750 A130,130 0,0,1 210,620 L210,320 A130,130 0,0,1 340,190 Z"
+        android:fillColor="#7C5CF0" />
+    <!-- Offset Teal Rounded Rect -->
+    <path
+        android:pathData="M564,274 L684,274 A130,130 0,0,1 814,404 L814,704 A130,130 0,0,1 684,834 L564,834 A130,130 0,0,1 434,704 L434,404 A130,130 0,0,1 564,274 Z"
+        android:fillColor="#2CCFA8" />
+    <!-- Pink/Raspberry Overlap Clip -->
+    <group>
+        <clip-path
+            android:pathData="M340,190 L460,190 A130,130 0,0,1 590,320 L590,620 A130,130 0,0,1 460,750 L340,750 A130,130 0,0,1 210,620 L210,320 A130,130 0,0,1 340,190 Z" />
+        <path
+            android:pathData="M564,274 L684,274 A130,130 0,0,1 814,404 L814,704 A130,130 0,0,1 684,834 L564,834 A130,130 0,0,1 434,704 L434,404 A130,130 0,0,1 564,274 Z"
+            android:fillColor="#E8366F" />
+    </group>
+</vector>

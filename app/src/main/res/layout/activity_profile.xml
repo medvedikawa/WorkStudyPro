@@ -21,14 +21,26 @@
             android:paddingEnd="20dp"
             android:paddingBottom="96dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:text="You"
-                android:textColor="@color/text_primary"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="You"
+                    android:textColor="@color/text_primary"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <com.example.wspro.LogoSvgView
+                    android:layout_width="110dp"
+                    android:layout_height="28dp" />
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/layoutProfileHeader"

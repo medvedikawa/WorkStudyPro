@@ -7,6 +7,14 @@
     android:orientation="vertical"
     android:padding="24dp">
 
+    <!-- Logo Mark -->
+    <ImageView
+        android:layout_width="72dp"
+        android:layout_height="76dp"
+        android:contentDescription="@string/logo_content_description"
+        android:src="@drawable/logo_mark"
+        android:layout_marginBottom="24dp" />
+
     <!-- Subtle Spinning Progress Bar (Tinted to your accent) -->
     <ProgressBar
         android:layout_width="48dp"

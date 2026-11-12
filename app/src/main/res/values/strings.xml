@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">WSPro</string>
+    <string name="brand_name">WorkStudyPro</string>
+    <string name="logo_content_description">WorkStudyPro Logo</string>
     <string name="schedule_title_edit">Edit Schedule</string>
     <string name="schedule_edit_subtitle">Update, add, or remove your school/work entries.</string>
     <string name="schedule_saving">Saving…</string>

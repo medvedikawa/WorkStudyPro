@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 240" width="980" height="240">
+<g transform="translate(24 24) scale(0.3) translate(-210 -190)">
+<clipPath id="c5"><rect x="210" y="190" width="380" height="560" rx="130"/></clipPath>
+<rect x="210" y="190" width="380" height="560" rx="130" fill="#7C5CF0"/>
+<rect x="434" y="274" width="380" height="560" rx="130" fill="#2CCFA8"/>
+<g clip-path="url(#c5)"><rect x="434" y="274" width="380" height="560" rx="130" fill="#E8366F"/></g>
+</g>
+<text x="250" y="148" font-family="Poppins,'Plus Jakarta Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="98" font-weight="800" letter-spacing="-2" fill="#F4F0FF">WorkStudy<tspan fill="#B79CFA">Pro</tspan></text>
+</svg>
