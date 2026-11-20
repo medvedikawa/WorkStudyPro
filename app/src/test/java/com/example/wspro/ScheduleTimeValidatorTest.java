@@ -35,7 +35,7 @@ public class ScheduleTimeValidatorTest {
         TimeSlotItem missingDay = new TimeSlotItem(
                 "Class", "", "9:00 AM", "10:00 AM", false, "#FFFFFF");
         TimeSlotItem reversedTime = new TimeSlotItem(
-                "Shift", "TUE", "2:00 PM", "1:00 PM", true, "#FFFFFF");
+                "Class", "TUE", "2:00 PM", "1:00 PM", false, "#FFFFFF");
 
         assertFalse(ScheduleTimeValidator.validateForSave(
                 java.util.Arrays.asList(missingDay, reversedTime)));

@@ -25,50 +25,35 @@ public final class ScheduleTimeValidator {
     }
 
     public static void updateErrors(List<TimeSlotItem> items) {
-        SimpleDateFormat formatter = new SimpleDateFormat("h:mm a", Locale.US);
-        formatter.setLenient(false);
-        for (TimeSlotItem item : items) {
-            item.setSubjectError(item.getSubject() == null || item.getSubject().trim().isEmpty()
-                    ? "Subject is required." : null);
-            item.setStartTimeError(isValidTime(item.getStartTime(), formatter)
-                    ? null : "Enter a valid start time.");
-            item.setEndTimeError(isValidTime(item.getEndTime(), formatter)
-                    ? null : "Enter a valid end time.");
-            if (item.getDays().isEmpty()) {
-                item.setScheduleError("Select at least one day.");
-                continue;
-            }
-
-            Date start = parseTime(item.getStartTime(), formatter);
-            Date end = parseTime(item.getEndTime(), formatter);
-            if (start == null || end == null) {
-                item.setScheduleError("Enter valid start and end times.");
-            } else if (ConflictChecker.timeToMinutes(item.getEndTime())
-                    <= ConflictChecker.timeToMinutes(item.getStartTime())) {
-                item.setScheduleError("End time must be after start time.");
-            } else {
-                item.setScheduleError(null);
-            }
-        }
+        // Validation only runs when Save is tapped (validateForSave), never while typing.
     }
 
     public static boolean validateForSave(List<TimeSlotItem> items) {
-        updateErrors(items);
         SimpleDateFormat formatter = new SimpleDateFormat("h:mm a", Locale.US);
         formatter.setLenient(false);
         boolean valid = true;
         for (TimeSlotItem item : items) {
-            Date start = parseTime(item.getStartTime(), formatter);
-            Date end = parseTime(item.getEndTime(), formatter);
-            if (start != null && end != null
-                    && ConflictChecker.timeToMinutes(item.getEndTime())
-                    <= ConflictChecker.timeToMinutes(item.getStartTime())) {
-                item.setEndTimeError("End time must be after start time.");
-            }
-            if (item.getDays().isEmpty() || item.getScheduleError() != null
-                    || item.getSubjectError() != null || item.getStartTimeError() != null
-                    || item.getEndTimeError() != null) {
+            item.setSubjectError(null);
+            boolean startValid = isValidTime(item.getStartTime(), formatter);
+            boolean endValid = isValidTime(item.getEndTime(), formatter);
+            item.setStartTimeError(startValid ? null : "Enter a valid start time.");
+            item.setEndTimeError(endValid ? null : "Enter a valid end time.");
+
+            if (item.getDays().isEmpty()) {
+                item.setScheduleError("Select at least one day.");
                 valid = false;
+            } else if (!startValid || !endValid) {
+                item.setScheduleError("Enter valid start and end times.");
+                valid = false;
+            } else if (!item.isWork() && ConflictChecker.timeToMinutes(item.getEndTime())
+                    <= ConflictChecker.timeToMinutes(item.getStartTime())) {
+                item.setScheduleError("End time must be after start time.");
+                item.setEndTimeError("End time must be after start time.");
+                valid = false;
+            } else {
+                item.setScheduleError(null);
+                item.setStartTimeError(null);
+                item.setEndTimeError(null);
             }
         }
         return valid;

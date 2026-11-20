@@ -961,7 +961,7 @@ public class EditScheduleActivity extends AppCompatActivity {
         // Warning banner
         TextView tvScanWarning = findViewById(R.id.tvScanWarning);
         if (tvScanWarning != null) {
-            if (result.unitsMismatch || !result.skippedLines.isEmpty()) {
+            if (!result.skippedLines.isEmpty()) {
                 tvScanWarning.setVisibility(View.VISIBLE);
             } else {
                 tvScanWarning.setVisibility(View.GONE);
