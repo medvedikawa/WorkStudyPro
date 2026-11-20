@@ -53,8 +53,8 @@ public class EditScheduleActivity extends AppCompatActivity {
     private List<TimeSlotItem> originalEditItems;
     private ScheduleReviewViewModel reviewModel;
     private ScheduleEditorRepository scheduleRepository;
-    private TextView btnSchoolTab;
-    private TextView btnWorkTab;
+    private LinearLayout btnSchoolTab;
+    private LinearLayout btnWorkTab;
     private TextView btnSaveScheduleLabel;
     private TextView tvScheduleSubtitle;
     private TextView tvConflictBanner;
@@ -241,18 +241,25 @@ public class EditScheduleActivity extends AppCompatActivity {
     private void updateTabUi() {
         btnSchoolTab.setBackgroundResource(categoryWork
                 ? R.drawable.bg_schedule_tab_unselected : R.drawable.bg_schedule_tab_selected);
-        btnSchoolTab.setTextColor(ContextCompat.getColor(this, categoryWork
-                ? R.color.text_muted : R.color.ws_on_brand));
-        btnSchoolTab.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                categoryWork ? R.drawable.ic_schedule_school : R.drawable.ic_schedule_school_selected,
-                0, 0, 0);
+        ImageView ivSchoolIcon = findViewById(R.id.ivSchoolIcon);
+        TextView tvSchoolText = findViewById(R.id.tvSchoolText);
+        if (ivSchoolIcon != null) {
+            ivSchoolIcon.setImageResource(categoryWork ? R.drawable.ic_schedule_school : R.drawable.ic_schedule_school_selected);
+        }
+        if (tvSchoolText != null) {
+            tvSchoolText.setTextColor(ContextCompat.getColor(this, categoryWork ? R.color.text_muted : R.color.ws_on_brand));
+        }
+
         btnWorkTab.setBackgroundResource(categoryWork
                 ? R.drawable.bg_schedule_tab_selected : R.drawable.bg_schedule_tab_unselected);
-        btnWorkTab.setTextColor(ContextCompat.getColor(this, categoryWork
-                ? R.color.ws_on_brand : R.color.text_muted));
-        btnWorkTab.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                categoryWork ? R.drawable.ic_schedule_work_selected : R.drawable.ic_schedule_work,
-                0, 0, 0);
+        ImageView ivWorkIcon = findViewById(R.id.ivWorkIcon);
+        TextView tvWorkText = findViewById(R.id.tvWorkText);
+        if (ivWorkIcon != null) {
+            ivWorkIcon.setImageResource(categoryWork ? R.drawable.ic_schedule_work_selected : R.drawable.ic_schedule_work);
+        }
+        if (tvWorkText != null) {
+            tvWorkText.setTextColor(ContextCompat.getColor(this, categoryWork ? R.color.ws_on_brand : R.color.text_muted));
+        }
         findViewById(R.id.btnSaveSchedule).setContentDescription(
                 getString(categoryWork ? R.string.schedule_work : R.string.schedule_school));
         btnSaveScheduleLabel.setText(blockingConflicts

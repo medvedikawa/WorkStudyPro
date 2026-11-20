@@ -106,40 +106,62 @@
     <LinearLayout
         android:id="@+id/layoutScheduleTabs"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="46dp"
         android:orientation="horizontal"
         android:paddingHorizontal="16dp"
         android:paddingTop="3dp"
         android:paddingBottom="5dp">
-        <TextView
+        <LinearLayout
             android:id="@+id/btnSchoolTab"
             android:layout_width="0dp"
-            android:layout_height="42dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:drawableStart="@drawable/ic_schedule_school_selected"
-            android:drawablePadding="6dp"
-            android:text="School"
-            android:textStyle="bold"
-            android:textColor="@color/ws_on_brand"
+            android:orientation="horizontal"
             android:background="@drawable/bg_schedule_tab_selected"
             android:clickable="true"
-            android:focusable="true" />
-        <TextView
+            android:focusable="true">
+            <ImageView
+                android:id="@+id/ivSchoolIcon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/ic_schedule_school_selected"
+                android:contentDescription="@null" />
+            <TextView
+                android:id="@+id/tvSchoolText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="School"
+                android:textStyle="bold"
+                android:textColor="@color/ws_on_brand" />
+        </LinearLayout>
+        <LinearLayout
             android:id="@+id/btnWorkTab"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:gravity="center"
-            android:drawableStart="@drawable/ic_schedule_work"
-            android:drawablePadding="6dp"
-            android:text="Work"
-            android:textStyle="bold"
-            android:textColor="@color/text_muted"
+            android:orientation="horizontal"
             android:background="@drawable/bg_schedule_tab_unselected"
             android:clickable="true"
-            android:focusable="true" />
+            android:focusable="true">
+            <ImageView
+                android:id="@+id/ivWorkIcon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/ic_schedule_work"
+                android:contentDescription="@null" />
+            <TextView
+                android:id="@+id/tvWorkText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Work"
+                android:textStyle="bold"
+                android:textColor="@color/text_muted" />
+        </LinearLayout>
     </LinearLayout>
 
     <TextView
