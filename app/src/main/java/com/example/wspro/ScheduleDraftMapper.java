@@ -12,12 +12,18 @@ public final class ScheduleDraftMapper {
 
     public static List<ScheduleItem> toScheduleItems(List<TimeSlotItem> source, boolean work) {
         List<ScheduleItem> result = new ArrayList<>();
+        int index = 1;
         for (TimeSlotItem item : source) {
             if (item.getGroupId() == null && (item.getId() <= 0 || item.getDays().size() > 1)) {
                 item.setGroupId(UUID.randomUUID().toString());
             }
+            String subject = item.getSubject() != null ? item.getSubject().trim() : "";
+            if (subject.isEmpty()) {
+                subject = "Time " + index;
+            }
+            index++;
             for (String day : item.getDays()) {
-                ScheduleItem schedule = new ScheduleItem(item.getSubject().trim(), day,
+                ScheduleItem schedule = new ScheduleItem(subject, day,
                         item.getStartTime(), item.getEndTime(), work, item.getColorHex());
                 if (day.equals(item.getOriginalDay())) schedule.setId(item.getId());
                 schedule.setGroupId(item.getGroupId());
