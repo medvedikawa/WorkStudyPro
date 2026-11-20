@@ -146,12 +146,6 @@ public class ScheduleTableParserTest {
         assertFalse("Quality gate should pass", result.qualityGateFailed);
         assertEquals("Should produce exactly 12 meetings", 12, result.meetings.size());
 
-        // Check total units calculation
-        assertNotNull("Printed total units should be parsed", result.totalUnitsPrinted);
-        assertEquals(19.00, result.totalUnitsPrinted, 0.01);
-        assertEquals(19.00, result.totalUnitsCalculated, 0.01);
-        assertFalse("Units should match", result.unitsMismatch);
-
         // Verify subjects and continuation
         assertEquals("Information Assurance and Security (Data Privacy)", result.meetings.get(0).subject);
         assertEquals("Information Assurance and Security (Data Privacy)", result.meetings.get(1).subject);

@@ -50,13 +50,11 @@ public class ScheduleTableParser {
         END_BEFORE_START,
         DURATION_OVER_8H,
         OVERLAPS_ANOTHER,
-        OVERNIGHT,
-        UNITS_MISMATCH
+        OVERNIGHT
     }
 
     public static class ParsedMeeting {
         public String subject = "";
-        public String units = "";
         public String section = "";
         public String room = "";
         public String day = "";
@@ -68,7 +66,6 @@ public class ScheduleTableParser {
         public String toString() {
             return "ParsedMeeting{" +
                     "subject='" + subject + '\'' +
-                    ", units='" + units + '\'' +
                     ", day='" + day + '\'' +
                     ", startTime='" + startTime + '\'' +
                     ", endTime='" + endTime + '\'' +
@@ -81,9 +78,6 @@ public class ScheduleTableParser {
     public static class ParseResult {
         public final List<ParsedMeeting> meetings = new ArrayList<>();
         public final List<String> skippedLines = new ArrayList<>();
-        public Double totalUnitsPrinted = null;
-        public Double totalUnitsCalculated = null;
-        public boolean unitsMismatch = false;
         public boolean qualityGateFailed = false;
         public String qualityGateMessage = null;
     }

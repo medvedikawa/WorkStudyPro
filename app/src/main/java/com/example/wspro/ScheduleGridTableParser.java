@@ -205,7 +205,7 @@ final class ScheduleGridTableParser {
         if (text == null) return false;
         String upper = text.trim().toUpperCase(Locale.US);
         if (upper.equals("DAY") || upper.equals("DAYS") || upper.equals("SUBJECT")
-                || upper.equals("COURSE") || upper.equals("DESCRIPTION") || upper.equals("UNITS")
+                || upper.equals("COURSE") || upper.equals("DESCRIPTION")
                 || upper.equals("TIME") || upper.equals("ROOM") || upper.equals("SECTION")
                 || upper.equals("CODE") || upper.equals("CLASS")) {
             return false;

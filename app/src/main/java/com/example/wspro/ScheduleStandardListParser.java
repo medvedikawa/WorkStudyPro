@@ -6,12 +6,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 final class ScheduleStandardListParser {
     private enum HeaderType {
-        SUBJECT, UNITS, SECTION, DAYS, TIME, ROOM, INSTRUCTOR, UNKNOWN
+        SUBJECT, SECTION, DAYS, TIME, ROOM, INSTRUCTOR, UNKNOWN
     }
 
     private static class ColumnInfo {
@@ -28,7 +26,6 @@ final class ScheduleStandardListParser {
 
     private static class CourseAnchor {
         String subject = "";
-        String units = "";
         String section = "";
         double topY;
         double bottomY;
@@ -41,7 +38,6 @@ final class ScheduleStandardListParser {
         String endTimeFormatted;
         List<String> parsedDays = new ArrayList<>();
         String roomRaw = "";
-        String unitsRaw = "";
         String sectionRaw = "";
         String subjectRaw = "";
         boolean isDayMissing;
@@ -89,12 +85,6 @@ final class ScheduleStandardListParser {
             String lineText = row.getFullText();
             if (isFinancialOrFooterRow(lineText)) {
                 if (row.top < tableBottomY) tableBottomY = row.top;
-                if (lineText.toLowerCase(Locale.US).contains("total")) {
-                    Double printed = parsePrintedUnits(lineText);
-                    if (printed != null && result.totalUnitsPrinted == null) {
-                        result.totalUnitsPrinted = printed;
-                    }
-                }
             }
         }
 
@@ -121,7 +111,6 @@ final class ScheduleStandardListParser {
             String timeCell = extractColumnText(row, columns, HeaderType.TIME);
             String daysCell = extractColumnText(row, columns, HeaderType.DAYS);
             String subjectCell = extractColumnText(row, columns, HeaderType.SUBJECT);
-            String unitsCell = extractUnitsNumber(extractColumnText(row, columns, HeaderType.UNITS));
             String sectionCell = extractColumnText(row, columns, HeaderType.SECTION);
             String roomCell = extractColumnText(row, columns, HeaderType.ROOM);
 
@@ -139,7 +128,6 @@ final class ScheduleStandardListParser {
                 meeting.parsedDays = ScheduleTableParser.extractDays(
                         !daysCell.isEmpty() ? daysCell : rowText);
                 meeting.roomRaw = roomCell;
-                meeting.unitsRaw = unitsCell;
                 meeting.sectionRaw = sectionCell;
                 meeting.subjectRaw = subjectCell;
                 rawMeetings.add(meeting);
@@ -156,8 +144,6 @@ final class ScheduleStandardListParser {
             }
         }
 
-        double totalCalculatedUnits = 0.0;
-        Set<String> processedAnchorSubjects = new HashSet<>();
         for (RawRowMeeting rawMeeting : rawMeetings) {
             CourseAnchor bestAnchor = findActiveAnchor(rawMeeting.row.centerY, anchors);
             String subject = bestAnchor != null ? bestAnchor.subject : rawMeeting.subjectRaw;
@@ -165,23 +151,12 @@ final class ScheduleStandardListParser {
                 subject = extractFallbackSubject(rawMeeting.row, columns);
             }
 
-            String units = bestAnchor != null ? bestAnchor.units : rawMeeting.unitsRaw;
             String section = bestAnchor != null ? bestAnchor.section : rawMeeting.sectionRaw;
             String room = rawMeeting.roomRaw;
-
-            if (units != null && !units.trim().isEmpty() && bestAnchor != null
-                    && !processedAnchorSubjects.contains(bestAnchor.subject)) {
-                processedAnchorSubjects.add(bestAnchor.subject);
-                try {
-                    totalCalculatedUnits += Double.parseDouble(units.trim());
-                } catch (NumberFormatException ignored) {
-                }
-            }
 
             for (String dayCode : rawMeeting.parsedDays) {
                 ScheduleTableParser.ParsedMeeting meeting = new ScheduleTableParser.ParsedMeeting();
                 meeting.subject = subject != null ? ScheduleTableParser.cleanSubjectText(subject) : "";
-                meeting.units = units != null ? units.trim() : "";
                 meeting.section = section != null ? section.trim() : "";
                 meeting.room = room.trim();
                 meeting.day = dayCode != null ? dayCode.trim() : "";
@@ -206,15 +181,6 @@ final class ScheduleStandardListParser {
         }
 
         ScheduleTableParser.deduplicateMeetings(result.meetings);
-        result.totalUnitsCalculated = totalCalculatedUnits;
-        if (result.totalUnitsPrinted != null
-                && Math.abs(result.totalUnitsPrinted - totalCalculatedUnits) > 0.01) {
-            result.unitsMismatch = true;
-            for (ScheduleTableParser.ParsedMeeting meeting : result.meetings) {
-                meeting.flags.add(ScheduleTableParser.Flag.UNITS_MISMATCH);
-            }
-        }
-
         ScheduleTableParser.checkMeetingOverlaps(result.meetings);
         if (result.meetings.isEmpty() || (headerRow == null && rawMeetings.size() < 2)) {
             result.qualityGateFailed = true;
@@ -233,8 +199,6 @@ final class ScheduleStandardListParser {
             if (text.contains("course") || text.contains("subject")
                     || text.contains("desc") || text.contains("title")) {
                 type = HeaderType.SUBJECT;
-            } else if (text.contains("unit") || text.contains("credit")) {
-                type = HeaderType.UNITS;
             } else if (text.contains("sec") || text.contains("class") || text.contains("code")) {
                 type = HeaderType.SECTION;
             } else if (text.contains("day") || text.contains("days")) {
@@ -304,12 +268,6 @@ final class ScheduleStandardListParser {
                 || lower.contains("account summary") || lower.contains("total units") || lower.contains("total");
     }
 
-    private static String extractUnitsNumber(String text) {
-        if (text == null || text.trim().isEmpty()) return "";
-        Matcher matcher = Pattern.compile("\\b\\d+(?:\\.\\d+)?\\b").matcher(text);
-        return matcher.find() ? matcher.group(0) : "";
-    }
-
     private static boolean hasValidTimeRange(String text) {
         return ScheduleTableParser.extractTimeRange(text, false) != null;
     }
@@ -319,11 +277,9 @@ final class ScheduleStandardListParser {
         List<CourseAnchor> anchors = new ArrayList<>();
         for (int i = 0; i < tableRows.size(); i++) {
             ScheduleTableParser.PhysicalRow row = tableRows.get(i);
-            String units = extractUnitsNumber(extractColumnText(row, columns, HeaderType.UNITS));
             String section = extractColumnText(row, columns, HeaderType.SECTION);
             String subjectCell = extractColumnText(row, columns, HeaderType.SUBJECT);
 
-            boolean hasUnits = !units.isEmpty() && units.matches(".*\\d+.*");
             boolean hasSection = !section.isEmpty() && section.length() >= 2;
             String rawSubject = subjectCell.isEmpty() ? row.getFullText() : subjectCell;
             String cleanedSubject = ScheduleTableParser.cleanSubjectText(rawSubject);
@@ -332,11 +288,10 @@ final class ScheduleStandardListParser {
                     && !isFinancialOrFooterRow(cleanedSubject)
                     && !cleanedSubject.startsWith("(") && !cleanedSubject.startsWith("-") && !cleanedSubject.startsWith("&");
 
-            boolean isAnchorRow = hasUnits || hasSection || hasSubject;
+            boolean isAnchorRow = hasSection || hasSubject;
             if (!isAnchorRow) continue;
 
             CourseAnchor anchor = new CourseAnchor();
-            anchor.units = units;
             anchor.section = section;
             anchor.topY = row.top;
             anchor.bottomY = row.bottom;
@@ -346,15 +301,12 @@ final class ScheduleStandardListParser {
             int nextIndex = i + 1;
             while (nextIndex < tableRows.size()) {
                 ScheduleTableParser.PhysicalRow nextRow = tableRows.get(nextIndex);
-                String nextUnits = extractUnitsNumber(
-                        extractColumnText(nextRow, columns, HeaderType.UNITS));
                 String nextSection = extractColumnText(nextRow, columns, HeaderType.SECTION);
                 String nextSubjectCell = extractColumnText(nextRow, columns, HeaderType.SUBJECT);
 
-                boolean nextHasUnits = !nextUnits.isEmpty() && nextUnits.matches(".*\\d+.*");
                 boolean nextHasSection = !nextSection.isEmpty() && nextSection.length() >= 2;
 
-                if (!nextHasUnits && !nextHasSection) {
+                if (!nextHasSection) {
                     String continuation = nextSubjectCell.isEmpty() ? nextRow.getFullText() : nextSubjectCell;
                     if (isContinuationLine(continuation)) {
                         String cleanContinuation = ScheduleTableParser.cleanSubjectText(continuation);
@@ -435,16 +387,5 @@ final class ScheduleStandardListParser {
             return true;
         }
         return trimmed.matches(".*[a-zA-Z]{3,}.*");
-    }
-
-    private static Double parsePrintedUnits(String text) {
-        Matcher matcher = Pattern.compile(
-                "(?i)total\\s*(?:units)?\\s*:?\\s*(\\d+(?:\\.\\d+)?)").matcher(text);
-        if (!matcher.find()) return null;
-        try {
-            return Double.parseDouble(matcher.group(1));
-        } catch (NumberFormatException ignored) {
-            return null;
-        }
     }
 }

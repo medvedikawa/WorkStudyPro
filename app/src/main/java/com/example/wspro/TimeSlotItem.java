@@ -135,10 +135,6 @@ public class TimeSlotItem {
                 case OVERLAPS_ANOTHER:
                     msg = "Overlaps with another class";
                     break;
-
-                case UNITS_MISMATCH:
-                    msg = "Units mismatch detected";
-                    break;
             }
             if (msg != null) {
                 if (sb.length() > 0) sb.append(" • ");
