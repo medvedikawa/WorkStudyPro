@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -143,7 +144,7 @@ public class NotificationTriggerEngine {
                         || task.getSubject().isEmpty() ? "" : " (" + task.getSubject() + ")";
 
                 // 1 Hour Deadline Reminder
-                if (diff <= 1 * 3600 * 1000L) {
+                if (diff <= 3600 * 1000L) {
                     String dedupeKey = "deadline_1h_" + task.getId() + "_" + due;
                     if (!db.notificationDao().existsByDedupeKey(dedupeKey)) {
                         String title = "Urgent: " + task.getTitle() + " due soon";
@@ -213,7 +214,7 @@ public class NotificationTriggerEngine {
                     int todayTaskCount = 0;
                     if (allAssignments != null) {
                         for (AssignmentItem a : allAssignments) {
-                            if (!a.isCompleted() && todayDateStr.equals(a.getDueDate())) {
+                            if (!a.isCompleted() && Objects.equals(todayDateStr, a.getDueDate())) {
                                 todayTaskCount++;
                             }
                         }
@@ -253,8 +254,8 @@ public class NotificationTriggerEngine {
         List<ScheduleItem> schedules = db.scheduleDao().getAll();
         if (schedules != null && schedules.size() >= 2) {
             for (int i = 0; i < schedules.size(); i++) {
+                ScheduleItem s1 = schedules.get(i);
                 for (int j = i + 1; j < schedules.size(); j++) {
-                    ScheduleItem s1 = schedules.get(i);
                     ScheduleItem s2 = schedules.get(j);
 
                     if (ConflictChecker.hasConflict(
