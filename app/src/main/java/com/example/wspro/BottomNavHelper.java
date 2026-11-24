@@ -48,17 +48,31 @@ public final class BottomNavHelper {
             default:
                 throw new IllegalArgumentException("Unknown tab: " + destination);
         }
-        Intent intent = new Intent(activity, target);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-        activity.startActivity(intent);
-        applyNoTransition(activity);
-        activity.finish();
-    }
 
-    private static void applyNoTransition(Activity activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            activity.overrideActivityTransition(Activity.OVERRIDE_TRANSITION_OPEN, 0, 0);
+        int currentIndex = currentTab.ordinal();
+        int destIndex = destination.ordinal();
+
+        Intent intent = new Intent(activity, target);
+        activity.startActivity(intent);
+
+        if (destIndex > currentIndex) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                activity.overrideActivityTransition(Activity.OVERRIDE_TRANSITION_OPEN, R.anim.slide_in_right, R.anim.slide_out_left);
+            } else {
+                @SuppressWarnings("deprecation")
+                Activity act = activity;
+                act.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                activity.overrideActivityTransition(Activity.OVERRIDE_TRANSITION_OPEN, R.anim.slide_in_left, R.anim.slide_out_right);
+            } else {
+                @SuppressWarnings("deprecation")
+                Activity act = activity;
+                act.overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+            }
         }
+        activity.finish();
     }
 
     private static void bind(Activity activity, Tab selectedTab, Tab tab, int itemId) {

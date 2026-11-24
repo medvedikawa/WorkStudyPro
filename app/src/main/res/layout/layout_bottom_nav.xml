@@ -84,7 +84,7 @@
             android:contentDescription="@string/today_scan_content_description"
             android:elevation="@dimen/today_nav_elevation"
             android:padding="@dimen/today_zero_padding"
-            android:src="@drawable/ic_today_add"
+            android:src="@android:drawable/ic_menu_gallery"
             android:translationY="@dimen/today_scan_translation" />
     </FrameLayout>
 
