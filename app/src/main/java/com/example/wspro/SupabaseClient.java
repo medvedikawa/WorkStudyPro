@@ -7,8 +7,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -143,15 +141,10 @@ public class SupabaseClient {
         if (context == null) return false;
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm == null) return false;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            NetworkCapabilities cap = cm.getNetworkCapabilities(cm.getActiveNetwork());
-            return cap != null && (cap.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-                    || cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-                    || cap.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
-        } else {
-            NetworkInfo info = cm.getActiveNetworkInfo();
-            return info != null && info.isConnected();
-        }
+        NetworkCapabilities capabilities = cm.getNetworkCapabilities(cm.getActiveNetwork());
+        return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
     }
 
     // --- SESSION & PREFERENCE HELPERS ---
@@ -365,6 +358,19 @@ public class SupabaseClient {
         saveSession(accessToken, null, userId, email, name, course);
     }
 
+    private void updateSessionTokens(String accessToken, String refreshToken) {
+        lastRefreshedAccessToken = null;
+        lastRefreshUserId = null;
+        lastTokenRefreshAt = 0L;
+        prefs.edit()
+                .putBoolean(KEY_IS_LOGGED_IN, true)
+                .putString(KEY_ACCESS_TOKEN, accessToken)
+                .putLong(KEY_ACCESS_TOKEN_EXPIRY, tokenExpirationMillis(accessToken))
+                .putString(KEY_REFRESH_TOKEN, refreshToken)
+                .remove(KEY_SESSION_EXPIRY_HANDLED)
+                .apply();
+    }
+
     public void clearSession() {
         SharedPreferences.Editor editor = prefs.edit()
                 .remove(KEY_IS_LOGGED_IN)
@@ -498,13 +504,8 @@ public class SupabaseClient {
                             }
                         }
 
-                        final String finalToken = accessToken;
-                        final String finalRefresh = refreshToken;
-                        final String finalId = userId;
-                        final String finalEmail = userEmail;
-
-                        saveSession(finalToken, finalRefresh, finalId, finalEmail, name, course);
-                        postSuccess(callback, finalId, finalEmail, finalToken);
+                        saveSession(accessToken, refreshToken, userId, userEmail, name, course);
+                        postSuccess(callback, userId, userEmail, accessToken);
                     } catch (Exception e) {
                         postError(callback, "Couldn't finish creating your account. Please try again.");
                     }
@@ -563,23 +564,193 @@ public class SupabaseClient {
                             }
                         }
 
-                        final String finalToken = accessToken;
-                        final String finalRefresh = refreshToken;
-                        final String finalId = userId;
-                        final String finalEmail = userEmail;
-                        final String finalName = userName;
-                        final String finalCourse = userCourse;
-
-                        saveSession(finalToken, finalRefresh, finalId, finalEmail, finalName, finalCourse);
-                        postSuccess(callback, finalId, finalEmail, finalToken);
+                        saveSession(accessToken, refreshToken, userId, userEmail, userName, userCourse);
+                        postSuccess(callback, userId, userEmail, accessToken);
                     } catch (Exception e) {
                         postError(callback, "Couldn't sign you in right now. Please try again.");
                     }
                 } else {
-                    postError(callback, signInError(response.code()));
+                    Log.d(TAG, "Sign-in error response body: " + responseBody);
+                    postError(callback, signInError(response.code(), responseBody));
                 }
             }
         });
+    }
+
+    public void loadMfaFactors(DataCallback<JsonArray> callback) {
+        requestAuthenticatedJson("GET", "/auth/v1/user", null, new DataCallback<JsonObject>() {
+            @Override
+            public void onSuccess(JsonObject result) {
+                JsonElement factors = result.get("factors");
+                if (factors == null || factors.isJsonNull()) {
+                    if (callback != null) callback.onSuccess(new JsonArray());
+                } else if (factors.isJsonArray()) {
+                    if (callback != null) callback.onSuccess(factors.getAsJsonArray());
+                } else {
+                    postDataError(callback, "The MFA factor list was not readable.");
+                }
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                postDataError(callback, errorMessage);
+            }
+        }, "Couldn't load MFA factors.");
+    }
+
+    public void deleteMfaFactor(String factorId, DataCallback<Boolean> callback) {
+        requestAuthenticatedJson("DELETE", "/auth/v1/factors/" + android.net.Uri.encode(factorId),
+                new JsonObject(), new DataCallback<JsonObject>() {
+                    @Override
+                    public void onSuccess(JsonObject result) {
+                        if (callback != null) callback.onSuccess(true);
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        postDataError(callback, errorMessage);
+                    }
+                }, "Couldn't remove the incomplete authenticator setup.");
+    }
+
+    public void enrollTotp(DataCallback<JsonObject> callback) {
+        JsonObject body = new JsonObject();
+        body.addProperty("factor_type", "totp");
+        body.addProperty("friendly_name", "WorkStudyPro Admin");
+        requestAuthenticatedJson("POST", "/auth/v1/factors", body, callback,
+                "Couldn't start authenticator setup.");
+    }
+
+    public void challengeTotp(String factorId, DataCallback<String> callback) {
+        requestAuthenticatedJson("POST", "/auth/v1/factors/" + android.net.Uri.encode(factorId) + "/challenge",
+                new JsonObject(), new DataCallback<JsonObject>() {
+                    @Override
+                    public void onSuccess(JsonObject result) {
+                        JsonElement id = result.get("id");
+                        if (id == null || id.isJsonNull()) {
+                            postDataError(callback, "The authenticator challenge could not be created.");
+                            return;
+                        }
+                        if (callback != null) callback.onSuccess(id.getAsString());
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        postDataError(callback, errorMessage);
+                    }
+                }, "Couldn't create an authenticator challenge.");
+    }
+
+    public void verifyTotp(String factorId, String challengeId, String code,
+                           DataCallback<Boolean> callback) {
+        JsonObject body = new JsonObject();
+        body.addProperty("challenge_id", challengeId);
+        body.addProperty("code", code);
+        requestAuthenticatedJson("POST", "/auth/v1/factors/" + android.net.Uri.encode(factorId) + "/verify",
+                body, new DataCallback<JsonObject>() {
+                    @Override
+                    public void onSuccess(JsonObject result) {
+                        String accessToken = stringValue(result, "access_token");
+                        String refreshToken = stringValue(result, "refresh_token");
+                        if (accessToken.isEmpty() || refreshToken.isEmpty()) {
+                            postDataError(callback, "MFA verification returned an incomplete session.");
+                            return;
+                        }
+                        String userId = getUserId();
+                        JsonElement userElement = result.get("user");
+                        if (userElement != null && userElement.isJsonObject()) {
+                            userId = stringValue(userElement.getAsJsonObject(), "id");
+                        }
+                        if (userId == null || userId.isEmpty()) {
+                            postDataError(callback, "MFA verification returned no signed-in user.");
+                            return;
+                        }
+                        if (!userId.equals(getUserId())) {
+                            postDataError(callback, "MFA verification returned a different signed-in user.");
+                            return;
+                        }
+                        updateSessionTokens(accessToken, refreshToken);
+                        if (callback != null) callback.onSuccess(true);
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        postDataError(callback, errorMessage);
+                    }
+                }, "The authenticator code was not accepted.");
+    }
+
+    public void refreshAuthenticatedSession(DataCallback<Boolean> callback) {
+        String token = getAccessToken();
+        if (token == null || token.isEmpty()) {
+            postDataError(callback, "There is no active session to refresh.");
+            return;
+        }
+        new Thread(() -> {
+            boolean refreshed = refreshSessionToken(token);
+            mainHandler.post(() -> {
+                if (refreshed) {
+                    if (callback != null) callback.onSuccess(true);
+                } else {
+                    postDataError(callback, "Couldn't refresh the verified session. Please try again.");
+                }
+            });
+        }).start();
+    }
+
+    public void callAdminConsole(JsonObject payload, DataCallback<JsonObject> callback) {
+        requestAuthenticatedJson("POST", "/functions/v1/admin-console", payload, callback,
+                "The admin request failed.");
+    }
+
+    private void requestAuthenticatedJson(String method, String path, JsonObject body,
+                                          DataCallback<JsonObject> callback, String fallback) {
+        String token = getAccessToken();
+        if (token == null || token.isEmpty()) {
+            postDataError(callback, "Sign in before making this request.");
+            return;
+        }
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(SUPABASE_URL + path)
+                .addHeader("apikey", SUPABASE_ANON_KEY)
+                .addHeader("Authorization", "Bearer " + token)
+                .addHeader("Content-Type", "application/json");
+        if ("GET".equals(method)) {
+            requestBuilder.get();
+        } else {
+            requestBuilder.method(method, RequestBody.create(body != null ? body.toString() : "{}", JSON));
+        }
+
+        httpClient.newCall(requestBuilder.build()).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                postDataError(callback, "Couldn't connect. Please check your internet connection.");
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                String responseBody = response.body() != null ? response.body().string() : "";
+                if (!response.isSuccessful()) {
+                    postDataError(callback, extractErrorMessage(responseBody,
+                            fallback + " (" + response.code() + ")."));
+                    return;
+                }
+                try {
+                    JsonObject result = responseBody.isEmpty()
+                            ? new JsonObject() : JsonParser.parseString(responseBody).getAsJsonObject();
+                    mainHandler.post(() -> {
+                        if (callback != null) callback.onSuccess(result);
+                    });
+                } catch (RuntimeException e) {
+                    postDataError(callback, "The server returned an unreadable response.");
+                }
+            }
+        });
+    }
+
+    private String stringValue(JsonObject object, String key) {
+        JsonElement value = object.get(key);
+        return value == null || value.isJsonNull() ? "" : value.getAsString();
     }
 
     // --- AUTHENTICATION: FORGOT PASSWORD / PASSWORD RECOVERY ---
@@ -743,7 +914,21 @@ public class SupabaseClient {
         return "Couldn't create your account. Check your details and try again.";
     }
 
-    private String signInError(int responseCode) {
+    private String signInError(int responseCode, String responseBody) {
+        try {
+            JsonObject errorJson = JsonParser.parseString(responseBody).getAsJsonObject();
+            String errorCode = errorJson.has("error_code") && !errorJson.get("error_code").isJsonNull()
+                    ? errorJson.get("error_code").getAsString() : "";
+            String message = errorJson.has("msg") && !errorJson.get("msg").isJsonNull()
+                    ? errorJson.get("msg").getAsString() : "";
+
+            if ("user_banned".equalsIgnoreCase(errorCode)
+                    || message.toLowerCase(Locale.ROOT).contains("banned")) {
+                return "This account has been deactivated. Contact workstudypro.app@gmail.com for support.";
+            }
+        } catch (RuntimeException ignored) {
+            // Keep the existing status-code message when the error body is not valid JSON.
+        }
         if (responseCode == 400 || responseCode == 401) {
             return "Email or password is incorrect. Check your details and try again.";
         }
@@ -804,6 +989,7 @@ public class SupabaseClient {
 
     private void synchronizeLocalData(Context context) throws IOException {
         AppDatabase db = AppDatabase.getInstance(context);
+        refreshAlgorithmConfigFromCloud();
         String schedulesJson = executeSyncRequest("/rest/v1/schedules?select=*", "GET", null);
         String assignmentsJson = executeSyncRequest("/rest/v1/assignments?select=*", "GET", null);
         JsonArray remoteSchedules = JsonParser.parseString(schedulesJson).getAsJsonArray();
@@ -823,7 +1009,25 @@ public class SupabaseClient {
         }
     }
 
-    private void mergeSchedules(AppDatabase db, JsonArray remoteRows, List<SyncChange> changes) throws IOException {
+    private void refreshAlgorithmConfigFromCloud() {
+        try {
+            String response = executeSyncRequest(
+                    "/rest/v1/app_config?key=eq.algorithm_weights&select=value&limit=1", "GET", null);
+            JsonArray rows = JsonParser.parseString(response).getAsJsonArray();
+            if (rows.isEmpty()) return;
+
+            JsonElement value = rows.get(0).getAsJsonObject().get("value");
+            if (value == null || !value.isJsonObject()) {
+                throw new IllegalArgumentException("The global algorithm configuration is unreadable.");
+            }
+            AlgorithmConfig.save(this.context, AlgorithmConfig.fromJson(value.getAsJsonObject()));
+        } catch (IOException | com.google.gson.JsonParseException | IllegalStateException
+                 | IllegalArgumentException e) {
+            Log.w(TAG, "Could not refresh global algorithm configuration; keeping the cached settings.", e);
+        }
+    }
+
+    private void mergeSchedules(AppDatabase db, JsonArray remoteRows, List<SyncChange> changes) {
         List<ScheduleItem> localRows = db.scheduleDao().getAllIncludingDeleted();
         for (JsonElement element : remoteRows) {
             JsonObject row = element.getAsJsonObject();
@@ -849,7 +1053,7 @@ public class SupabaseClient {
         }
     }
 
-    private void mergeAssignments(AppDatabase db, JsonArray remoteRows, List<SyncChange> changes) throws IOException {
+    private void mergeAssignments(AppDatabase db, JsonArray remoteRows, List<SyncChange> changes) {
         List<AssignmentItem> localRows = db.assignmentDao().getAllIncludingDeleted();
         for (JsonElement element : remoteRows) {
             JsonObject row = element.getAsJsonObject();
@@ -1419,7 +1623,7 @@ public class SupabaseClient {
 
                 try {
                     JsonArray rows = JsonParser.parseString(body).getAsJsonArray();
-                    if (rows.size() == 0) {
+                    if (rows.isEmpty()) {
                         mainHandler.post(() -> {
                             if (callback != null) callback.onSuccess(null);
                         });
@@ -1547,7 +1751,7 @@ public class SupabaseClient {
         });
     }
 
-    public void updateEmail(Context context, String newEmail, DataCallback<Boolean> callback) {
+    public void updateEmail(String newEmail, DataCallback<Boolean> callback) {
         String token = getAccessToken();
         if (token == null || token.isEmpty()) {
             if (callback != null) callback.onError("User is not signed in.");
@@ -1587,49 +1791,6 @@ public class SupabaseClient {
                     if (callback != null) {
                         mainHandler.post(() -> callback.onError(extractErrorMessage(responseBody, "Failed to send email confirmation (" + response.code() + ")")));
                     }
-                }
-            }
-        });
-    }
-
-    public void invokeAdminFunction(JsonObject payload, DataCallback<JsonObject> callback) {
-        String token = getAccessToken();
-        if (token == null || token.isEmpty() || isDemoSession()) {
-            if (callback != null) mainHandler.post(() -> callback.onError("Admin access is unavailable."));
-            return;
-        }
-
-        Request request = new Request.Builder()
-                .url(SUPABASE_URL + "/functions/v1/admin-console")
-                .addHeader("apikey", SUPABASE_ANON_KEY)
-                .addHeader("Authorization", "Bearer " + token)
-                .post(RequestBody.create(payload.toString(), JSON))
-                .build();
-
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                if (callback != null) mainHandler.post(() ->
-                        callback.onError("Couldn't connect to the admin service."));
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                String body = response.body() != null ? response.body().string() : "";
-                if (!response.isSuccessful()) {
-                    if (callback != null) mainHandler.post(() ->
-                            callback.onError("Unable to complete the admin request."));
-                    return;
-                }
-                try {
-                    JsonElement parsed = JsonParser.parseString(body);
-                    if (!parsed.isJsonObject()) throw new IllegalStateException("Invalid response");
-                    JsonObject result = parsed.getAsJsonObject();
-                    if (callback != null) mainHandler.post(() -> callback.onSuccess(result));
-                } catch (RuntimeException e) {
-                    Log.e(TAG, "Invalid response from admin service", e);
-                    if (callback != null) mainHandler.post(() ->
-                            callback.onError("The admin service returned an invalid response."));
                 }
             }
         });

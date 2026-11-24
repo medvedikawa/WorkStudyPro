@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_admin_user_card"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- User Header: Avatar, Name/Email, Status Pill -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Avatar with Initial -->
+        <TextView
+            android:id="@+id/userAvatar"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/bg_admin_avatar"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            tools:text="D" />
+
+        <!-- User Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/userName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/admin_ink"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                tools:text="Demo Student" />
+
+            <TextView
+                android:id="@+id/userEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:textColor="@color/admin_mute"
+                android:textSize="12sp"
+                android:typeface="monospace"
+                tools:text="demo@student.edu" />
+        </LinearLayout>
+
+        <!-- Status Pill -->
+        <TextView
+            android:id="@+id/userStatusPill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_admin_pill_active"
+            android:paddingStart="10dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="3dp"
+            android:textColor="@color/admin_active_text"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            tools:text="Active" />
+    </LinearLayout>
+
+    <!-- Course & Role Metadata Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Course: "
+            android:textColor="@color/admin_mute"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/userCourse"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/admin_ink"
+            android:textSize="12sp"
+            tools:text="BS Computer Science" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="  ·  Role: "
+            android:textColor="@color/admin_mute"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/userRole"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/admin_mute"
+            android:textSize="12sp"
+            tools:text="user" />
+    </LinearLayout>
+
+    <!-- Action Buttons Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnResetPassword"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_admin_btn"
+            android:minHeight="38dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:stateListAnimator="@null"
+            android:text="Set new password"
+            android:textAllCaps="false"
+            android:textColor="@color/admin_ink"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnToggleActive"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_admin_btn"
+            android:minHeight="38dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:stateListAnimator="@null"
+            android:text="Deactivate"
+            android:textAllCaps="false"
+            android:textColor="@color/admin_ink"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnDelete"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_admin_btn_danger"
+            android:minHeight="38dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:stateListAnimator="@null"
+            android:text="Delete"
+            android:textAllCaps="false"
+            android:textColor="@color/admin_raspberry"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

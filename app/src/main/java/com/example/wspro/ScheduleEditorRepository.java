@@ -50,7 +50,8 @@ public final class ScheduleEditorRepository {
         }
         loadSchedules.addAll(proposed);
         int weeklyLimit = SupabaseClient.getInstance(appContext).getWeeklyHoursLimit();
-        return new SaveCheck(conflicts, LoadCalculator.calculate(loadSchedules, weeklyLimit));
+        return new SaveCheck(conflicts, LoadCalculator.calculate(
+                loadSchedules, weeklyLimit, AlgorithmConfig.load(appContext)));
     }
 
     public void save(boolean editMode, List<ScheduleItem> schedules, List<Integer> deletedIds) {

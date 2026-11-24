@@ -43,6 +43,12 @@ public class LoadCalculator {
     }
 
     public static LoadResult calculate(List<ScheduleItem> schedules, int weeklyLimit) {
+        return calculate(schedules, weeklyLimit, AlgorithmConfig.defaults());
+    }
+
+    public static LoadResult calculate(List<ScheduleItem> schedules, int weeklyLimit,
+                                       AlgorithmConfig config) {
+        AlgorithmConfig effectiveConfig = config != null ? config : AlgorithmConfig.defaults();
         int limit = Math.max(1, weeklyLimit);
         double totalHours = 0;
         double classHours = 0;
@@ -72,9 +78,10 @@ public class LoadCalculator {
         }
 
         LoadBand band;
-        if (totalHours > limit) {
+        double loadPercent = totalHours / limit * 100.0;
+        if (loadPercent >= effectiveConfig.highLoadPercent) {
             band = LoadBand.HIGH;
-        } else if (totalHours >= limit * 0.75) {
+        } else if (loadPercent >= effectiveConfig.moderateLoadPercent) {
             band = LoadBand.MODERATE;
         } else {
             band = LoadBand.LOW;

@@ -12,7 +12,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.gson.JsonObject;
 import androidx.appcompat.widget.SwitchCompat;
 
 import java.util.ArrayList;
@@ -78,10 +77,6 @@ public class ProfileActivity extends AppCompatActivity {
         refreshLastSynced();
         btnSyncNow.setOnClickListener(v -> syncNow());
 
-        Button adminButton = findViewById(R.id.btnAdminConsole);
-        adminButton.setOnClickListener(v ->
-                startActivity(new Intent(this, AdminActivity.class)));
-
         findViewById(R.id.btnLogOut).setOnClickListener(v -> {
             View logoutButton = findViewById(R.id.btnLogOut);
             logoutButton.setEnabled(false);
@@ -146,30 +141,6 @@ public class ProfileActivity extends AppCompatActivity {
         refreshLastSynced();
         renderSummary();
         renderProfileInfo();
-        refreshAdminAccess();
-    }
-
-    private void refreshAdminAccess() {
-        Button adminButton = findViewById(R.id.btnAdminConsole);
-        if (!client.isLoggedIn() || client.isDemoSession()) {
-            adminButton.setVisibility(View.GONE);
-            return;
-        }
-        JsonObject request = new JsonObject();
-        request.addProperty("action", "check_role");
-        client.invokeAdminFunction(request, new SupabaseClient.DataCallback<>() {
-            @Override
-            public void onSuccess(JsonObject result) {
-                if (isFinishing()) return;
-                boolean isAdmin = result.has("is_admin") && result.get("is_admin").getAsBoolean();
-                adminButton.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
-            }
-
-            @Override
-            public void onError(String errorMessage) {
-                if (!isFinishing()) adminButton.setVisibility(View.GONE);
-            }
-        });
     }
 
     private void renderProfileInfo() {
@@ -268,7 +239,8 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void renderSummary() {
         int weeklyLimit = client.getWeeklyHoursLimit();
-        LoadCalculator.LoadResult result = LoadCalculator.calculate(cachedSchedules, weeklyLimit);
+        LoadCalculator.LoadResult result = LoadCalculator.calculate(
+                cachedSchedules, weeklyLimit, AlgorithmConfig.load(this));
 
         String loadStatus = result.isHigh()
                 ? "High workload"

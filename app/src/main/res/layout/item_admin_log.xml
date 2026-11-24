@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="4dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="4dp"
+    android:paddingBottom="8dp">
+
+    <!-- Log Header: Level/Event, Time, Actor -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/logLevel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="11sp"
+            android:typeface="monospace"
+            android:textColor="@color/admin_primary"
+            tools:text="INFO" />
+
+        <TextView
+            android:id="@+id/logTimestamp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/admin_mute"
+            android:textSize="11sp"
+            android:typeface="monospace"
+            tools:text="14:02:11" />
+
+        <TextView
+            android:id="@+id/logActor"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/admin_mute"
+            android:textSize="11sp"
+            tools:text="actor: demo@student.edu" />
+    </LinearLayout>
+
+    <!-- Log Details Content -->
+    <TextView
+        android:id="@+id/logDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/admin_ink"
+        android:textSize="12sp"
+        android:typeface="monospace"
+        tools:text="JWT expired on sync · session refresh failed" />
+
+    <!-- Divider Line -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="10dp"
+        android:background="@color/admin_line" />
+</LinearLayout>

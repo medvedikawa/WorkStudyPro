@@ -300,7 +300,7 @@ public class EditProfileActivity extends AppCompatActivity {
         btnUpdateEmail.setEnabled(false);
         btnUpdateEmail.setText("Sending confirmation...");
 
-        client.updateEmail(this, newEmail, new SupabaseClient.DataCallback<>() {
+        client.updateEmail(newEmail, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {
                 btnUpdateEmail.setEnabled(true);

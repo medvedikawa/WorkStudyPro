@@ -270,16 +270,6 @@
                 android:text="High workload alerts"
                 android:textColor="@color/text_secondary" />
 
-            <Button
-                android:id="@+id/btnAdminConsole"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="@color/ws_surface2"
-                android:text="@string/admin_console"
-                android:textColor="@color/text_primary"
-                android:visibility="gone" />
-
             <LinearLayout
                 android:id="@+id/layoutSyncSection"
                 android:layout_width="match_parent"

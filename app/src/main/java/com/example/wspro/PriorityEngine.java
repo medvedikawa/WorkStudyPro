@@ -1,17 +1,22 @@
 package com.example.wspro;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class PriorityEngine {
 
-    public static List<AssignmentItem> calculateAndSort(List<AssignmentItem> assignments, List<ScheduleItem> schedules) {
+    public static List<AssignmentItem> calculateAndSort(List<AssignmentItem> assignments,
+                                                         List<ScheduleItem> schedules) {
+        return calculateAndSort(assignments, schedules, AlgorithmConfig.defaults());
+    }
+
+    public static List<AssignmentItem> calculateAndSort(List<AssignmentItem> assignments,
+                                                         List<ScheduleItem> schedules,
+                                                         AlgorithmConfig config) {
         if (assignments == null) return new ArrayList<>();
+        AlgorithmConfig effectiveConfig = config != null ? config : AlgorithmConfig.defaults();
 
         List<AssignmentItem> result = new ArrayList<>(assignments);
         long now = System.currentTimeMillis();
@@ -27,47 +32,46 @@ public class PriorityEngine {
             double score = 0;
             StringBuilder reasonBuilder = new StringBuilder();
 
-            // 1. Category Base Weight
-            String cat = item.getCategory() != null ? item.getCategory().trim() : "";
-            double catWeight = 15;
-            if (cat.equalsIgnoreCase("Task Performance")) {
-                catWeight = 40;
+            String category = item.getCategory() != null ? item.getCategory().trim() : "";
+            int categoryWeight;
+            if (category.equalsIgnoreCase("Task Performance")) {
+                categoryWeight = effectiveConfig.getWeight(AlgorithmConfig.TASK_PERFORMANCE);
                 reasonBuilder.append("Major Task Performance");
-            } else if (cat.equalsIgnoreCase("Group Work")) {
-                catWeight = 30;
+            } else if (category.equalsIgnoreCase("Group Work")) {
+                categoryWeight = effectiveConfig.getWeight(AlgorithmConfig.GROUP_WORK);
                 reasonBuilder.append("Group Project Coordination");
-            } else if (cat.equalsIgnoreCase("Laboratory")) {
-                catWeight = 25;
+            } else if (category.equalsIgnoreCase("Laboratory")) {
+                categoryWeight = effectiveConfig.getWeight(AlgorithmConfig.LABORATORY);
                 reasonBuilder.append("Hands-on Laboratory");
             } else {
-                catWeight = 15;
+                categoryWeight = effectiveConfig.getWeight(AlgorithmConfig.ASSIGNMENT);
                 reasonBuilder.append("Academic Assignment");
             }
-            score += catWeight;
+            score += categoryWeight;
 
-            // 2. Deadline Proximity
             long diffMillis = item.getDueTimestamp() - now;
             long diffHours = diffMillis / (1000 * 60 * 60);
-
+            double deadlineFactor;
             if (diffMillis < 0) {
-                score += 65;
+                deadlineFactor = 1.0;
                 reasonBuilder.insert(0, "Overdue • ");
             } else if (diffHours <= 12) {
-                score += 50;
+                deadlineFactor = 0.85;
                 reasonBuilder.insert(0, "Due in under 12 hrs • ");
             } else if (diffHours <= 24) {
-                score += 38;
+                deadlineFactor = 0.65;
                 reasonBuilder.insert(0, "Due in under 24 hrs • ");
             } else if (diffHours <= 48) {
-                score += 24;
+                deadlineFactor = 0.45;
                 reasonBuilder.insert(0, "Due in 2 days • ");
             } else if (diffHours <= 72) {
-                score += 14;
+                deadlineFactor = 0.30;
                 reasonBuilder.insert(0, "Due in 3 days • ");
             } else {
-                score += 5;
+                deadlineFactor = 0.10;
                 reasonBuilder.insert(0, "Due on " + item.getDueDate() + " • ");
             }
+            score += effectiveConfig.getWeight(AlgorithmConfig.DEADLINE) * deadlineFactor;
 
             // 3. Work Shift Collision on Due Date
             boolean collision = false;
@@ -77,7 +81,7 @@ public class PriorityEngine {
                 for (ScheduleItem s : schedules) {
                     if (s.isWork() && s.getDay() != null && s.getDay().equalsIgnoreCase(dueDayCode)) {
                         collision = true;
-                        score += 35; // Significant collision boost
+                        score += effectiveConfig.getWeight(AlgorithmConfig.WORK_SHIFT_COLLISION);
                         reasonBuilder.append(" • Work shift collision on ").append(dueDayCode)
                                 .append(" (").append(s.getStartTime()).append(" - ").append(s.getEndTime()).append(")");
                         break;

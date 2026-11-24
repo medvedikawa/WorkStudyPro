@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.google.gson.JsonObject;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -128,6 +129,33 @@ public class LoginActivity extends AppCompatActivity {
             navigateToDashboard();
             return;
         }
+        JsonObject payload = new JsonObject();
+        payload.addProperty("action", "check_role");
+        supabaseClient.callAdminConsole(payload, new SupabaseClient.DataCallback<>() {
+            @Override
+            public void onSuccess(JsonObject result) {
+                boolean isAdmin = result.has("is_admin") && result.get("is_admin").getAsBoolean();
+                if (isAdmin) {
+                    boolean mfaVerified = result.has("mfa_verified")
+                            && result.get("mfa_verified").getAsBoolean();
+                    Intent intent = new Intent(LoginActivity.this,
+                            mfaVerified ? AdminConsoleActivity.class : AdminMfaActivity.class);
+                    startActivity(intent);
+                    if (mfaVerified) finish();
+                    return;
+                }
+                refreshUserProfileAndNavigate();
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                Toast.makeText(LoginActivity.this,
+                        "Couldn't verify account access: " + errorMessage, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void refreshUserProfileAndNavigate() {
         supabaseClient.loadProfileFromSupabase(this, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(UserProfile profile) {

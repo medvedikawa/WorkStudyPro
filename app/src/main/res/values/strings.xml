@@ -23,9 +23,6 @@
     <string name="action_undo">Undo</string>
     <string name="profile_edit_action">Edit</string>
     <string name="profile_demo_read_only">Demo profile</string>
-    <string name="admin_console">Admin console</string>
-    <string name="admin_users">Users</string>
-    <string name="admin_logs">Debug log</string>
     <string name="profile_demo_edit_unavailable">Profile changes aren\'t available in the demo account.</string>
     <string name="schedule_school">School</string>
     <string name="schedule_work">Work</string>
@@ -116,5 +113,14 @@
     </string-array>
     <string name="crop_processing">Processing…</string>
     <string name="crop_scan_now">✓ Scan Now</string>
+    <string name="admin_tab_algorithm">Algorithm weights</string>
+    <string name="admin_algorithm_weights_title">Task priority weights</string>
+    <string name="admin_algorithm_weights_description">Controls task ranking factors used across the app. Weights must total 100%.</string>
+    <string name="admin_algorithm_weight_total_default">Total: 100%</string>
+    <string name="admin_algorithm_thresholds_title">Weekly load thresholds</string>
+    <string name="admin_algorithm_thresholds_description">Percent of a student’s weekly hours limit.</string>
+    <string name="admin_algorithm_auto_normalize">Auto-normalize</string>
+    <string name="admin_algorithm_reset">Reset</string>
+    <string name="admin_algorithm_publish">Publish to all users</string>
 
 </resources>

@@ -204,7 +204,8 @@ public class NotificationTriggerEngine {
         if (schedules != null) {
             SupabaseClient client = SupabaseClient.getInstance(context);
             int weeklyLimit = client.getWeeklyHoursLimit();
-            LoadCalculator.LoadResult load = LoadCalculator.calculate(schedules, weeklyLimit);
+            LoadCalculator.LoadResult load = LoadCalculator.calculate(
+                    schedules, weeklyLimit, AlgorithmConfig.load(context));
 
             if (load.isHigh()) {
                 Calendar cal = Calendar.getInstance();

@@ -131,6 +131,12 @@ public class TasksActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        applyPrioritiesAndRender();
+    }
+
+    @Override
     protected void onDestroy() {
         cancelPendingSearch();
         super.onDestroy();
@@ -287,8 +293,8 @@ public class TasksActivity extends AppCompatActivity {
     }
 
     private void applyPrioritiesAndRender() {
-        List<AssignmentItem> prioritized =
-                PriorityEngine.calculateAndSort(visibleAssignments, currentSchedules);
+        List<AssignmentItem> prioritized = PriorityEngine.calculateAndSort(
+                visibleAssignments, currentSchedules, AlgorithmConfig.load(this));
 
         adapter.updateData(prioritized);
         long pendingCount = 0;

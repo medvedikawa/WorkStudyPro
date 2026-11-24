@@ -277,7 +277,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void computeWeeklyLoad(List<ScheduleItem> schedules) {
         SupabaseClient client = SupabaseClient.getInstance(this);
-        LoadCalculator.LoadResult result = LoadCalculator.calculate(schedules, client.getWeeklyHoursLimit());
+        LoadCalculator.LoadResult result = LoadCalculator.calculate(
+                schedules, client.getWeeklyHoursLimit(), AlgorithmConfig.load(this));
 
         TextView tvWorkloadNumber = findViewById(R.id.tvWorkloadNumber);
         TextView tvWorkloadLimit = findViewById(R.id.tvWorkloadLimit);
@@ -424,7 +425,8 @@ public class MainActivity extends AppCompatActivity {
 
         layoutEmptyTasksPlaceholder.setVisibility(View.GONE);
         boolean collisionAlerts = SupabaseClient.getInstance(this).isAlertCollisionsEnabled();
-        List<AssignmentItem> prioritized = PriorityEngine.calculateAndSort(pendingTasks, schedules);
+        List<AssignmentItem> prioritized = PriorityEngine.calculateAndSort(
+                pendingTasks, schedules, AlgorithmConfig.load(this));
         LayoutInflater inflater = LayoutInflater.from(this);
         int count = Math.min(prioritized.size(), 3);
         for (int i = 0; i < count; i++) {

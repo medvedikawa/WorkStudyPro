@@ -253,8 +253,8 @@ public class ScheduleTableParser {
         Matcher matcher = pattern.matcher(cleaned);
 
         while (matcher.find()) {
-            String rawStart = matcher.group(1) != null ? matcher.group(1).trim() : "";
-            String rawEnd = matcher.group(2) != null ? matcher.group(2).trim() : "";
+            String rawStart = matcher.group(1).trim();
+            String rawEnd = matcher.group(2).trim();
 
             boolean hasColonOrMeridiem = rawStart.contains(":") || rawStart.contains(".") ||
                     rawEnd.contains(":") || rawEnd.contains(".") ||
@@ -379,7 +379,7 @@ public class ScheduleTableParser {
             return res;
         }
 
-        t = t.replaceAll("5", "S")
+        t = t.replace("5", "S")
              .replaceAll("\\$", "S")
              .replaceAll("(?i)VV", "W")
              .replaceAll("(?i)Tn", "Th");

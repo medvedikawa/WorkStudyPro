@@ -55,4 +55,22 @@
     <color name="glow_end">#00B794F6</color>
     <color name="nav_surface">#E01B1923</color>
     <color name="schedule_day_on">#FFFFFF</color>
+
+    <!-- Admin Console Theme Colors (Mockup match dark) -->
+    <color name="admin_bg">#15121F</color>
+    <color name="admin_card">#1F1B2E</color>
+    <color name="admin_ink">#F1EEFC</color>
+    <color name="admin_mute">#A49DC0</color>
+    <color name="admin_line">#352F4D</color>
+    <color name="admin_primary">#9D72FF</color>
+    <color name="admin_primary_soft">#2C2447</color>
+    <color name="admin_raspberry">#FF78A9</color>
+    <color name="admin_green">#34D399</color>
+    <color name="admin_amber">#FBBF24</color>
+    <color name="admin_active_bg">#1E3A2F</color>
+    <color name="admin_active_text">#6EE7B7</color>
+    <color name="admin_suspended_bg">#3D1E24</color>
+    <color name="admin_suspended_text">#FCA5A5</color>
+    <color name="admin_pending_bg">#3B2E19</color>
+    <color name="admin_pending_text">#FDE68A</color>
 </resources>

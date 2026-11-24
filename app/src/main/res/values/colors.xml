@@ -57,4 +57,22 @@
     <color name="schedule_day_on">#FFFFFF</color>
     <color name="schedule_warning_fill">#FFFFF2E5</color>
     <color name="schedule_conflict_fill">#FFFFF1F2</color>
+
+    <!-- Admin Console Theme Colors (Mockup match) -->
+    <color name="admin_bg">#F7F5FC</color>
+    <color name="admin_card">#FFFFFF</color>
+    <color name="admin_ink">#1A1530</color>
+    <color name="admin_mute">#6B6585</color>
+    <color name="admin_line">#E3DFF0</color>
+    <color name="admin_primary">#6D28D9</color>
+    <color name="admin_primary_soft">#ECE6FB</color>
+    <color name="admin_raspberry">#BE185D</color>
+    <color name="admin_green">#10B981</color>
+    <color name="admin_amber">#D97706</color>
+    <color name="admin_active_bg">#D1FAE5</color>
+    <color name="admin_active_text">#065F46</color>
+    <color name="admin_suspended_bg">#FEE2E2</color>
+    <color name="admin_suspended_text">#991B1B</color>
+    <color name="admin_pending_bg">#FEF3C7</color>
+    <color name="admin_pending_text">#92400E</color>
 </resources>

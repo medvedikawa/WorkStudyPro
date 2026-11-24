@@ -30,6 +30,22 @@ public class PriorityEngineTest {
     }
 
     @Test
+    public void configuredCategoryWeightChangesThePriorityScore() {
+        long dueTimestamp = System.currentTimeMillis() + 10L * 24 * 60 * 60 * 1000;
+        AssignmentItem groupTask = new AssignmentItem(
+                "Prepare presentation", "Biology", "Group Work", "date", "time", dueTimestamp,
+                false, AssignmentItem.TYPE_SCHOOL);
+        int[] adjustedWeights = AlgorithmConfig.defaults().getWeights();
+        adjustedWeights[AlgorithmConfig.GROUP_WORK] += 5;
+        adjustedWeights[AlgorithmConfig.ASSIGNMENT] -= 5;
+        AlgorithmConfig adjusted = new AlgorithmConfig(adjustedWeights, 60, 85);
+
+        PriorityEngine.calculateAndSort(List.of(groupTask), new ArrayList<>(), adjusted);
+
+        assertEquals(23.5, groupTask.getPriorityScore(), 0.1);
+    }
+
+    @Test
     public void schoolTasksRemainPrioritizedAheadOfWorkTasks() {
         long dueTimestamp = System.currentTimeMillis() + 60 * 60 * 1000L;
         AssignmentItem schoolTask = new AssignmentItem(
