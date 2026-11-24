@@ -26,7 +26,7 @@
             android:id="@+id/tvAssignmentDialogSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Select category, importance, deadline, and optional reminders."
+            android:text="@string/task_dialog_subtitle"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
             android:layout_marginBottom="16dp" />
@@ -54,7 +54,7 @@
                 android:layout_height="44dp"
                 android:background="@drawable/bg_toggle_selected"
                 android:gravity="center"
-                android:text="School"
+                android:text="@string/schedule_school"
                 android:textColor="@color/ws_on_brand"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -69,7 +69,7 @@
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_toggle_unselected"
                 android:gravity="center"
-                android:text="Work"
+                android:text="@string/schedule_work"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -84,7 +84,7 @@
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_toggle_unselected"
                 android:gravity="center"
-                android:text="Other"
+                android:text="@string/task_category_other"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -96,7 +96,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="IMPORTANCE"
+            android:text="@string/task_importance"
             android:textColor="@color/text_primary"
             android:textSize="12sp"
             android:textStyle="bold"
@@ -115,7 +115,7 @@
                 android:layout_height="40dp"
                 android:background="@drawable/bg_toggle_unselected"
                 android:gravity="center"
-                android:text="High"
+                android:text="@string/task_importance_high"
                 android:textColor="@color/text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold"
@@ -130,7 +130,7 @@
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_toggle_selected"
                 android:gravity="center"
-                android:text="Mid"
+                android:text="@string/task_importance_mid"
                 android:textColor="@color/ws_on_brand"
                 android:textSize="13sp"
                 android:textStyle="bold"
@@ -145,7 +145,7 @@
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_toggle_unselected"
                 android:gravity="center"
-                android:text="Low"
+                android:text="@string/task_importance_low"
                 android:textColor="@color/text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold"
@@ -291,7 +291,7 @@
             android:id="@+id/cbEnableReminder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Enable Task Reminder"
+            android:text="@string/task_reminder_enable"
             android:textColor="@color/text_primary"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -320,7 +320,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⏰ REMINDER TIME"
+                    android:text="@string/task_reminder_time"
                     android:textColor="@color/text_primary"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -329,7 +329,7 @@
                     android:id="@+id/tvSelectedReminderTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="05:00 PM"
+                    android:text="@string/task_reminder_time_default"
                     android:textColor="@color/ws_accent"
                     android:textSize="15sp"
                     android:textStyle="bold"
@@ -340,7 +340,7 @@
                 android:id="@+id/cbRepeatWeekly"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Repeat Weekly (Recurring)"
+                android:text="@string/task_repeat_weekly"
                 android:textColor="@color/text_primary"
                 android:textSize="15sp"
                 android:textStyle="bold"
@@ -358,7 +358,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="RECURRING DAYS"
+                    android:text="@string/task_recurring_days"
                     android:textColor="@color/text_primary"
                     android:textSize="11sp"
                     android:textStyle="bold"
@@ -369,13 +369,13 @@
                     android:layout_height="wrap_content"
                     android:columnCount="4">
 
-                    <CheckBox android:id="@+id/cbMon" android:text="Mon" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbTue" android:text="Tue" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbWed" android:text="Wed" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbThu" android:text="Thu" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbFri" android:text="Fri" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbSat" android:text="Sat" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbSun" android:text="Sun" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbMon" android:text="@string/task_day_mon" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbTue" android:text="@string/task_day_tue" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbWed" android:text="@string/task_day_wed" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbThu" android:text="@string/task_day_thu" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbFri" android:text="@string/task_day_fri" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbSat" android:text="@string/task_day_sat" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbSun" android:text="@string/task_day_sun" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
                 </GridLayout>
             </LinearLayout>
         </LinearLayout>
@@ -385,7 +385,7 @@
             android:id="@+id/btnSaveAssignment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Save Task"
+            android:text="@string/task_save"
             android:textColor="@color/ws_on_brand"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -397,7 +397,7 @@
             android:id="@+id/btnCancelAssignment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Discard changes"
+            android:text="@string/task_discard"
             android:textColor="@color/text_primary"
             android:textSize="15sp"
             android:backgroundTint="@android:color/transparent" />

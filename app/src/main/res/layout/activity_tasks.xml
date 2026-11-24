@@ -217,7 +217,7 @@
             android:id="@+id/cbSelectAllTasks"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Select All"
+            android:text="@string/task_select_all"
             android:textColor="@color/text_primary"
             android:textSize="13sp"
             android:buttonTint="@color/ws_accent" />
@@ -231,7 +231,7 @@
             android:id="@+id/btnBulkDelete"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
-            android:text="Delete Selected"
+            android:text="@string/task_delete_selected"
             android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="@color/ws_on_brand"

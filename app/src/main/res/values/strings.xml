@@ -96,6 +96,31 @@
     <string name="tasks_filter_no_subjects">No schedule subjects</string>
     <string name="tasks_no_matches">No tasks match your search</string>
     <string name="tasks_pending_subtitle">%1$d active tasks • Sorted by urgency &amp; work collision</string>
+
+    <string name="task_category_other">Other</string>
+    <string name="task_importance">IMPORTANCE</string>
+    <string name="task_importance_high">High</string>
+    <string name="task_importance_mid">Mid</string>
+    <string name="task_importance_low">Low</string>
+    <string name="task_dialog_subtitle">Select category, importance, deadline, and optional reminders.</string>
+    <string name="task_select_all">Select All</string>
+    <string name="task_delete_selected">Delete Selected</string>
+    <string name="task_reminder_enable">Enable Task Reminder</string>
+    <string name="task_reminder_time">⏰ REMINDER TIME</string>
+    <string name="task_reminder_time_default">05:00 PM</string>
+    <string name="task_repeat_weekly">Repeat Weekly (Recurring)</string>
+    <string name="task_recurring_days">RECURRING DAYS</string>
+    <string name="task_day_mon">Mon</string>
+    <string name="task_day_tue">Tue</string>
+    <string name="task_day_wed">Wed</string>
+    <string name="task_day_thu">Thu</string>
+    <string name="task_day_fri">Fri</string>
+    <string name="task_day_sat">Sat</string>
+    <string name="task_day_sun">Sun</string>
+    <string name="task_save">Save Task</string>
+    <string name="task_discard">Discard changes</string>
+    <string name="task_delete_desc">Delete task</string>
+
     <string-array name="program_courses">
         <item>BS Computer Science</item>
         <item>BS Information Technology</item>
