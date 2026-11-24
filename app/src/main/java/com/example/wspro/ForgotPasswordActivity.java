@@ -271,7 +271,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
 
         setInlineError(tvEmailError, null);
         btnSendEmail.setEnabled(false);
-        btnSendEmail.setText("Sending Code...");
+        btnSendEmail.setText("Sending Code");
 
         supabaseClient.resetPasswordForEmail(email, new SupabaseClient.AuthCallback() {
             @Override
@@ -311,7 +311,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         setInlineError(tvCodeError, null);
         codeInputView.setError(false);
         btnVerifyCode.setEnabled(false);
-        btnVerifyCode.setText("Verifying Code...");
+        btnVerifyCode.setText("Verifying Code");
 
         supabaseClient.verifyOtp(currentEmail, code, "recovery", new SupabaseClient.RecoveryCallback() {
             @Override
@@ -425,7 +425,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         }
 
         btnUpdatePassword.setEnabled(false);
-        btnUpdatePassword.setText("Updating Password...");
+        btnUpdatePassword.setText("Updating Password");
 
         supabaseClient.updateUser(newPassword, recoveryAccessToken, new SupabaseClient.DataCallback<>() {
             @Override

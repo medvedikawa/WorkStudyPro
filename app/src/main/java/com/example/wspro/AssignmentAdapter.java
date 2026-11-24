@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.Vi
         void onToggleComplete(AssignmentItem item, boolean isCompleted);
         void onEdit(AssignmentItem item);
         void onDelete(AssignmentItem item);
+        void onSelectionChanged(AssignmentItem item, boolean isSelected);
     }
 
     private final Context context;
@@ -54,36 +56,25 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.Vi
         holder.tvDueDateTime.setText(item.getDueDate() + " • "
                 + TimeFormatPreference.formatTime(context, item.getDueTime()));
         boolean workTask = item.isWorkTask();
-        holder.layoutBadges.setVisibility(workTask ? View.GONE : View.VISIBLE);
-        holder.tvSubject.setVisibility(workTask ? View.GONE : View.VISIBLE);
-        holder.tvPriorityBadge.setVisibility(workTask ? View.GONE : View.VISIBLE);
-        holder.layoutReasonBox.setVisibility(View.GONE);
 
-        // Category formatting
-        String category = item.getCategory() != null ? item.getCategory() : "Assignment";
-        if (category.equalsIgnoreCase("Task Performance")) {
-            holder.tvCategoryBadge.setText("Task Performance");
-            holder.tvCategoryBadge.setTextColor(androidx.core.content.ContextCompat.getColor(
-                    holder.itemView.getContext(), R.color.ws_category_task));
-        } else if (category.equalsIgnoreCase("Group Work")) {
-            holder.tvCategoryBadge.setText("Group Work");
-            holder.tvCategoryBadge.setTextColor(androidx.core.content.ContextCompat.getColor(
-                    holder.itemView.getContext(), R.color.ws_category_group));
-        } else if (category.equalsIgnoreCase("Laboratory")) {
-            holder.tvCategoryBadge.setText("Laboratory");
-            holder.tvCategoryBadge.setTextColor(androidx.core.content.ContextCompat.getColor(
-                    holder.itemView.getContext(), R.color.ws_category_lab));
+        // Display category badge (School, Work, Other)
+        String category = item.getCategory() != null ? item.getCategory() : AssignmentItem.CATEGORY_SCHOOL;
+        holder.tvCategoryBadge.setText(category + " (" + item.getImportance() + ")");
+        if (category.equalsIgnoreCase(AssignmentItem.CATEGORY_WORK)) {
+            holder.tvCategoryBadge.setTextColor(ContextCompat.getColor(context, R.color.schedule_work));
+        } else if (category.equalsIgnoreCase(AssignmentItem.CATEGORY_OTHER)) {
+            holder.tvCategoryBadge.setTextColor(ContextCompat.getColor(context, R.color.ws_accent2));
         } else {
-            holder.tvCategoryBadge.setText("Assignment");
-            holder.tvCategoryBadge.setTextColor(androidx.core.content.ContextCompat.getColor(
-                    holder.itemView.getContext(), R.color.ws_category_assignment));
+            holder.tvCategoryBadge.setTextColor(ContextCompat.getColor(context, R.color.schedule_school));
         }
 
-        // Priority Rank Badge & Collision
+        holder.tvSubject.setVisibility(item.getSubject() == null || item.getSubject().isEmpty() ? View.GONE : View.VISIBLE);
+        holder.layoutReasonBox.setVisibility(View.GONE);
+
+        // Classification Chip display (Critical, Urgent, Not Urgent, Minor)
         if (item.isCompleted()) {
             holder.tvPriorityBadge.setText("COMPLETED");
-            holder.tvPriorityBadge.setTextColor(androidx.core.content.ContextCompat.getColor(
-                    holder.itemView.getContext(), R.color.ws_success));
+            holder.tvPriorityBadge.setTextColor(ContextCompat.getColor(context, R.color.ws_success));
             holder.layoutReasonBox.setVisibility(View.GONE);
             holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             holder.tvTitle.setAlpha(0.5f);
@@ -91,29 +82,27 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.Vi
             holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
             holder.tvTitle.setAlpha(1.0f);
 
-            if (workTask) {
+            if (workTask || category.equalsIgnoreCase(AssignmentItem.CATEGORY_OTHER)) {
                 holder.layoutReasonBox.setVisibility(View.GONE);
                 holder.tvPriorityBadge.setVisibility(View.GONE);
             } else {
                 holder.tvPriorityBadge.setVisibility(View.VISIBLE);
-                int rank = 1;
-                for (int i = 0; i < position; i++) {
-                    if (!assignments.get(i).isWorkTask() && !assignments.get(i).isCompleted()) rank++;
+                String classification = PriorityEngine.classifyTask(item, System.currentTimeMillis());
+                holder.tvPriorityBadge.setText(classification);
+
+                if (classification.equals(PriorityEngine.CLASS_CRITICAL)) {
+                    holder.tvPriorityBadge.setTextColor(ContextCompat.getColor(context, R.color.ws_error));
+                } else if (classification.equals(PriorityEngine.CLASS_URGENT)) {
+                    holder.tvPriorityBadge.setTextColor(ContextCompat.getColor(context, R.color.ws_warning));
+                } else {
+                    holder.tvPriorityBadge.setTextColor(ContextCompat.getColor(context, R.color.text_primary));
                 }
-                holder.tvPriorityBadge.setText("#" + rank + " PRIORITY (" + (int) item.getPriorityScore() + " pts)");
 
                 if (item.isHasWorkCollision()) {
-                    holder.tvPriorityBadge.setTextColor(androidx.core.content.ContextCompat.getColor(
-                            holder.itemView.getContext(), R.color.ws_error));
                     holder.layoutReasonBox.setVisibility(View.VISIBLE);
-                    holder.tvPriorityReason.setTextColor(androidx.core.content.ContextCompat.getColor(
-                            holder.itemView.getContext(), R.color.ws_error));
+                    holder.tvPriorityReason.setTextColor(ContextCompat.getColor(context, R.color.ws_error));
                 } else {
-                    holder.tvPriorityBadge.setTextColor(androidx.core.content.ContextCompat.getColor(
-                            holder.itemView.getContext(), R.color.ws_warning));
-                    holder.layoutReasonBox.setVisibility(View.VISIBLE);
-                    holder.tvPriorityReason.setTextColor(androidx.core.content.ContextCompat.getColor(
-                            holder.itemView.getContext(), R.color.ws_text2));
+                    holder.layoutReasonBox.setVisibility(View.GONE);
                 }
                 holder.tvPriorityReason.setText(item.getPriorityReason());
             }
@@ -125,6 +114,16 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.Vi
         holder.cbComplete.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (listener != null) {
                 listener.onToggleComplete(item, isChecked);
+            }
+        });
+
+        // Checkbox select for bulk delete
+        holder.cbSelect.setOnCheckedChangeListener(null);
+        holder.cbSelect.setChecked(item.isSelected());
+        holder.cbSelect.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            item.setSelected(isChecked);
+            if (listener != null) {
+                listener.onSelectionChanged(item, isChecked);
             }
         });
 
@@ -146,7 +145,7 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.Vi
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvCategoryBadge, tvPriorityBadge, tvTitle, tvSubject, tvDueDateTime, tvPriorityReason;
-        CheckBox cbComplete;
+        CheckBox cbComplete, cbSelect;
         ImageButton btnDelete;
         LinearLayout layoutReasonBox, layoutBadges;
 
@@ -159,6 +158,7 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.Vi
             tvDueDateTime = itemView.findViewById(R.id.tvDueDateTime);
             tvPriorityReason = itemView.findViewById(R.id.tvPriorityReason);
             cbComplete = itemView.findViewById(R.id.cbComplete);
+            cbSelect = itemView.findViewById(R.id.cbSelectTask);
             btnDelete = itemView.findViewById(R.id.btnDeleteAssignment);
             layoutReasonBox = itemView.findViewById(R.id.layoutReasonBox);
             layoutBadges = itemView.findViewById(R.id.layoutAssignmentBadges);

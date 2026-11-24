@@ -6,6 +6,50 @@ import java.util.Collections;
 import java.util.List;
 
 public class PriorityEngine {
+    public static final String IMPORTANCE_HIGH = "High";
+    public static final String IMPORTANCE_MID = "Mid";
+    public static final String IMPORTANCE_LOW = "Low";
+
+    public static final String CLASS_CRITICAL = "Critical";
+    public static final String CLASS_URGENT = "Urgent";
+    public static final String CLASS_NOT_URGENT = "Not Urgent";
+    public static final String CLASS_MINOR = "Minor";
+
+    public static final long URGENCY_THRESHOLD_HOURS = 48;
+
+    public static String classifyTask(AssignmentItem item, long now) {
+        long diffMillis = item.getDueTimestamp() - now;
+        long diffHours = diffMillis / (1000 * 60 * 60);
+        boolean isUrgent = diffMillis < 0 || diffHours <= URGENCY_THRESHOLD_HOURS;
+
+        String importance = item.getImportance();
+        if (importance == null) importance = IMPORTANCE_MID;
+
+        if (isUrgent) {
+            if (importance.equalsIgnoreCase(IMPORTANCE_HIGH) || importance.equalsIgnoreCase(IMPORTANCE_MID)) {
+                return CLASS_CRITICAL;
+            } else {
+                return CLASS_URGENT;
+            }
+        } else {
+            if (importance.equalsIgnoreCase(IMPORTANCE_HIGH) || importance.equalsIgnoreCase(IMPORTANCE_MID)) {
+                return CLASS_NOT_URGENT;
+            } else {
+                return CLASS_MINOR;
+            }
+        }
+    }
+
+    public static int getClassificationOrder(String classification) {
+        if (classification == null) return 3;
+        switch (classification) {
+            case CLASS_CRITICAL: return 0;
+            case CLASS_URGENT: return 1;
+            case CLASS_NOT_URGENT: return 2;
+            case CLASS_MINOR: return 3;
+            default: return 3;
+        }
+    }
 
     public static List<AssignmentItem> calculateAndSort(List<AssignmentItem> assignments,
                                                          List<ScheduleItem> schedules) {
@@ -16,8 +60,6 @@ public class PriorityEngine {
                                                          List<ScheduleItem> schedules,
                                                          AlgorithmConfig config) {
         if (assignments == null) return new ArrayList<>();
-        AlgorithmConfig effectiveConfig = config != null ? config : AlgorithmConfig.defaults();
-
         List<AssignmentItem> result = new ArrayList<>(assignments);
         long now = System.currentTimeMillis();
 
@@ -29,72 +71,52 @@ public class PriorityEngine {
                 continue;
             }
 
-            double score = 0;
-            StringBuilder reasonBuilder = new StringBuilder();
+            String classification = classifyTask(item, now);
+            item.setPriorityScore(3 - getClassificationOrder(classification));
 
-            String category = item.getCategory() != null ? item.getCategory().trim() : "";
-            int categoryWeight;
-            if (category.equalsIgnoreCase("Task Performance")) {
-                categoryWeight = effectiveConfig.getWeight(AlgorithmConfig.TASK_PERFORMANCE);
-                reasonBuilder.append("Major Task Performance");
-            } else if (category.equalsIgnoreCase("Group Work")) {
-                categoryWeight = effectiveConfig.getWeight(AlgorithmConfig.GROUP_WORK);
-                reasonBuilder.append("Group Project Coordination");
-            } else if (category.equalsIgnoreCase("Laboratory")) {
-                categoryWeight = effectiveConfig.getWeight(AlgorithmConfig.LABORATORY);
-                reasonBuilder.append("Hands-on Laboratory");
-            } else {
-                categoryWeight = effectiveConfig.getWeight(AlgorithmConfig.ASSIGNMENT);
-                reasonBuilder.append("Academic Assignment");
-            }
-            score += categoryWeight;
-
+            StringBuilder reasonBuilder = new StringBuilder(classification);
             long diffMillis = item.getDueTimestamp() - now;
             long diffHours = diffMillis / (1000 * 60 * 60);
-            double deadlineFactor;
             if (diffMillis < 0) {
-                deadlineFactor = 1.0;
-                reasonBuilder.insert(0, "Overdue • ");
-            } else if (diffHours <= 12) {
-                deadlineFactor = 0.85;
-                reasonBuilder.insert(0, "Due in under 12 hrs • ");
-            } else if (diffHours <= 24) {
-                deadlineFactor = 0.65;
-                reasonBuilder.insert(0, "Due in under 24 hrs • ");
-            } else if (diffHours <= 48) {
-                deadlineFactor = 0.45;
-                reasonBuilder.insert(0, "Due in 2 days • ");
-            } else if (diffHours <= 72) {
-                deadlineFactor = 0.30;
-                reasonBuilder.insert(0, "Due in 3 days • ");
+                reasonBuilder.append(" • Overdue");
+            } else if (diffHours <= URGENCY_THRESHOLD_HOURS) {
+                reasonBuilder.append(" • Due in ").append(diffHours).append(" hrs");
             } else {
-                deadlineFactor = 0.10;
-                reasonBuilder.insert(0, "Due on " + item.getDueDate() + " • ");
+                reasonBuilder.append(" • Due on ").append(item.getDueDate());
             }
-            score += effectiveConfig.getWeight(AlgorithmConfig.DEADLINE) * deadlineFactor;
 
-            // 3. Work Shift Collision on Due Date
+            // Find nearest start time schedule conflict
             boolean collision = false;
             String dueDayCode = getDayCodeFromTimestamp(item.getDueTimestamp());
+            ScheduleItem nearestCollision = null;
+            int minTimeDiff = Integer.MAX_VALUE;
+            int taskDueMin = ConflictChecker.timeToMinutes(item.getDueTime());
 
             if (schedules != null) {
                 for (ScheduleItem s : schedules) {
                     if (s.isWork() && s.getDay() != null && s.getDay().equalsIgnoreCase(dueDayCode)) {
-                        collision = true;
-                        score += effectiveConfig.getWeight(AlgorithmConfig.WORK_SHIFT_COLLISION);
-                        reasonBuilder.append(" • Work shift collision on ").append(dueDayCode)
-                                .append(" (").append(s.getStartTime()).append(" - ").append(s.getEndTime()).append(")");
-                        break;
+                        if (ConflictChecker.hasConflict(dueDayCode, item.getDueTime(), item.getDueTime(), s.getDay(), s.getStartTime(), s.getEndTime())) {
+                            int schedStartMin = ConflictChecker.timeToMinutes(s.getStartTime());
+                            int diff = Math.abs(schedStartMin - taskDueMin);
+                            if (diff < minTimeDiff) {
+                                minTimeDiff = diff;
+                                nearestCollision = s;
+                                collision = true;
+                            }
+                        }
                     }
                 }
             }
 
+            if (collision && nearestCollision != null) {
+                reasonBuilder.append(" • Nearest work conflict: ").append(nearestCollision.getSubject())
+                        .append(" (").append(nearestCollision.getStartTime()).append(" - ").append(nearestCollision.getEndTime()).append(")");
+            }
+
             item.setHasWorkCollision(collision);
-            item.setPriorityScore(score);
             item.setPriorityReason(reasonBuilder.toString());
         }
 
-        // Sort: Incomplete tasks first sorted by Priority Score descending, completed tasks at the bottom
         Collections.sort(result, (a, b) -> {
             if (a.isCompleted() != b.isCompleted()) {
                 return a.isCompleted() ? 1 : -1;
@@ -102,10 +124,15 @@ public class PriorityEngine {
             if (a.isWorkTask() != b.isWorkTask()) {
                 return a.isWorkTask() ? 1 : -1;
             }
-            if (a.isWorkTask()) {
-                return Long.compare(a.getDueTimestamp(), b.getDueTimestamp());
+            String classA = classifyTask(a, now);
+            String classB = classifyTask(b, now);
+            int orderA = getClassificationOrder(classA);
+            int orderB = getClassificationOrder(classB);
+            if (orderA != orderB) {
+                return Integer.compare(orderA, orderB);
             }
-            return Double.compare(b.getPriorityScore(), a.getPriorityScore());
+            // Within group, earliest due date first
+            return Long.compare(a.getDueTimestamp(), b.getDueTimestamp());
         });
 
         return result;

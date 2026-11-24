@@ -212,7 +212,7 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
         btnSyncNow.setEnabled(false);
-        btnSyncNow.setText("Syncing...");
+        btnSyncNow.setText("Syncing");
         client.syncAllLocalDataToCloud(this, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {

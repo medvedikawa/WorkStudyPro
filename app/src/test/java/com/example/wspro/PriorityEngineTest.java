@@ -6,60 +6,47 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 public class PriorityEngineTest {
 
     @Test
-    public void workTasksAreNotWeightedOrMarkedAsShiftCollisions() {
-        long dueTimestamp = System.currentTimeMillis() + 60 * 60 * 1000L;
-        AssignmentItem workTask = new AssignmentItem(
-                "Submit timesheet", "", "", "date", "time", dueTimestamp, false,
-                AssignmentItem.TYPE_WORK);
-        List<ScheduleItem> schedules = new ArrayList<>();
-        schedules.add(new ScheduleItem("Shift", PriorityEngine.getDayCodeFromTimestamp(dueTimestamp),
-                "9:00 AM", "5:00 PM", true));
+    public void classifyTaskCorrectly() {
+        long now = System.currentTimeMillis();
+        AssignmentItem criticalTask = new AssignmentItem("Critical", "Sub", "School", "date", "time", now + 10 * 3600 * 1000L, false);
+        criticalTask.setImportance(PriorityEngine.IMPORTANCE_HIGH);
+        assertEquals(PriorityEngine.CLASS_CRITICAL, PriorityEngine.classifyTask(criticalTask, now));
 
-        PriorityEngine.calculateAndSort(List.of(workTask), schedules);
+        AssignmentItem urgentTask = new AssignmentItem("Urgent", "Sub", "School", "date", "time", now + 10 * 3600 * 1000L, false);
+        urgentTask.setImportance(PriorityEngine.IMPORTANCE_LOW);
+        assertEquals(PriorityEngine.CLASS_URGENT, PriorityEngine.classifyTask(urgentTask, now));
 
-        assertEquals(0, workTask.getPriorityScore(), 0);
-        assertNull(workTask.getPriorityReason());
-        assertFalse(workTask.isHasWorkCollision());
+        AssignmentItem notUrgentTask = new AssignmentItem("Not Urgent", "Sub", "School", "date", "time", now + 72 * 3600 * 1000L, false);
+        notUrgentTask.setImportance(PriorityEngine.IMPORTANCE_MID);
+        assertEquals(PriorityEngine.CLASS_NOT_URGENT, PriorityEngine.classifyTask(notUrgentTask, now));
+
+        AssignmentItem minorTask = new AssignmentItem("Minor", "Sub", "School", "date", "time", now + 72 * 3600 * 1000L, false);
+        minorTask.setImportance(PriorityEngine.IMPORTANCE_LOW);
+        assertEquals(PriorityEngine.CLASS_MINOR, PriorityEngine.classifyTask(minorTask, now));
     }
 
     @Test
-    public void configuredCategoryWeightChangesThePriorityScore() {
-        long dueTimestamp = System.currentTimeMillis() + 10L * 24 * 60 * 60 * 1000;
-        AssignmentItem groupTask = new AssignmentItem(
-                "Prepare presentation", "Biology", "Group Work", "date", "time", dueTimestamp,
-                false, AssignmentItem.TYPE_SCHOOL);
-        int[] adjustedWeights = AlgorithmConfig.defaults().getWeights();
-        adjustedWeights[AlgorithmConfig.GROUP_WORK] += 5;
-        adjustedWeights[AlgorithmConfig.ASSIGNMENT] -= 5;
-        AlgorithmConfig adjusted = new AlgorithmConfig(adjustedWeights, 60, 85);
+    public void sortGroupsInCorrectOrderAndEarliestFirst() {
+        long now = System.currentTimeMillis();
+        AssignmentItem minor = new AssignmentItem("Minor", "Sub", "School", "date", "time", now + 100 * 3600 * 1000L, false);
+        minor.setImportance(PriorityEngine.IMPORTANCE_LOW);
 
-        PriorityEngine.calculateAndSort(List.of(groupTask), new ArrayList<>(), adjusted);
+        AssignmentItem criticalEarly = new AssignmentItem("Critical Early", "Sub", "School", "date", "time", now + 5 * 3600 * 1000L, false);
+        criticalEarly.setImportance(PriorityEngine.IMPORTANCE_HIGH);
 
-        assertEquals(23.5, groupTask.getPriorityScore(), 0.1);
-    }
-
-    @Test
-    public void schoolTasksRemainPrioritizedAheadOfWorkTasks() {
-        long dueTimestamp = System.currentTimeMillis() + 60 * 60 * 1000L;
-        AssignmentItem schoolTask = new AssignmentItem(
-                "Submit assignment", "Biology", "Task Performance", "date", "time", dueTimestamp,
-                false, AssignmentItem.TYPE_SCHOOL);
-        AssignmentItem workTask = new AssignmentItem(
-                "Submit timesheet", "", "", "date", "time", dueTimestamp, false,
-                AssignmentItem.TYPE_WORK);
+        AssignmentItem criticalLate = new AssignmentItem("Critical Late", "Sub", "School", "date", "time", now + 20 * 3600 * 1000L, false);
+        criticalLate.setImportance(PriorityEngine.IMPORTANCE_HIGH);
 
         List<AssignmentItem> sorted = PriorityEngine.calculateAndSort(
-                List.of(workTask, schoolTask), new ArrayList<>());
+                List.of(minor, criticalLate, criticalEarly), new ArrayList<>());
 
-        assertSame(schoolTask, sorted.get(0));
-        assertSame(workTask, sorted.get(1));
-        assertEquals(0, workTask.getPriorityScore(), 0);
+        assertSame(criticalEarly, sorted.get(0));
+        assertSame(criticalLate, sorted.get(1));
+        assertSame(minor, sorted.get(2));
     }
 }

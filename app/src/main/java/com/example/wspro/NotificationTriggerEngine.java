@@ -6,8 +6,10 @@ import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -50,28 +52,102 @@ public class NotificationTriggerEngine {
         long now = System.currentTimeMillis();
 
         // ----------------------------------------------------
-        // Trigger 1: Deadline Reminders (24h and 2h before due)
+        // Trigger 1: Deadline Reminders (1 Day and 1 Hour before due)
         // ----------------------------------------------------
         List<AssignmentItem> pendingTasks = db.assignmentDao().getPendingAssignments();
         if (pendingTasks != null) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            String todayDateStr = dateFormat.format(Calendar.getInstance().getTime());
+            Calendar calNow = Calendar.getInstance();
+            int hour = calNow.get(Calendar.HOUR_OF_DAY);
+            int minute = calNow.get(Calendar.MINUTE);
+            String todayDayCode = PriorityEngine.getDayCodeFromTimestamp(now);
+
             for (AssignmentItem task : pendingTasks) {
+                // Check custom task reminders
+                if (task.isHasReminder() && !task.isCompleted()) {
+                    if (task.isRecurring()) {
+                        String recurringDays = task.getRecurringDays();
+                        if (recurringDays != null && recurringDays.toUpperCase(Locale.US).contains(todayDayCode)) {
+                            String reminderTime = task.getReminderTime();
+                            if (reminderTime != null && !reminderTime.isEmpty()) {
+                                String dedupeKey = "reminder_recurring_" + task.getId() + "_" + todayDateStr + "_" + reminderTime;
+                                if (!db.notificationDao().existsByDedupeKey(dedupeKey)) {
+                                    String title = "Recurring Reminder: " + task.getTitle();
+                                    String message = "Reminder for " + task.getTitle() + " (" + reminderTime + ").";
+                                    NotificationItem item = new NotificationItem(
+                                            NotificationItem.TYPE_DEADLINE,
+                                            title,
+                                            message,
+                                            now,
+                                            false,
+                                            String.valueOf(task.getId()),
+                                            dedupeKey
+                                    );
+                                    long rowId = db.notificationDao().insert(item);
+                                    if (rowId > 0) {
+                                        NotificationHelper.postNotification(
+                                                context,
+                                                (int) rowId,
+                                                NotificationItem.TYPE_DEADLINE,
+                                                title,
+                                                message,
+                                                String.valueOf(task.getId())
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        long remTime = task.getReminderTimestamp();
+                        if (remTime > 0 && now >= remTime) {
+                            String dedupeKey = "reminder_onetime_" + task.getId() + "_" + remTime;
+                            if (!db.notificationDao().existsByDedupeKey(dedupeKey)) {
+                                String title = "Task Reminder: " + task.getTitle();
+                                String message = task.getTitle() + " is due.";
+                                NotificationItem item = new NotificationItem(
+                                        NotificationItem.TYPE_DEADLINE,
+                                        title,
+                                        message,
+                                        now,
+                                        false,
+                                        String.valueOf(task.getId()),
+                                        dedupeKey
+                                );
+                                long rowId = db.notificationDao().insert(item);
+                                if (rowId > 0) {
+                                    NotificationHelper.postNotification(
+                                            context,
+                                            (int) rowId,
+                                            NotificationItem.TYPE_DEADLINE,
+                                            title,
+                                            message,
+                                            String.valueOf(task.getId())
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Standard 1 Day and 1 Hour deadlines with title & time
                 long due = task.getDueTimestamp();
                 if (due <= 0) continue;
 
                 long diff = due - now;
                 if (diff <= 0) continue; // Already expired
 
-                // 2 Hours Deadline Reminder
-                if (diff <= 2 * 3600 * 1000L) {
-                    String dedupeKey = "deadline_2h_" + task.getId() + "_" + due;
+                String timeStr = task.getDueTime() != null
+                        ? TimeFormatPreference.formatTime(context, task.getDueTime()) : "soon";
+                String subject = task.isWorkTask() || task.getSubject() == null
+                        || task.getSubject().isEmpty() ? "" : " (" + task.getSubject() + ")";
+
+                // 1 Hour Deadline Reminder
+                if (diff <= 1 * 3600 * 1000L) {
+                    String dedupeKey = "deadline_1h_" + task.getId() + "_" + due;
                     if (!db.notificationDao().existsByDedupeKey(dedupeKey)) {
                         String title = "Urgent: " + task.getTitle() + " due soon";
-                        String timeStr = task.getDueTime() != null
-                                ? TimeFormatPreference.formatTime(context, task.getDueTime()) : "soon";
-                        String subject = task.isWorkTask() || task.getSubject() == null
-                                || task.getSubject().isEmpty() ? "" : " (" + task.getSubject() + ")";
-                        String message = task.getTitle() + subject
-                                + " is due in less than 2 hours (" + timeStr + ").";
+                        String message = task.getTitle() + subject + " is due in 1 hour (" + timeStr + ").";
 
                         NotificationItem item = new NotificationItem(
                                 NotificationItem.TYPE_DEADLINE,
@@ -95,17 +171,12 @@ public class NotificationTriggerEngine {
                         }
                     }
                 }
-                // 24 Hours Deadline Reminder
+                // 1 Day (24 Hours) Deadline Reminder
                 else if (diff <= 24 * 3600 * 1000L) {
-                    String dedupeKey = "deadline_24h_" + task.getId() + "_" + due;
+                    String dedupeKey = "deadline_1d_" + task.getId() + "_" + due;
                     if (!db.notificationDao().existsByDedupeKey(dedupeKey)) {
                         String title = "Upcoming Deadline: " + task.getTitle();
-                        String timeStr = task.getDueTime() != null
-                                ? TimeFormatPreference.formatTime(context, task.getDueTime()) : "";
-                        String subject = task.isWorkTask() || task.getSubject() == null
-                                || task.getSubject().isEmpty() ? "" : " (" + task.getSubject() + ")";
-                        String message = task.getTitle() + subject + " is due in less than 24 hours"
-                                + (timeStr.isEmpty() ? "." : " at " + timeStr + ".");
+                        String message = task.getTitle() + subject + " is due in 1 day at " + timeStr + ".";
 
                         NotificationItem item = new NotificationItem(
                                 NotificationItem.TYPE_DEADLINE,
@@ -130,10 +201,54 @@ public class NotificationTriggerEngine {
                     }
                 }
             }
+
+            // ----------------------------------------------------
+            // Trigger 2: Daily Summary at 8:00 AM
+            // ----------------------------------------------------
+            if (hour == 8 && minute < 20) {
+                String summaryDedupeKey = "daily_summary_" + todayDateStr;
+                if (!db.notificationDao().existsByDedupeKey(summaryDedupeKey)) {
+                    List<ScheduleItem> todaySchedules = db.scheduleDao().getAllSchedules(todayDayCode);
+                    List<AssignmentItem> allAssignments = db.assignmentDao().getAllAssignments();
+                    int todayTaskCount = 0;
+                    if (allAssignments != null) {
+                        for (AssignmentItem a : allAssignments) {
+                            if (!a.isCompleted() && todayDateStr.equals(a.getDueDate())) {
+                                todayTaskCount++;
+                            }
+                        }
+                    }
+                    int classCount = todaySchedules != null ? todaySchedules.size() : 0;
+
+                    String title = "Good Morning! Today's Schedule";
+                    String message = "You have " + classCount + " classes and " + todayTaskCount + " tasks scheduled for today (" + todayDateStr + ").";
+
+                    NotificationItem item = new NotificationItem(
+                            NotificationItem.TYPE_DEADLINE,
+                            title,
+                            message,
+                            now,
+                            false,
+                            null,
+                            summaryDedupeKey
+                    );
+                    long rowId = db.notificationDao().insert(item);
+                    if (rowId > 0) {
+                        NotificationHelper.postNotification(
+                                context,
+                                (int) rowId,
+                                NotificationItem.TYPE_DEADLINE,
+                                title,
+                                message,
+                                null
+                        );
+                    }
+                }
+            }
         }
 
         // ----------------------------------------------------
-        // Trigger 2: Conflict Alert (schedule overlap detection)
+        // Trigger 3: Conflict Alert (schedule overlap detection)
         // ----------------------------------------------------
         List<ScheduleItem> schedules = db.scheduleDao().getAll();
         if (schedules != null && schedules.size() >= 2) {
@@ -191,7 +306,7 @@ public class NotificationTriggerEngine {
         }
 
         // ----------------------------------------------------
-        // Trigger 3: Workload Alert (highest load tier)
+        // Trigger 4: Workload Alert (highest load tier)
         // ----------------------------------------------------
         if (schedules != null) {
             SupabaseClient client = SupabaseClient.getInstance(context);

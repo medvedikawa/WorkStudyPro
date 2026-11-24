@@ -84,7 +84,7 @@ public class AdminMfaActivity extends AppCompatActivity {
         TextView description = text("Use an authenticator app to verify your administrator account.", 16, false);
         description.setGravity(Gravity.CENTER);
         addSpaced(description, 12);
-        status = text("Checking your authenticator setup...", 15, false);
+        status = text("Checking your authenticator setup", 15, false);
         status.setGravity(Gravity.CENTER);
         addSpaced(status, 20);
 
@@ -111,7 +111,7 @@ public class AdminMfaActivity extends AppCompatActivity {
     }
 
     private void loadFactors() {
-        setBusy(true, "Checking your authenticator setup...");
+        setBusy(true, "Checking your authenticator setup");
         supabaseClient.loadMfaFactors(new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(JsonArray factors) {
@@ -152,7 +152,7 @@ public class AdminMfaActivity extends AppCompatActivity {
     }
 
     private void beginEnrollment() {
-        setBusy(true, "Preparing authenticator enrollment...");
+        setBusy(true, "Preparing authenticator enrollment");
         supabaseClient.enrollTotp(new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(JsonObject result) {
@@ -220,7 +220,7 @@ public class AdminMfaActivity extends AppCompatActivity {
             setBusy(false, "No authenticator factor is available. Sign in again to retry setup.");
             return;
         }
-        setBusy(true, "Verifying code...");
+        setBusy(true, "Verifying code");
         supabaseClient.challengeTotp(factorId, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(String challengeId) {

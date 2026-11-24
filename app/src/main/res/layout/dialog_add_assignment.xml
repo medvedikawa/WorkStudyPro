@@ -18,7 +18,7 @@
             android:layout_height="wrap_content"
             android:text="Add Task"
             android:textColor="@color/text_primary"
-            android:textSize="20sp"
+            android:textSize="23sp"
             android:textStyle="bold"
             android:layout_marginBottom="4dp" />
 
@@ -26,53 +26,140 @@
             android:id="@+id/tvAssignmentDialogSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Choose School or Work, then set a deadline."
-            android:textColor="@color/text_muted"
-            android:textSize="12sp"
+            android:text="Select category, importance, deadline, and optional reminders."
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
             android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="TASK TYPE"
-            android:textColor="@color/text_secondary"
-            android:textSize="10sp"
+            android:text="TASK CATEGORY"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp"
             android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="6dp" />
 
-        <RadioGroup
-            android:id="@+id/rgTaskType"
+        <!-- Three Categories: School, Work, Other -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginBottom="14dp">
 
-            <RadioButton
-                android:id="@+id/radioSchoolTask"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:buttonTint="@color/ws_accent"
-                android:checked="true"
+            <TextView
+                android:id="@+id/chipCategorySchool"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_toggle_selected"
+                android:gravity="center"
                 android:text="School"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/ws_on_brand"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <RadioButton
-                android:id="@+id/radioWorkTask"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:layout_marginStart="24dp"
-                android:buttonTint="@color/ws_accent"
+            <TextView
+                android:id="@+id/chipCategoryWork"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_toggle_unselected"
+                android:gravity="center"
                 android:text="Work"
-                android:textColor="@color/text_primary" />
-        </RadioGroup>
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
 
-        <!-- Title Input -->
+            <TextView
+                android:id="@+id/chipCategoryOther"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_toggle_unselected"
+                android:gravity="center"
+                android:text="Other"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- Importance Selector: High, Mid, Low -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="ASSIGNMENT TITLE"
-            android:textColor="@color/text_secondary"
-            android:textSize="10sp"
+            android:text="IMPORTANCE"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="14dp">
+
+            <TextView
+                android:id="@+id/chipImportanceHigh"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_toggle_unselected"
+                android:gravity="center"
+                android:text="High"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipImportanceMid"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_toggle_selected"
+                android:gravity="center"
+                android:text="Mid"
+                android:textColor="@color/ws_on_brand"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipImportanceLow"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_toggle_unselected"
+                android:gravity="center"
+                android:text="Low"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- Title Input ("Task title") -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TASK TITLE"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:letterSpacing="0.06"
             android:layout_marginBottom="6dp" />
@@ -85,13 +172,13 @@
             android:hint="e.g. Chapter 4 System Architecture ERD"
             android:textColorHint="@color/text_muted"
             android:textColor="@color/text_primary"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:padding="12dp"
             android:inputType="textCapSentences"
             android:layout_marginBottom="14dp" />
 
         <LinearLayout
-            android:id="@+id/layoutSchoolTaskDetails"
+            android:id="@+id/layoutSubjectSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -101,8 +188,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="COURSE / SUBJECT"
-                android:textColor="@color/text_secondary"
-                android:textSize="10sp"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.06"
                 android:layout_marginBottom="6dp" />
@@ -124,99 +211,16 @@
                     android:inputType="textCapWords"
                     android:textColor="@color/text_primary"
                     android:textColorHint="@color/text_muted"
-                    android:textSize="14sp" />
+                    android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Category Selector -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="TASK CATEGORY (FOR WEIGHTED GWA IMPACT)"
-                android:textColor="@color/text_secondary"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.06"
-                android:layout_marginBottom="8dp" />
-
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:scrollbars="none"
-                android:layout_marginBottom="16dp">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/chipTaskPerformance"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📝 Task Performance"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/ws_on_brand"
-                    android:background="@drawable/bg_toggle_selected"
-                    android:paddingHorizontal="14dp"
-                    android:paddingVertical="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/chipGroupWork"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="👥 Group Work"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_muted"
-                    android:background="@drawable/bg_toggle_unselected"
-                    android:paddingHorizontal="14dp"
-                    android:paddingVertical="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/chipLaboratory"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🧪 Laboratory"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_muted"
-                    android:background="@drawable/bg_toggle_unselected"
-                    android:paddingHorizontal="14dp"
-                    android:paddingVertical="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/chipAssignment"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📖 Assignment"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_muted"
-                    android:background="@drawable/bg_toggle_unselected"
-                    android:paddingHorizontal="14dp"
-                    android:paddingVertical="8dp"
-                    android:clickable="true"
-                    android:focusable="true" />
-            </LinearLayout>
-            </HorizontalScrollView>
         </LinearLayout>
 
-        <!-- Due Date (Calendar Pick) & Time (Clock Pick) -->
+        <!-- Due Date & Time -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="20dp">
+            android:layout_marginBottom="14dp">
 
             <!-- Calendar Picker Button -->
             <LinearLayout
@@ -235,8 +239,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="📅 DUE DATE"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="9sp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -245,7 +249,7 @@
                     android:layout_height="wrap_content"
                     android:text="Select Date"
                     android:textColor="@color/ws_accent"
-                    android:textSize="13sp"
+                    android:textSize="15sp"
                     android:textStyle="bold"
                     android:layout_marginTop="4dp" />
             </LinearLayout>
@@ -266,8 +270,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="⏰ DUE TIME"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="9sp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -276,9 +280,103 @@
                     android:layout_height="wrap_content"
                     android:text="11:59 PM"
                     android:textColor="@color/ws_accent"
-                    android:textSize="13sp"
+                    android:textSize="15sp"
                     android:textStyle="bold"
                     android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Reminder & Recurrence Section -->
+        <CheckBox
+            android:id="@+id/cbEnableReminder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enable Task Reminder"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:buttonTint="@color/ws_accent"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/layoutReminderDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginBottom="14dp">
+
+            <LinearLayout
+                android:id="@+id/btnPickReminderTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_input"
+                android:padding="12dp"
+                android:layout_marginBottom="10dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⏰ REMINDER TIME"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSelectedReminderTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="05:00 PM"
+                    android:textColor="@color/ws_accent"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/cbRepeatWeekly"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Repeat Weekly (Recurring)"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:buttonTint="@color/ws_accent"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:id="@+id/layoutRecurringDays"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="RECURRING DAYS"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="6dp" />
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="4">
+
+                    <CheckBox android:id="@+id/cbMon" android:text="Mon" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbTue" android:text="Tue" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbWed" android:text="Wed" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbThu" android:text="Thu" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbFri" android:text="Fri" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbSat" android:text="Sat" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                    <CheckBox android:id="@+id/cbSun" android:text="Sun" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
+                </GridLayout>
             </LinearLayout>
         </LinearLayout>
 
@@ -287,9 +385,9 @@
             android:id="@+id/btnSaveAssignment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Save &amp; Prioritize Task"
+            android:text="Save Task"
             android:textColor="@color/ws_on_brand"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:backgroundTint="@color/ws_accent"
             android:padding="14dp"
@@ -299,9 +397,9 @@
             android:id="@+id/btnCancelAssignment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Cancel"
-            android:textColor="@color/text_muted"
-            android:textSize="13sp"
+            android:text="Discard changes"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
             android:backgroundTint="@android:color/transparent" />
 
     </LinearLayout>

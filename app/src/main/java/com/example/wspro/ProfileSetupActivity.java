@@ -86,8 +86,8 @@ public class ProfileSetupActivity extends AppCompatActivity {
         }
 
         btnCompleteSetup.setEnabled(false);
-        btnCompleteSetup.setText("Creating account...");
-        Toast.makeText(this, "Creating your account...", Toast.LENGTH_SHORT).show();
+        btnCompleteSetup.setText("Creating account");
+        Toast.makeText(this, "Creating your account", Toast.LENGTH_SHORT).show();
 
         SupabaseClient.getInstance(this).signUp(email, password, name, course, new SupabaseClient.AuthCallback() {
             @Override

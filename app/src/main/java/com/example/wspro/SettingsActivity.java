@@ -81,7 +81,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         btnSyncNow.setEnabled(false);
-        btnSyncNow.setText("Syncing...");
+        btnSyncNow.setText("Sync");
         client.syncAllLocalDataToCloud(this, new SupabaseClient.DataCallback<>() {
             @Override
             public void onSuccess(Boolean result) {

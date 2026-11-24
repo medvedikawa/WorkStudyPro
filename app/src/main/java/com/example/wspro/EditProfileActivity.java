@@ -272,7 +272,7 @@ public class EditProfileActivity extends AppCompatActivity {
         if (!isNameValid || !isCourseValid) return;
 
         btnSaveProfileInfo.setEnabled(false);
-        btnSaveProfileInfo.setText("Saving...");
+        btnSaveProfileInfo.setText("Saving");
 
         client.updateProfileData(this, name, course, client.getAvatarUrl(), new SupabaseClient.DataCallback<>() {
             @Override
@@ -298,7 +298,7 @@ public class EditProfileActivity extends AppCompatActivity {
         if (!validateEmail()) return;
 
         btnUpdateEmail.setEnabled(false);
-        btnUpdateEmail.setText("Sending confirmation...");
+        btnUpdateEmail.setText("Sending confirmation");
 
         client.updateEmail(newEmail, new SupabaseClient.DataCallback<>() {
             @Override
@@ -321,7 +321,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
     private void handleRequestPasswordCode() {
         btnSendPasswordCode.setEnabled(false);
-        btnSendPasswordCode.setText("Sending code...");
+        btnSendPasswordCode.setText("Sending code");
 
         client.reauthenticate(new SupabaseClient.DataCallback<>() {
             @Override
@@ -352,7 +352,7 @@ public class EditProfileActivity extends AppCompatActivity {
         if (!isNonceValid || !isNewPasswordValid || !isConfirmValid) return;
 
         btnUpdatePassword.setEnabled(false);
-        btnUpdatePassword.setText("Updating password...");
+        btnUpdatePassword.setText("Updating password");
 
         client.updatePasswordWithNonce(newPassword, nonce, new SupabaseClient.DataCallback<>() {
             @Override

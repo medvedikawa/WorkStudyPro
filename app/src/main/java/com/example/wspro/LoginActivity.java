@@ -56,7 +56,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // 4. Handle Demo Account Quick Access
         btnDemo.setOnClickListener(v -> {
-            Toast.makeText(this, "Logging in with Demo Account...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Logging in with Demo Account", Toast.LENGTH_SHORT).show();
             supabaseClient.saveSession("demo_token", "demo_user_id", "demo@student.edu", "Demo Student", "BS Computer Science");
             navigateToDashboard();
         });
@@ -103,8 +103,8 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         btnLogin.setEnabled(false);
-        btnLogin.setText("Signing In...");
-        Toast.makeText(this, "Signing in...", Toast.LENGTH_SHORT).show();
+        btnLogin.setText("Signing In");
+        Toast.makeText(this, "Signing in", Toast.LENGTH_SHORT).show();
 
         supabaseClient.signIn(email, password, new SupabaseClient.AuthCallback() {
             @Override

@@ -212,7 +212,7 @@ public class AdminConsoleActivity extends AppCompatActivity {
     }
 
     private void verifyAdminSession() {
-        setBusy(true, "Verifying administrator access...");
+        setBusy(true, "Verifying administrator access");
         JsonObject payload = new JsonObject();
         payload.addProperty("action", "check_role");
         supabaseClient.callAdminConsole(payload, new SupabaseClient.DataCallback<>() {

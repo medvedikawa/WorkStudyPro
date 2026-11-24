@@ -79,7 +79,7 @@ public class CropProfilePictureActivity extends AppCompatActivity {
         CropImageView.CropData cropData = cropImageView.getCropData();
         btnSaveCrop.setEnabled(false);
         btnHeaderSave.setEnabled(false);
-        btnSaveCrop.setText("Processing...");
+        btnSaveCrop.setText("Processing");
 
         new Thread(() -> {
             try {
