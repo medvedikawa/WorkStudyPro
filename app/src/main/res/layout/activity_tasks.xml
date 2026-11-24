@@ -3,105 +3,186 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface"
+    android:background="@color/task_bg"
     android:clipChildren="false"
     android:clipToPadding="false">
 
-    <!-- Top Bar -->
+    <!-- Top Bar Container -->
     <LinearLayout
-        android:id="@+id/tasksHeader"
+        android:id="@+id/layoutTasksTop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="16dp"
-        android:background="@color/background">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="26dp"
-            android:layout_marginEnd="10dp"
-            android:contentDescription="@string/logo_content_description"
-            android:src="@drawable/logo_mark" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="0dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Priority Task Manager"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvTaskSubtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sorted dynamically by workload &amp; deadlines"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <ImageButton
-            android:id="@+id/btnSearchTasks"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/tasks_search"
-            android:src="@android:drawable/ic_menu_search"
-            app:tint="@color/text_primary" />
-
-        <!-- Add Task Action Button in Header -->
-        <Button
-            android:id="@+id/btnAddNewTaskHeader"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="+ Add"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textColor="@color/ws_on_brand"
-            android:backgroundTint="@color/ws_accent"
-            android:paddingHorizontal="14dp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/tasksControls"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/tasksHeader"
+        android:background="@color/ws_surface"
         android:orientation="vertical"
-        android:paddingBottom="8dp">
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="10dp">
 
+        <!-- Normal Top Bar -->
+        <RelativeLayout
+            android:id="@+id/normalBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@id/layoutNormalBarActions"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvTaskHeaderTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tasks"
+                    android:textColor="@color/task_ink"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvTaskSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="0 active · sorted by urgency"
+                    android:textColor="@color/task_muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutNormalBarActions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnSearchTasks"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/tasks_search"
+                    android:src="@drawable/ic_task_search" />
+
+                <LinearLayout
+                    android:id="@+id/btnAddNewTaskHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="2dp"
+                    android:background="@drawable/bg_task_add_btn"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="16dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_today_add"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="Add"
+                        android:textColor="@color/ws_surface"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </RelativeLayout>
+
+        <!-- Selection Toolbar (shown when selecting/bulk action) -->
+        <RelativeLayout
+            android:id="@+id/selBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnCancelSelection"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Cancel selection"
+                    android:src="@drawable/ic_task_close" />
+
+                <TextView
+                    android:id="@+id/tvSelCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="0 selected"
+                    android:textColor="@color/task_ink"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnSelectAllTasks"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Select all"
+                    android:src="@drawable/ic_task_select_all" />
+
+                <ImageButton
+                    android:id="@+id/btnDeleteSelection"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Delete selected"
+                    android:src="@drawable/ic_task_trash" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <!-- Search input box if search opened -->
         <LinearLayout
             android:id="@+id/taskSearchRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
             android:gravity="center_vertical"
             android:visibility="gone">
 
             <EditText
                 android:id="@+id/etTaskSearch"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_toggle_unselected"
+                android:background="@drawable/bg_task_filter_chip"
                 android:hint="@string/tasks_search_hint"
                 android:imeOptions="actionDone"
                 android:inputType="text"
                 android:paddingHorizontal="14dp"
                 android:singleLine="true"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_muted"
-                android:textSize="15sp" />
+                android:textColor="@color/task_ink"
+                android:textColorHint="@color/task_muted"
+                android:textSize="14sp" />
 
             <ImageButton
                 android:id="@+id/btnCloseTaskSearch"
@@ -110,155 +191,236 @@
                 android:layout_marginStart="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/tasks_close_search"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                app:tint="@color/text_primary" />
+                android:src="@drawable/ic_task_close" />
         </LinearLayout>
 
+        <!-- Tabs: Active vs Done -->
         <LinearLayout
+            android:id="@+id/layoutTaskTabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_task_tabs"
+            android:orientation="horizontal"
+            android:padding="3dp">
 
-            <HorizontalScrollView
+            <TextView
+                android:id="@+id/tabActive"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:clipToPadding="false"
-                android:fillViewport="false"
-                android:overScrollMode="never"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/chipTaskCategoryFilter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:background="@drawable/bg_toggle_unselected"
-                        android:gravity="center"
-                        android:paddingHorizontal="12dp"
-                        android:text="@string/tasks_filter_category"
-                        android:textColor="@color/text_primary"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/chipTaskSubjectFilter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_toggle_unselected"
-                        android:gravity="center"
-                        android:paddingHorizontal="12dp"
-                        android:text="@string/tasks_filter_subject"
-                        android:textColor="@color/text_primary"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/chipTaskDueFilter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_toggle_unselected"
-                        android:gravity="center"
-                        android:paddingHorizontal="12dp"
-                        android:text="@string/tasks_filter_due"
-                        android:textColor="@color/text_primary"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/chipTaskStatusFilter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_toggle_unselected"
-                        android:gravity="center"
-                        android:paddingHorizontal="12dp"
-                        android:text="@string/tasks_filter_status"
-                        android:textColor="@color/text_primary"
-                        android:textSize="13sp" />
-                </LinearLayout>
-            </HorizontalScrollView>
+                android:background="@drawable/bg_task_tab_on"
+                android:elevation="1dp"
+                android:gravity="center"
+                android:paddingVertical="8dp"
+                android:text="Active"
+                android:textColor="@color/task_violet"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/btnClearTaskFilters"
+                android:id="@+id/tabDone"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:gravity="center"
+                android:paddingVertical="8dp"
+                android:text="Done"
+                android:textColor="@color/task_muted"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Filter Chips Row (Category, Subject, Due, Priority) -->
+        <HorizontalScrollView
+            android:id="@+id/scrollTaskFilters"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:paddingVertical="8dp"
-                android:text="@string/tasks_filter_clear"
-                android:textColor="@color/ws_accent"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
-        </LinearLayout>
-    </LinearLayout>
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-    <!-- Bulk Actions Toolbar -->
-    <LinearLayout
-        android:id="@+id/layoutBulkActions"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/tasksControls"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
-        android:background="@color/background">
+                <!-- Category Filter -->
+                <LinearLayout
+                    android:id="@+id/chipTaskCategoryFilter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_task_filter_chip"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:paddingStart="13dp"
+                    android:paddingTop="7dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="7dp">
 
-        <CheckBox
-            android:id="@+id/cbSelectAllTasks"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/task_select_all"
-            android:textColor="@color/text_primary"
-            android:textSize="13sp"
-            android:buttonTint="@color/ws_accent" />
+                    <TextView
+                        android:id="@+id/tvFilterCategoryText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Category"
+                        android:textColor="@color/task_ink"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
+                    <ImageView
+                        android:id="@+id/ivFilterCategoryChevron"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="4dp"
+                        android:src="@drawable/ic_task_chevron_down"
+                        android:contentDescription="@null" />
+                </LinearLayout>
+
+                <!-- Subject Filter -->
+                <LinearLayout
+                    android:id="@+id/chipTaskSubjectFilter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_task_filter_chip"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:paddingStart="13dp"
+                    android:paddingTop="7dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvFilterSubjectText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Subject"
+                        android:textColor="@color/task_ink"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/ivFilterSubjectChevron"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="4dp"
+                        android:src="@drawable/ic_task_chevron_down"
+                        android:contentDescription="@null" />
+                </LinearLayout>
+
+                <!-- Due Filter -->
+                <LinearLayout
+                    android:id="@+id/chipTaskDueFilter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_task_filter_chip"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:paddingStart="13dp"
+                    android:paddingTop="7dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvFilterDueText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Due"
+                        android:textColor="@color/task_ink"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/ivFilterDueChevron"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="4dp"
+                        android:src="@drawable/ic_task_chevron_down"
+                        android:contentDescription="@null" />
+                </LinearLayout>
+
+                <!-- Priority / Status Filter -->
+                <LinearLayout
+                    android:id="@+id/chipTaskPriorityFilter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_task_filter_chip"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:paddingStart="13dp"
+                    android:paddingTop="7dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="7dp">
+
+                    <TextView
+                        android:id="@+id/tvFilterPriorityText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Priority"
+                        android:textColor="@color/task_ink"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/ivFilterPriorityChevron"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="4dp"
+                        android:src="@drawable/ic_task_chevron_down"
+                        android:contentDescription="@null" />
+                </LinearLayout>
+
+                <!-- Clear Filters Button -->
+                <TextView
+                    android:id="@+id/btnClearTaskFilters"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:paddingVertical="7dp"
+                    android:text="@string/tasks_filter_clear"
+                    android:textColor="@color/task_violet"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- Separator bottom border -->
         <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <Button
-            android:id="@+id/btnBulkDelete"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="@string/task_delete_selected"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="@color/ws_on_brand"
-            android:backgroundTint="@color/ws_error"
-            android:paddingHorizontal="14dp" />
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="10dp"
+            android:background="@color/task_line" />
     </LinearLayout>
 
-    <!-- Main Content Area -->
+    <!-- Main Tasks List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerTasks"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/layoutBulkActions"
-        android:paddingStart="16dp"
-        android:paddingTop="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="96dp"
-        android:clipToPadding="false" />
+        android:layout_below="@id/layoutTasksTop"
+        android:clipToPadding="false"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="120dp" />
 
-    <!-- Empty State View -->
+    <!-- Empty State -->
     <LinearLayout
         android:id="@+id/layoutEmptyTasks"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:orientation="vertical"
         android:gravity="center"
+        android:orientation="vertical"
         android:padding="32dp"
         android:visibility="gone">
 
@@ -266,34 +428,61 @@
             android:id="@+id/tvEmptyTasksTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/tasks_empty_title"
-            android:textColor="@color/text_primary"
-            android:textSize="23sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
-
-        <TextView
-            android:id="@+id/tvEmptyTasksBody"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/tasks_empty_body"
-            android:textColor="@color/text_primary"
+            android:layout_marginBottom="6dp"
+            android:text="All clear. Enjoy the free time!"
+            android:textColor="@color/task_muted"
             android:textSize="15sp"
-            android:gravity="center"
-            android:layout_marginBottom="18dp" />
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnEmptyAddTask"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/task_violet"
+            android:paddingHorizontal="20dp"
             android:text="@string/tasks_add_first"
-            android:textColor="@color/ws_on_brand"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:backgroundTint="@color/ws_accent"
-            android:paddingHorizontal="20dp" />
+            android:textColor="@color/ws_surface"
+            android:textSize="14sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Floating Action / Undo Toast Bar -->
+    <LinearLayout
+        android:id="@+id/layoutTaskToast"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="84dp"
+        android:background="@color/task_ink"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvToastMessage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Marked as done"
+            android:textColor="@color/ws_surface"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/btnToastUndo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="12dp"
+            android:text="Undo"
+            android:textColor="#C4B5FD"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Bottom Navigator (preserved pink button, unaltered layout) -->
     <include
         layout="@layout/layout_bottom_nav"
         android:layout_width="match_parent"

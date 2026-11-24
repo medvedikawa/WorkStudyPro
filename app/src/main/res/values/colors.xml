@@ -75,4 +75,24 @@
     <color name="admin_suspended_text">#991B1B</color>
     <color name="admin_pending_bg">#FEF3C7</color>
     <color name="admin_pending_text">#92400E</color>
+
+    <!-- Tasks Redesign Colors (matching tasks_redesign.html) -->
+    <color name="task_violet">#6D28D9</color>
+    <color name="task_soft_violet">#EDE9FE</color>
+    <color name="task_line">#E4DEF5</color>
+    <color name="task_rasp">#BE185D</color>
+    <color name="task_ink">#1E1B2E</color>
+    <color name="task_muted">#6B6880</color>
+    <color name="task_bg">#F6F4FB</color>
+    <color name="task_card_sel">#F8F5FF</color>
+    <color name="task_tag_crit_bg">#FCE7F3</color>
+    <color name="task_tag_crit_txt">#9D174D</color>
+    <color name="task_tag_high_bg">#FEF3C7</color>
+    <color name="task_tag_high_txt">#92400E</color>
+    <color name="task_tag_mid_bg">#EDE9FE</color>
+    <color name="task_tag_mid_txt">#5B21B6</color>
+    <color name="task_tag_low_bg">#F1F0F5</color>
+    <color name="task_tag_low_txt">#55526A</color>
+    <color name="task_tag_conf_bg">#FFF1F2</color>
+    <color name="task_tag_conf_txt">#BE123C</color>
 </resources>

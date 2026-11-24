@@ -34,7 +34,7 @@ public interface AssignmentDao {
     @Query("SELECT * FROM assignment_table WHERE isDeleted = 0 "
             + "AND (:searchQuery = '' OR instr(lower(ifnull(title, '')), lower(:searchQuery)) > 0 "
             + "OR instr(lower(ifnull(subject, '')), lower(:searchQuery)) > 0) "
-            + "AND (:categoryFilter = '' OR category = :categoryFilter COLLATE NOCASE) "
+            + "AND (:categoryFilter = '' OR category = :categoryFilter COLLATE NOCASE OR category LIKE :categoryFilter || '|%') "
             + "AND (:subjectFilter = '' OR subject = :subjectFilter COLLATE NOCASE) "
             + "AND (:statusFilter = -1 OR isCompleted = :statusFilter) "
             + "AND (:dueFilter = -1 "

@@ -72,6 +72,14 @@ public class AssignmentItem {
     public String getSubject() { return subject; }
     public void setSubject(String subject) { this.subject = subject; }
 
+    public String getRawCategory() {
+        return category;
+    }
+
+    public void setRawCategory(String category) {
+        this.category = category;
+    }
+
     public String getCategory() {
         if (category != null && category.contains("|")) {
             return category.split("\\|")[0].trim();
@@ -87,11 +95,12 @@ public class AssignmentItem {
     }
 
     public void setCategory(String category) {
+        if (category != null && category.contains("|")) {
+            this.category = category;
+            return;
+        }
         String importance = getImportance();
         String base = category != null && !category.isEmpty() ? category : CATEGORY_SCHOOL;
-        if (base.contains("|")) {
-            base = base.split("\\|")[0].trim();
-        }
         this.category = base + "|" + importance;
     }
 

@@ -1,5 +1,6 @@
 package com.example.wspro;
 
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import androidx.annotation.NonNull;
 import androidx.core.widget.TextViewCompat;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -16,6 +18,7 @@ import android.widget.EditText;
 import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -52,17 +55,46 @@ public class TasksActivity extends AppCompatActivity {
     private LinearLayout layoutEmptyTasks;
     private TextView tvTaskSubtitle;
     private TextView tvEmptyTasksTitle;
-    private TextView tvEmptyTasksBody;
     private TextView btnClearTaskFilters;
     private EditText etTaskSearch;
     private View taskSearchRow;
-    private TextView chipTaskCategoryFilter;
-    private TextView chipTaskSubjectFilter;
-    private TextView chipTaskDueFilter;
-    private TextView chipTaskStatusFilter;
-    private CheckBox cbSelectAllTasks;
-    private Button btnBulkDelete;
-    private View layoutBulkActions;
+
+    // Redesigned Top Bars
+    private View normalBar;
+    private View selBar;
+    private TextView tvSelCount;
+    private ImageButton btnCancelSelection;
+    private ImageButton btnSelectAllTasks;
+    private ImageButton btnDeleteSelection;
+
+    // Tabs
+    private TextView tabActive;
+    private TextView tabDone;
+
+    // Filter Chips
+    private LinearLayout chipTaskCategoryFilter;
+    private TextView tvFilterCategoryText;
+    private ImageView ivFilterCategoryChevron;
+
+    private LinearLayout chipTaskSubjectFilter;
+    private TextView tvFilterSubjectText;
+    private ImageView ivFilterSubjectChevron;
+
+    private LinearLayout chipTaskDueFilter;
+    private TextView tvFilterDueText;
+    private ImageView ivFilterDueChevron;
+
+    private LinearLayout chipTaskPriorityFilter;
+    private TextView tvFilterPriorityText;
+    private ImageView ivFilterPriorityChevron;
+
+    // Toast Bar
+    private LinearLayout layoutTaskToast;
+    private TextView tvToastMessage;
+    private TextView btnToastUndo;
+    private final Handler toastHandler = new Handler(Looper.getMainLooper());
+    private Runnable toastDismissRunnable;
+    private AssignmentItem lastToggledItem;
 
     private ScanButtonHelper scanButtonHelper;
     private TextInputLayout activeSubjectLayout;
@@ -80,7 +112,8 @@ public class TasksActivity extends AppCompatActivity {
     private String categoryFilter = "";
     private String subjectFilter = "";
     private int dueFilter = -1;
-    private int statusFilter = -1;
+    private String priorityFilter = ""; // High, Mid, Low
+    private String currentTab = "active"; // "active" or "done"
     private boolean cloudFetchStarted;
 
     @Override
@@ -94,24 +127,39 @@ public class TasksActivity extends AppCompatActivity {
         layoutEmptyTasks = findViewById(R.id.layoutEmptyTasks);
         tvTaskSubtitle = findViewById(R.id.tvTaskSubtitle);
         tvEmptyTasksTitle = findViewById(R.id.tvEmptyTasksTitle);
-        tvEmptyTasksBody = findViewById(R.id.tvEmptyTasksBody);
-        Button btnAddNewTaskHeader = findViewById(R.id.btnAddNewTaskHeader);
+        View btnAddNewTaskHeader = findViewById(R.id.btnAddNewTaskHeader);
         Button btnEmptyAddTask = findViewById(R.id.btnEmptyAddTask);
 
-        cbSelectAllTasks = findViewById(R.id.cbSelectAllTasks);
-        btnBulkDelete = findViewById(R.id.btnBulkDelete);
-        layoutBulkActions = findViewById(R.id.layoutBulkActions);
+        normalBar = findViewById(R.id.normalBar);
+        selBar = findViewById(R.id.selBar);
+        tvSelCount = findViewById(R.id.tvSelCount);
+        btnCancelSelection = findViewById(R.id.btnCancelSelection);
+        btnSelectAllTasks = findViewById(R.id.btnSelectAllTasks);
+        btnDeleteSelection = findViewById(R.id.btnDeleteSelection);
+
+        tabActive = findViewById(R.id.tabActive);
+        tabDone = findViewById(R.id.tabDone);
+
+        layoutTaskToast = findViewById(R.id.layoutTaskToast);
+        tvToastMessage = findViewById(R.id.tvToastMessage);
+        btnToastUndo = findViewById(R.id.btnToastUndo);
 
         btnAddNewTaskHeader.setOnClickListener(v -> showAssignmentDialog(null));
         btnEmptyAddTask.setOnClickListener(v -> showAssignmentDialog(null));
+
+        setupTabs();
         setupTaskFilters();
         setupBulkActions();
+        setupToastUndo();
 
         recyclerTasks.setLayoutManager(new LinearLayoutManager(this));
         adapter = new AssignmentAdapter(this, new ArrayList<>(), new AssignmentAdapter.OnAssignmentActionListener() {
             @Override
             public void onToggleComplete(AssignmentItem item, boolean isCompleted) {
                 item.setCompleted(isCompleted);
+                lastToggledItem = item;
+                showUndoToast(isCompleted ? "Marked as done" : "Moved back to active", true);
+
                 new Thread(() -> {
                     LocalDataRepository.updateAssignment(
                             AppDatabase.getInstance(getApplicationContext()), item);
@@ -128,26 +176,83 @@ public class TasksActivity extends AppCompatActivity {
             public void onDelete(AssignmentItem item) {
                 new AlertDialog.Builder(TasksActivity.this)
                         .setTitle("Delete task?")
-                        .setMessage("This task will be removed from your list.")
+                        .setMessage("\"" + item.getTitle() + "\" will be permanently removed.")
                         .setNegativeButton("Cancel", null)
                         .setPositiveButton("Delete", (dialog, which) -> new Thread(() -> {
                             LocalDataRepository.deleteAssignment(
                                     AppDatabase.getInstance(getApplicationContext()), item);
                             ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
-                            runOnUiThread(() -> Toast.makeText(TasksActivity.this, "Task deleted", Toast.LENGTH_SHORT).show());
+                            runOnUiThread(() -> showUndoToast("Task deleted", false));
                         }).start())
                         .show();
             }
 
             @Override
             public void onSelectionChanged(AssignmentItem item, boolean isSelected) {
-                updateBulkActionsVisibility();
+                updateSelectionState();
+            }
+
+            @Override
+            public void onStartSelection(AssignmentItem item) {
+                adapter.setSelecting(true);
+                updateSelectionState();
             }
         });
         recyclerTasks.setAdapter(adapter);
 
         setupBottomNav();
         setupReactiveObservers();
+    }
+
+    private void setupTabs() {
+        tabActive.setOnClickListener(v -> {
+            if ("active".equals(currentTab)) return;
+            currentTab = "active";
+            tabActive.setBackgroundResource(R.drawable.bg_task_tab_on);
+            tabActive.setTextColor(ContextCompat.getColor(this, R.color.task_violet));
+            tabDone.setBackgroundResource(android.R.color.transparent);
+            tabDone.setTextColor(ContextCompat.getColor(this, R.color.task_muted));
+            observeFilteredTasks();
+        });
+
+        tabDone.setOnClickListener(v -> {
+            if ("done".equals(currentTab)) return;
+            currentTab = "done";
+            tabDone.setBackgroundResource(R.drawable.bg_task_tab_on);
+            tabDone.setTextColor(ContextCompat.getColor(this, R.color.task_violet));
+            tabActive.setBackgroundResource(android.R.color.transparent);
+            tabActive.setTextColor(ContextCompat.getColor(this, R.color.task_muted));
+            observeFilteredTasks();
+        });
+    }
+
+    private void setupToastUndo() {
+        btnToastUndo.setOnClickListener(v -> {
+            if (lastToggledItem != null) {
+                final AssignmentItem itemToUndo = lastToggledItem;
+                lastToggledItem = null;
+                itemToUndo.setCompleted(!itemToUndo.isCompleted());
+                new Thread(() -> {
+                    LocalDataRepository.updateAssignment(
+                            AppDatabase.getInstance(getApplicationContext()), itemToUndo);
+                    ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
+                }).start();
+            }
+            hideToast();
+        });
+    }
+
+    private void showUndoToast(String message, boolean canUndo) {
+        tvToastMessage.setText(message);
+        btnToastUndo.setVisibility(canUndo ? View.VISIBLE : View.GONE);
+        layoutTaskToast.setVisibility(View.VISIBLE);
+        if (toastDismissRunnable != null) toastHandler.removeCallbacks(toastDismissRunnable);
+        toastDismissRunnable = this::hideToast;
+        toastHandler.postDelayed(toastDismissRunnable, 3500);
+    }
+
+    private void hideToast() {
+        layoutTaskToast.setVisibility(View.GONE);
     }
 
     @Override
@@ -159,6 +264,7 @@ public class TasksActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         cancelPendingSearch();
+        if (toastDismissRunnable != null) toastHandler.removeCallbacks(toastDismissRunnable);
         super.onDestroy();
     }
 
@@ -167,15 +273,25 @@ public class TasksActivity extends AppCompatActivity {
     }
 
     private void setupBulkActions() {
-        cbSelectAllTasks.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        btnCancelSelection.setOnClickListener(v -> exitSelectionMode());
+
+        btnSelectAllTasks.setOnClickListener(v -> {
+            boolean allSelected = true;
             for (AssignmentItem item : visibleAssignments) {
-                item.setSelected(isChecked);
+                if (!item.isSelected()) {
+                    allSelected = false;
+                    break;
+                }
+            }
+            boolean target = !allSelected;
+            for (AssignmentItem item : visibleAssignments) {
+                item.setSelected(target);
             }
             adapter.notifyDataSetChanged();
-            updateBulkActionsVisibility();
+            updateSelectionState();
         });
 
-        btnBulkDelete.setOnClickListener(v -> {
+        btnDeleteSelection.setOnClickListener(v -> {
             List<AssignmentItem> selectedItems = new ArrayList<>();
             for (AssignmentItem item : visibleAssignments) {
                 if (item.isSelected()) selectedItems.add(item);
@@ -184,7 +300,8 @@ public class TasksActivity extends AppCompatActivity {
 
             new AlertDialog.Builder(this)
                     .setTitle("Delete selected tasks?")
-                    .setMessage("Selected tasks (" + selectedItems.size() + ") will be permanently removed.")
+                    .setMessage(selectedItems.size() + " task" + (selectedItems.size() > 1 ? "s" : "")
+                            + " will be permanently removed.")
                     .setNegativeButton("Cancel", null)
                     .setPositiveButton("Delete", (dialog, which) -> new Thread(() -> {
                         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
@@ -193,34 +310,43 @@ public class TasksActivity extends AppCompatActivity {
                         }
                         ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
                         runOnUiThread(() -> {
-                            cbSelectAllTasks.setChecked(false);
-                            Toast.makeText(this, "Selected tasks deleted", Toast.LENGTH_SHORT).show();
+                            exitSelectionMode();
+                            showUndoToast("Deleted", false);
                         });
                     }).start())
                     .show();
         });
     }
 
-    private void updateBulkActionsVisibility() {
-        if (visibleAssignments.isEmpty()) {
-            layoutBulkActions.setVisibility(View.GONE);
-            return;
-        }
-        layoutBulkActions.setVisibility(View.VISIBLE);
-        boolean allSelected = true;
-        boolean anySelected = false;
+    private void exitSelectionMode() {
         for (AssignmentItem item : visibleAssignments) {
-            if (item.isSelected()) {
-                anySelected = true;
-            } else {
-                allSelected = false;
-            }
+            item.setSelected(false);
         }
-        cbSelectAllTasks.setOnCheckedChangeListener(null);
-        cbSelectAllTasks.setChecked(allSelected && !visibleAssignments.isEmpty());
-        setupBulkActions();
-        btnBulkDelete.setEnabled(anySelected);
-        btnBulkDelete.setAlpha(anySelected ? 1.0f : 0.5f);
+        adapter.setSelecting(false);
+        normalBar.setVisibility(View.VISIBLE);
+        selBar.setVisibility(View.GONE);
+        findViewById(R.id.layoutTaskTabs).setVisibility(View.VISIBLE);
+        findViewById(R.id.scrollTaskFilters).setVisibility(View.VISIBLE);
+    }
+
+    private void updateSelectionState() {
+        int selectedCount = 0;
+        for (AssignmentItem item : visibleAssignments) {
+            if (item.isSelected()) selectedCount++;
+        }
+
+        if (selectedCount == 0 && !adapter.isSelecting()) {
+            normalBar.setVisibility(View.VISIBLE);
+            selBar.setVisibility(View.GONE);
+            findViewById(R.id.layoutTaskTabs).setVisibility(View.VISIBLE);
+            findViewById(R.id.scrollTaskFilters).setVisibility(View.VISIBLE);
+        } else {
+            normalBar.setVisibility(View.GONE);
+            selBar.setVisibility(View.VISIBLE);
+            findViewById(R.id.layoutTaskTabs).setVisibility(View.GONE);
+            findViewById(R.id.scrollTaskFilters).setVisibility(View.GONE);
+            tvSelCount.setText(selectedCount + " selected");
+        }
     }
 
     private void setupReactiveObservers() {
@@ -266,10 +392,23 @@ public class TasksActivity extends AppCompatActivity {
         ImageButton btnCloseTaskSearch = findViewById(R.id.btnCloseTaskSearch);
         taskSearchRow = findViewById(R.id.taskSearchRow);
         etTaskSearch = findViewById(R.id.etTaskSearch);
+
         chipTaskCategoryFilter = findViewById(R.id.chipTaskCategoryFilter);
+        tvFilterCategoryText = findViewById(R.id.tvFilterCategoryText);
+        ivFilterCategoryChevron = findViewById(R.id.ivFilterCategoryChevron);
+
         chipTaskSubjectFilter = findViewById(R.id.chipTaskSubjectFilter);
+        tvFilterSubjectText = findViewById(R.id.tvFilterSubjectText);
+        ivFilterSubjectChevron = findViewById(R.id.ivFilterSubjectChevron);
+
         chipTaskDueFilter = findViewById(R.id.chipTaskDueFilter);
-        chipTaskStatusFilter = findViewById(R.id.chipTaskStatusFilter);
+        tvFilterDueText = findViewById(R.id.tvFilterDueText);
+        ivFilterDueChevron = findViewById(R.id.ivFilterDueChevron);
+
+        chipTaskPriorityFilter = findViewById(R.id.chipTaskPriorityFilter);
+        tvFilterPriorityText = findViewById(R.id.tvFilterPriorityText);
+        ivFilterPriorityChevron = findViewById(R.id.ivFilterPriorityChevron);
+
         btnClearTaskFilters = findViewById(R.id.btnClearTaskFilters);
 
         btnSearchTasks.setOnClickListener(v -> {
@@ -284,6 +423,7 @@ public class TasksActivity extends AppCompatActivity {
                 }
             });
         });
+
         btnCloseTaskSearch.setOnClickListener(v -> {
             etTaskSearch.setText("");
             searchQuery = "";
@@ -316,11 +456,12 @@ public class TasksActivity extends AppCompatActivity {
             }
         });
 
-        chipTaskCategoryFilter.setOnClickListener(v -> showCategoryFilterMenu(v));
-        chipTaskSubjectFilter.setOnClickListener(v -> showSubjectFilterMenu(v));
-        chipTaskDueFilter.setOnClickListener(v -> showDueFilterMenu(v));
-        chipTaskStatusFilter.setOnClickListener(v -> showStatusFilterMenu(v));
+        chipTaskCategoryFilter.setOnClickListener(this::showCategoryFilterMenu);
+        chipTaskSubjectFilter.setOnClickListener(this::showSubjectFilterMenu);
+        chipTaskDueFilter.setOnClickListener(this::showDueFilterMenu);
+        chipTaskPriorityFilter.setOnClickListener(this::showPriorityFilterMenu);
         btnClearTaskFilters.setOnClickListener(v -> clearTaskFilters());
+
         renderFilterChips();
     }
 
@@ -350,21 +491,36 @@ public class TasksActivity extends AppCompatActivity {
         Calendar nextWeekStart = (Calendar) weekStart.clone();
         nextWeekStart.add(Calendar.DAY_OF_YEAR, 7);
 
+        int status = "done".equals(currentTab) ? 1 : 0;
+
         currentTasksLiveData = db.assignmentDao().searchAssignmentsLiveData(
                 searchQuery,
                 categoryFilter,
                 subjectFilter,
-                statusFilter,
+                status,
                 dueFilter,
                 nowTimestamp,
                 dayStartTimestamp,
                 tomorrowStartTimestamp,
                 weekStart.getTimeInMillis(),
                 nextWeekStart.getTimeInMillis());
+
         currentTasksObserver = assignments -> {
-            visibleAssignments = assignments != null ? assignments : new ArrayList<>();
+            List<AssignmentItem> filtered = new ArrayList<>();
+            if (assignments != null) {
+                for (AssignmentItem item : assignments) {
+                    if (!priorityFilter.isEmpty()) {
+                        String imp = item.getImportance();
+                        if (imp == null || !imp.equalsIgnoreCase(priorityFilter)) {
+                            continue;
+                        }
+                    }
+                    filtered.add(item);
+                }
+            }
+            visibleAssignments = filtered;
             applyPrioritiesAndRender();
-            updateBulkActionsVisibility();
+            updateSelectionState();
         };
         currentTasksLiveData.observe(this, currentTasksObserver);
         updateClearAllVisibility();
@@ -375,62 +531,61 @@ public class TasksActivity extends AppCompatActivity {
                 visibleAssignments, currentSchedules, AlgorithmConfig.load(this));
 
         adapter.updateData(prioritized);
-        long pendingCount = 0;
+
+        long activeCount = 0;
         for (AssignmentItem assignment : prioritized) {
             if (!assignment.isCompleted()) {
-                pendingCount++;
+                activeCount++;
             }
         }
-        tvTaskSubtitle.setText(getString(R.string.tasks_pending_subtitle, pendingCount));
+        tvTaskSubtitle.setText(activeCount + " active · sorted by urgency");
 
         if (prioritized.isEmpty()) {
             layoutEmptyTasks.setVisibility(View.VISIBLE);
             recyclerTasks.setVisibility(View.GONE);
-            layoutBulkActions.setVisibility(View.GONE);
             if (hasActiveFilters()) {
                 tvEmptyTasksTitle.setText(R.string.tasks_no_matches);
-                tvEmptyTasksBody.setVisibility(View.GONE);
                 findViewById(R.id.btnEmptyAddTask).setVisibility(View.GONE);
             } else {
-                tvEmptyTasksTitle.setText(R.string.tasks_empty_title);
-                tvEmptyTasksBody.setText(R.string.tasks_empty_body);
-                tvEmptyTasksBody.setVisibility(View.VISIBLE);
-                findViewById(R.id.btnEmptyAddTask).setVisibility(View.VISIBLE);
+                tvEmptyTasksTitle.setText("done".equals(currentTab)
+                        ? "Nothing finished yet."
+                        : "All clear. Enjoy the free time!");
+                findViewById(R.id.btnEmptyAddTask).setVisibility(
+                        "done".equals(currentTab) ? View.GONE : View.VISIBLE);
             }
         } else {
             layoutEmptyTasks.setVisibility(View.GONE);
             recyclerTasks.setVisibility(View.VISIBLE);
-            layoutBulkActions.setVisibility(View.VISIBLE);
         }
     }
 
     private void showCategoryFilterMenu(View anchor) {
         showFilterMenu(anchor, categoryFilter,
                 Arrays.asList(AssignmentItem.CATEGORY_SCHOOL, AssignmentItem.CATEGORY_WORK, AssignmentItem.CATEGORY_OTHER),
-                getString(R.string.tasks_filter_any_category),
+                "Category",
                 selected -> categoryFilter = selected);
     }
 
     private void showSubjectFilterMenu(View anchor) {
         List<String> subjects = new ArrayList<>(schoolSubjects);
         showFilterMenu(anchor, subjectFilter, subjects,
-                getString(R.string.tasks_filter_any_subject),
+                "Subject",
                 selected -> subjectFilter = selected);
     }
 
     private void showDueFilterMenu(View anchor) {
         PopupMenu menu = new PopupMenu(this, anchor);
-        addFilterOption(menu, getString(R.string.tasks_filter_any_due), dueFilter == -1);
-        addFilterOption(menu, getString(R.string.tasks_filter_overdue), dueFilter == 0);
-        addFilterOption(menu, getString(R.string.tasks_filter_today), dueFilter == 1);
-        addFilterOption(menu, getString(R.string.tasks_filter_this_week), dueFilter == 2);
+        addFilterOption(menu, "Due", dueFilter == -1);
+        addFilterOption(menu, "Overdue", dueFilter == 0);
+        addFilterOption(menu, "Today", dueFilter == 1);
+        addFilterOption(menu, "This week", dueFilter == 2);
         menu.setOnMenuItemClickListener(item -> {
             String selected = String.valueOf(item.getTitle());
-            if (selected.equals(getString(R.string.tasks_filter_any_due))) {
+            if (selected.equals("Due")) {
                 dueFilter = -1;
-            } else if (selected.equals(getString(R.string.tasks_filter_overdue))) {
+            } else if (selected.equals("Overdue")) {
                 dueFilter = 0;
-            } else if (selected.equals(getString(R.string.tasks_filter_today))) {
+            } else if (selected.equals("Today")) {
                 dueFilter = 1;
             } else {
                 dueFilter = 2;
@@ -442,19 +597,19 @@ public class TasksActivity extends AppCompatActivity {
         menu.show();
     }
 
-    private void showStatusFilterMenu(View anchor) {
+    private void showPriorityFilterMenu(View anchor) {
         PopupMenu menu = new PopupMenu(this, anchor);
-        addFilterOption(menu, getString(R.string.tasks_filter_any_status), statusFilter == -1);
-        addFilterOption(menu, getString(R.string.tasks_filter_pending), statusFilter == 0);
-        addFilterOption(menu, getString(R.string.tasks_filter_completed), statusFilter == 1);
+        addFilterOption(menu, "Priority", priorityFilter.isEmpty());
+        addFilterOption(menu, "Critical", "Critical".equalsIgnoreCase(priorityFilter));
+        addFilterOption(menu, "High", "High".equalsIgnoreCase(priorityFilter));
+        addFilterOption(menu, "Mid", "Mid".equalsIgnoreCase(priorityFilter));
+        addFilterOption(menu, "Low", "Low".equalsIgnoreCase(priorityFilter));
         menu.setOnMenuItemClickListener(item -> {
             String selected = String.valueOf(item.getTitle());
-            if (selected.equals(getString(R.string.tasks_filter_any_status))) {
-                statusFilter = -1;
-            } else if (selected.equals(getString(R.string.tasks_filter_pending))) {
-                statusFilter = 0;
+            if (selected.equals("Priority")) {
+                priorityFilter = "";
             } else {
-                statusFilter = 1;
+                priorityFilter = selected;
             }
             renderFilterChips();
             observeFilteredTasks();
@@ -474,8 +629,8 @@ public class TasksActivity extends AppCompatActivity {
         for (String option : options) {
             addFilterOption(menu, option, selectedValue.equals(option));
         }
-        if (options.isEmpty()) {
-            menu.getMenu().add(getString(R.string.tasks_filter_no_subjects)).setEnabled(false);
+        if (options.isEmpty() && "Subject".equals(anyLabel)) {
+            menu.getMenu().add("No schedule subjects").setEnabled(false);
         }
         menu.setOnMenuItemClickListener(item -> {
             String label = String.valueOf(item.getTitle());
@@ -492,35 +647,46 @@ public class TasksActivity extends AppCompatActivity {
     }
 
     private void renderFilterChips() {
-        setFilterChipText(chipTaskCategoryFilter, R.string.tasks_filter_category,
-                categoryFilter);
-        setFilterChipText(chipTaskSubjectFilter, R.string.tasks_filter_subject,
-                subjectFilter);
-        setFilterChipText(chipTaskDueFilter, R.string.tasks_filter_due,
-                dueFilter == 0 ? getString(R.string.tasks_filter_overdue)
-                        : dueFilter == 1 ? getString(R.string.tasks_filter_today)
-                        : dueFilter == 2 ? getString(R.string.tasks_filter_this_week) : "");
-        setFilterChipText(chipTaskStatusFilter, R.string.tasks_filter_status,
-                statusFilter == 0 ? getString(R.string.tasks_filter_pending)
-                        : statusFilter == 1 ? getString(R.string.tasks_filter_completed) : "");
+        setFilterChipState(chipTaskCategoryFilter, tvFilterCategoryText, ivFilterCategoryChevron,
+                "Category", categoryFilter);
+        setFilterChipState(chipTaskSubjectFilter, tvFilterSubjectText, ivFilterSubjectChevron,
+                "Subject", subjectFilter);
+
+        String dueLabel = dueFilter == 0 ? "Overdue"
+                : dueFilter == 1 ? "Today"
+                : dueFilter == 2 ? "This week" : "";
+        setFilterChipState(chipTaskDueFilter, tvFilterDueText, ivFilterDueChevron,
+                "Due", dueLabel);
+
+        setFilterChipState(chipTaskPriorityFilter, tvFilterPriorityText, ivFilterPriorityChevron,
+                "Priority", priorityFilter);
+
         updateClearAllVisibility();
     }
 
-    private void setFilterChipText(TextView chip, int defaultLabelResource, String selectedValue) {
-        if (chip == null) return;
-        boolean selected = !selectedValue.isEmpty();
-        chip.setText(selected ? selectedValue : getString(defaultLabelResource));
-        chip.setBackgroundResource(selected
-                ? R.drawable.bg_toggle_selected : R.drawable.bg_toggle_unselected);
-        chip.setTextColor(ContextCompat.getColor(this,
-                selected ? R.color.ws_on_brand : R.color.text_primary));
+    private void setFilterChipState(LinearLayout container, TextView text, ImageView chevron,
+                                    String defaultLabel, String selectedValue) {
+        if (container == null || text == null) return;
+        boolean selected = selectedValue != null && !selectedValue.isEmpty();
+        text.setText(selected ? selectedValue : defaultLabel);
+
+        container.setBackgroundResource(selected
+                ? R.drawable.bg_task_filter_chip_on : R.drawable.bg_task_filter_chip);
+
+        int textColor = ContextCompat.getColor(this,
+                selected ? R.color.ws_surface : R.color.task_ink);
+        text.setTextColor(textColor);
+
+        if (chevron != null) {
+            chevron.setColorFilter(textColor);
+        }
     }
 
     private boolean hasActiveFilters() {
         String currentSearch = etTaskSearch == null
                 ? searchQuery : etTaskSearch.getText().toString().trim();
         return !currentSearch.isEmpty() || !categoryFilter.isEmpty()
-                || !subjectFilter.isEmpty() || dueFilter != -1 || statusFilter != -1;
+                || !subjectFilter.isEmpty() || dueFilter != -1 || !priorityFilter.isEmpty();
     }
 
     private void updateClearAllVisibility() {
@@ -533,7 +699,7 @@ public class TasksActivity extends AppCompatActivity {
         categoryFilter = "";
         subjectFilter = "";
         dueFilter = -1;
-        statusFilter = -1;
+        priorityFilter = "";
         etTaskSearch.setText("");
         searchQuery = "";
         cancelPendingSearch();
@@ -665,54 +831,56 @@ public class TasksActivity extends AppCompatActivity {
         TextView[] categoryChips = {chipSchool, chipWork, chipOther};
         String[] categoryNames = {AssignmentItem.CATEGORY_SCHOOL, AssignmentItem.CATEGORY_WORK, AssignmentItem.CATEGORY_OTHER};
 
-        View.OnClickListener categoryClick = v -> {
+        Runnable updateCategoryChips = () -> {
             for (int i = 0; i < categoryChips.length; i++) {
-                boolean selected = (categoryChips[i] == v);
+                boolean selected = categoryNames[i].equalsIgnoreCase(selectedCategory[0]);
                 categoryChips[i].setSelected(selected);
-                if (selected) {
-                    selectedCategory[0] = categoryNames[i];
-                }
+                categoryChips[i].setBackgroundResource(selected ? R.drawable.bg_toggle_selected : R.drawable.bg_toggle_unselected);
+                categoryChips[i].setTextColor(ContextCompat.getColor(this, selected ? R.color.ws_on_brand : R.color.text_primary));
             }
-            subjectSection.setVisibility(selectedCategory[0].equals(AssignmentItem.CATEGORY_SCHOOL) ? View.VISIBLE : View.GONE);
+            subjectSection.setVisibility(selectedCategory[0].equalsIgnoreCase(AssignmentItem.CATEGORY_SCHOOL) ? View.VISIBLE : View.GONE);
         };
 
-        for (TextView chip : categoryChips) {
-            chip.setOnClickListener(categoryClick);
+        for (int i = 0; i < categoryChips.length; i++) {
+            final int index = i;
+            categoryChips[i].setOnClickListener(v -> {
+                selectedCategory[0] = categoryNames[index];
+                updateCategoryChips.run();
+            });
         }
-        categoryClick.onClick(chipSchool);
+        updateCategoryChips.run();
 
         TextView[] importanceChips = {chipHigh, chipMid, chipLow};
         String[] importanceNames = {PriorityEngine.IMPORTANCE_HIGH, PriorityEngine.IMPORTANCE_MID, PriorityEngine.IMPORTANCE_LOW};
 
-        View.OnClickListener importanceClick = v -> {
+        Runnable updateImportanceChips = () -> {
             for (int i = 0; i < importanceChips.length; i++) {
-                boolean selected = (importanceChips[i] == v);
+                boolean selected = importanceNames[i].equalsIgnoreCase(selectedImportance[0]);
                 importanceChips[i].setSelected(selected);
-                if (selected) {
-                    selectedImportance[0] = importanceNames[i];
-                }
+                importanceChips[i].setBackgroundResource(selected ? R.drawable.bg_toggle_selected : R.drawable.bg_toggle_unselected);
+                importanceChips[i].setTextColor(ContextCompat.getColor(this, selected ? R.color.ws_on_brand : R.color.text_primary));
             }
         };
 
-        for (TextView chip : importanceChips) {
-            chip.setOnClickListener(importanceClick);
+        for (int i = 0; i < importanceChips.length; i++) {
+            final int index = i;
+            importanceChips[i].setOnClickListener(v -> {
+                selectedImportance[0] = importanceNames[index];
+                updateImportanceChips.run();
+            });
         }
-        importanceClick.onClick(chipMid);
+        updateImportanceChips.run();
 
         if (editing != null) {
             String cat = editing.getCategory();
-            for (int i = 0; i < categoryNames.length; i++) {
-                if (categoryNames[i].equalsIgnoreCase(cat)) {
-                    categoryClick.onClick(categoryChips[i]);
-                    break;
-                }
+            if (cat != null && !cat.isEmpty()) {
+                selectedCategory[0] = cat;
+                updateCategoryChips.run();
             }
             String imp = editing.getImportance();
-            for (int i = 0; i < importanceNames.length; i++) {
-                if (importanceNames[i].equalsIgnoreCase(imp)) {
-                    importanceClick.onClick(importanceChips[i]);
-                    break;
-                }
+            if (imp != null && !imp.isEmpty()) {
+                selectedImportance[0] = imp;
+                updateImportanceChips.run();
             }
             if (editing.getSubject() != null && !editing.getSubject().isEmpty()) {
                 etSubject.setText(editing.getSubject(), false);
@@ -720,14 +888,14 @@ public class TasksActivity extends AppCompatActivity {
 
             cbEnableReminder.setChecked(editing.isHasReminder());
             layoutReminderDetails.setVisibility(editing.isHasReminder() ? View.VISIBLE : View.GONE);
-            if (editing.getReminderTimestamp() > 0) {
-                reminderCal.setTimeInMillis(editing.getReminderTimestamp());
-                tvSelectedReminderTime.setText(timeFormat.format(reminderCal.getTime()));
+            if (editing.getReminderTime() != null && !editing.getReminderTime().isEmpty()) {
+                tvSelectedReminderTime.setText(TimeFormatPreference.formatTime(this, editing.getReminderTime()));
             }
+
             cbRepeatWeekly.setChecked(editing.isRecurring());
             layoutRecurringDays.setVisibility(editing.isRecurring() ? View.VISIBLE : View.GONE);
-            String days = editing.getRecurringDays();
-            if (days != null) {
+            if (editing.getRecurringDays() != null) {
+                String days = editing.getRecurringDays();
                 cbMon.setChecked(days.contains("MON"));
                 cbTue.setChecked(days.contains("TUE"));
                 cbWed.setChecked(days.contains("WED"));
@@ -738,406 +906,187 @@ public class TasksActivity extends AppCompatActivity {
             }
         }
 
-        TextView btnModeDeadline = dialogView.findViewById(R.id.btnModeDeadline);
-        TextView btnModeReminder = dialogView.findViewById(R.id.btnModeReminder);
-        LinearLayout layoutDeadlineSection = dialogView.findViewById(R.id.layoutDeadlineSection);
-        TextView tvRepeatSub = dialogView.findViewById(R.id.tvRepeatSub);
-        LinearLayout layoutDaysRow = dialogView.findViewById(R.id.layoutDaysRow);
+        cbEnableReminder.setOnCheckedChangeListener((bv, isChecked) ->
+                layoutReminderDetails.setVisibility(isChecked ? View.VISIBLE : View.GONE));
 
-        CheckBox[] dayChips = {cbMon, cbTue, cbWed, cbThu, cbFri, cbSat, cbSun};
-
-        final String[] selectedMode = { "deadline" };
-
-        if (btnModeDeadline != null && btnModeReminder != null) {
-            Runnable updateModeUI = () -> {
-                boolean isDeadline = "deadline".equals(selectedMode[0]);
-                btnModeDeadline.setBackgroundResource(isDeadline ? R.drawable.bg_task_mode_selected : android.R.color.transparent);
-                btnModeDeadline.setTextColor(ContextCompat.getColor(this, isDeadline ? R.color.ws_accent : R.color.text_muted));
-                TextViewCompat.setCompoundDrawableTintList(btnModeDeadline,
-                        ColorStateList.valueOf(ContextCompat.getColor(this, isDeadline ? R.color.ws_accent : R.color.text_muted)));
-
-                btnModeReminder.setBackgroundResource(!isDeadline ? R.drawable.bg_task_mode_selected : android.R.color.transparent);
-                btnModeReminder.setTextColor(ContextCompat.getColor(this, !isDeadline ? R.color.ws_accent : R.color.text_muted));
-                TextViewCompat.setCompoundDrawableTintList(btnModeReminder,
-                        ColorStateList.valueOf(ContextCompat.getColor(this, !isDeadline ? R.color.ws_accent : R.color.text_muted)));
-
-                if (layoutDeadlineSection != null) {
-                    layoutDeadlineSection.setVisibility(isDeadline ? View.VISIBLE : View.GONE);
-                }
-                dialogSubtitle.setText(isDeadline ? "Something with a deadline. We can nudge you before it's due." : "Just a ping. No due date.");
-            };
-
-            btnModeDeadline.setOnClickListener(v -> {
-                selectedMode[0] = "deadline";
-                updateModeUI.run();
-            });
-            btnModeReminder.setOnClickListener(v -> {
-                selectedMode[0] = "reminder";
-                updateModeUI.run();
-            });
-            updateModeUI.run();
-        }
-
-        Runnable validateTaskInput = () -> {
-            boolean ok = etTitle.getText().toString().trim().length() > 0;
-            boolean anyDayChecked = false;
-            for (CheckBox cb : dayChips) {
-                if (cb != null && cb.isChecked()) {
-                    anyDayChecked = true;
-                    break;
-                }
-            }
-            if (cbRepeatWeekly.isChecked() && !anyDayChecked) {
-                ok = false;
-                if (tvRepeatSub != null) {
-                    tvRepeatSub.setText("Choose at least one day");
-                    tvRepeatSub.setTextColor(ContextCompat.getColor(this, R.color.brand_raspberry));
-                }
-            } else {
-                if (tvRepeatSub != null) {
-                    tvRepeatSub.setText("Pick the days it repeats");
-                    tvRepeatSub.setTextColor(ContextCompat.getColor(this, R.color.text_muted));
-                }
-            }
-            btnSave.setEnabled(ok);
-            btnSave.setAlpha(ok ? 1.0f : 0.5f);
-        };
-
-        etTitle.addTextChangedListener(new android.text.TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { validateTaskInput.run(); }
-            @Override public void afterTextChanged(android.text.Editable s) {}
-        });
-
-        final boolean[] isDraggingDays = {false};
-        final int[] startDayIndex = {-1};
-        final boolean[] targetDayState = {false};
-        final boolean[] initialDayStates = new boolean[7];
-
-        View.OnTouchListener dayTouchListener = (v, event) -> {
-            int action = event.getActionMasked();
-            float rawX = event.getRawX();
-            float rawY = event.getRawY();
-
-            if (action == MotionEvent.ACTION_DOWN) {
-                int touchedIdx = findDayIndexAt(rawX, rawY, dayChips);
-                if (touchedIdx != -1) {
-                    isDraggingDays[0] = true;
-                    startDayIndex[0] = touchedIdx;
-                    for (int i = 0; i < 7; i++) {
-                        initialDayStates[i] = dayChips[i] != null && dayChips[i].isChecked();
-                    }
-                    targetDayState[0] = !initialDayStates[touchedIdx];
-                    if (v.getParent() != null) {
-                        v.getParent().requestDisallowInterceptTouchEvent(true);
-                    }
-                    updateDayDragSelection(startDayIndex[0], touchedIdx, dayChips, targetDayState[0], initialDayStates);
-                }
-                return true;
-            } else if (action == MotionEvent.ACTION_MOVE) {
-                if (isDraggingDays[0]) {
-                    if (v.getParent() != null) {
-                        v.getParent().requestDisallowInterceptTouchEvent(true);
-                    }
-                    int currIdx = findDayIndexAt(rawX, rawY, dayChips);
-                    if (currIdx != -1) {
-                        updateDayDragSelection(startDayIndex[0], currIdx, dayChips, targetDayState[0], initialDayStates);
-                    }
-                }
-                return true;
-            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                if (isDraggingDays[0]) {
-                    isDraggingDays[0] = false;
-                    if (v.getParent() != null) {
-                        v.getParent().requestDisallowInterceptTouchEvent(false);
-                    }
-                    for (CheckBox chip : dayChips) {
-                        if (chip != null) {
-                            chip.animate().scaleX(1.0f).scaleY(1.0f).setDuration(80).start();
-                        }
-                    }
-                    validateTaskInput.run();
-                }
-                return true;
-            }
-            return false;
-        };
-
-        if (layoutDaysRow != null) {
-            layoutDaysRow.setOnTouchListener(dayTouchListener);
-        }
-        for (CheckBox cb : dayChips) {
-            if (cb != null) {
-                cb.setOnTouchListener(dayTouchListener);
-            }
-        }
-
-        cbEnableReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            layoutReminderDetails.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            validateTaskInput.run();
-        });
-
-        cbRepeatWeekly.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            layoutRecurringDays.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            validateTaskInput.run();
-        });
-
-        validateTaskInput.run();
-
-        btnPickReminderTime.setOnClickListener(v -> {
-            MaterialTimePicker picker = new MaterialTimePicker.Builder()
-                    .setTitleText("Select reminder time")
-                    .setTimeFormat(TimeFormatPreference.is24Hour(this)
-                            ? TimeFormat.CLOCK_24H : TimeFormat.CLOCK_12H)
-                    .setInputMode(MaterialTimePicker.INPUT_MODE_KEYBOARD)
-                    .setHour(reminderCal.get(Calendar.HOUR_OF_DAY))
-                    .setMinute(reminderCal.get(Calendar.MINUTE))
-                    .build();
-            picker.addOnPositiveButtonClickListener(view -> {
-                reminderCal.set(Calendar.HOUR_OF_DAY, picker.getHour());
-                reminderCal.set(Calendar.MINUTE, picker.getMinute());
-                reminderCal.set(Calendar.SECOND, 0);
-                reminderCal.set(Calendar.MILLISECOND, 0);
-                tvSelectedReminderTime.setText(timeFormat.format(reminderCal.getTime()));
-            });
-            picker.show(getSupportFragmentManager(), "task_reminder_time_picker");
-        });
+        cbRepeatWeekly.setOnCheckedChangeListener((bv, isChecked) ->
+                layoutRecurringDays.setVisibility(isChecked ? View.VISIBLE : View.GONE));
 
         btnPickDate.setOnClickListener(v -> {
-            Calendar today = Calendar.getInstance();
-            long firstAllowedDate = utcDateMillis(today);
-            Calendar initialDate = (Calendar) selectedCal.clone();
-            if (isBeforeToday(initialDate, today)) initialDate = today;
-            CalendarConstraints constraints = new CalendarConstraints.Builder()
-                    .setValidator(DateValidatorPointForward.from(firstAllowedDate))
+            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
+                    .setTitleText("Select Due Date")
+                    .setSelection(selectedCal.getTimeInMillis())
+                    .setCalendarConstraints(new CalendarConstraints.Builder()
+                            .setValidator(DateValidatorPointForward.now())
+                            .build())
                     .build();
-            MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
-                    .setTitleText("Select due date")
-                    .setCalendarConstraints(constraints)
-                    .setSelection(utcDateMillis(initialDate))
-                    .build();
-            picker.addOnPositiveButtonClickListener(selection -> {
-                Calendar utcSelection = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-                utcSelection.setTimeInMillis(selection);
-                selectedCal.set(Calendar.YEAR, utcSelection.get(Calendar.YEAR));
-                selectedCal.set(Calendar.MONTH, utcSelection.get(Calendar.MONTH));
-                selectedCal.set(Calendar.DAY_OF_MONTH, utcSelection.get(Calendar.DAY_OF_MONTH));
+
+            datePicker.addOnPositiveButtonClickListener(selection -> {
+                Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                utcCal.setTimeInMillis(selection);
+                selectedCal.set(Calendar.YEAR, utcCal.get(Calendar.YEAR));
+                selectedCal.set(Calendar.MONTH, utcCal.get(Calendar.MONTH));
+                selectedCal.set(Calendar.DAY_OF_MONTH, utcCal.get(Calendar.DAY_OF_MONTH));
                 tvSelectedDate.setText(displayDateFormat.format(selectedCal.getTime()));
-                tvSelectedTime.setText(timeFormat.format(selectedCal.getTime()));
             });
-            picker.show(getSupportFragmentManager(), "task_due_date_picker");
+
+            datePicker.show(getSupportFragmentManager(), "TASK_DATE_PICKER");
         });
 
         btnPickTime.setOnClickListener(v -> {
-            MaterialTimePicker picker = new MaterialTimePicker.Builder()
-                    .setTitleText("Select due time")
-                    .setTimeFormat(TimeFormatPreference.is24Hour(this)
-                            ? TimeFormat.CLOCK_24H : TimeFormat.CLOCK_12H)
-                    .setInputMode(MaterialTimePicker.INPUT_MODE_KEYBOARD)
+            int timeFormatMode = TimeFormatPreference.is24Hour(this)
+                    ? TimeFormat.CLOCK_24H : TimeFormat.CLOCK_12H;
+            MaterialTimePicker timePicker = new MaterialTimePicker.Builder()
+                    .setTimeFormat(timeFormatMode)
                     .setHour(selectedCal.get(Calendar.HOUR_OF_DAY))
                     .setMinute(selectedCal.get(Calendar.MINUTE))
+                    .setTitleText("Select Due Time")
                     .build();
-            picker.addOnPositiveButtonClickListener(view -> {
-                selectedCal.set(Calendar.HOUR_OF_DAY, picker.getHour());
-                selectedCal.set(Calendar.MINUTE, picker.getMinute());
-                selectedCal.set(Calendar.SECOND, 0);
-                selectedCal.set(Calendar.MILLISECOND, 0);
+
+            timePicker.addOnPositiveButtonClickListener(dialogView1 -> {
+                selectedCal.set(Calendar.HOUR_OF_DAY, timePicker.getHour());
+                selectedCal.set(Calendar.MINUTE, timePicker.getMinute());
                 tvSelectedTime.setText(timeFormat.format(selectedCal.getTime()));
             });
-            picker.show(getSupportFragmentManager(), "task_due_time_picker");
+
+            timePicker.show(getSupportFragmentManager(), "TASK_TIME_PICKER");
         });
 
-        Runnable discardAction = () -> {
-            new AlertDialog.Builder(this)
-                    .setTitle("Discard changes?")
-                    .setMessage("Your changes will be discarded and you will return to the home screen.")
-                    .setNegativeButton("Keep editing", null)
-                    .setPositiveButton("Discard", (d, w) -> {
-                        dialog.dismiss();
-                        Intent intent = new Intent(this, MainActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                        startActivity(intent);
-                        finish();
-                    })
-                    .show();
-        };
+        btnPickReminderTime.setOnClickListener(v -> {
+            int timeFormatMode = TimeFormatPreference.is24Hour(this)
+                    ? TimeFormat.CLOCK_24H : TimeFormat.CLOCK_12H;
+            MaterialTimePicker timePicker = new MaterialTimePicker.Builder()
+                    .setTimeFormat(timeFormatMode)
+                    .setHour(reminderCal.get(Calendar.HOUR_OF_DAY))
+                    .setMinute(reminderCal.get(Calendar.MINUTE))
+                    .setTitleText("Select Reminder Time")
+                    .build();
 
-        btnCancel.setOnClickListener(v -> discardAction.run());
-        dialog.setOnDismissListener(dialogInterface -> {
-            if (activeSubjectField == etSubject) {
-                activeSubjectLayout = null;
-                activeSubjectField = null;
-                activeSubjectAdapter = null;
-            }
+            timePicker.addOnPositiveButtonClickListener(dialogView1 -> {
+                reminderCal.set(Calendar.HOUR_OF_DAY, timePicker.getHour());
+                reminderCal.set(Calendar.MINUTE, timePicker.getMinute());
+                tvSelectedReminderTime.setText(timeFormat.format(reminderCal.getTime()));
+            });
+
+            timePicker.show(getSupportFragmentManager(), "REMINDER_TIME_PICKER");
         });
 
         btnSave.setOnClickListener(v -> {
             String title = etTitle.getText().toString().trim();
-            String category = selectedCategory[0];
-            String importance = selectedImportance[0];
-            String subject = category.equals(AssignmentItem.CATEGORY_SCHOOL) ? etSubject.getText().toString().trim() : "";
-
             if (title.isEmpty()) {
-                Toast.makeText(this, "Please enter a task title.", Toast.LENGTH_SHORT).show();
+                etTitle.setError("Title is required");
                 return;
             }
 
-            if (category.equals(AssignmentItem.CATEGORY_SCHOOL) && subject.isEmpty()) {
-                subject = "General Academic";
+            String subject = etSubject.getText().toString().trim();
+            if (activeSubjectAdapter != null && activeSubjectAdapter.isUseRow(subject)) {
+                subject = activeSubjectAdapter.getUseSubject();
             }
 
-            String dateStr = dateFormat.format(selectedCal.getTime());
-            String timeStr = timeFormat.format(selectedCal.getTime());
+            String formattedDate = dateFormat.format(selectedCal.getTime());
+            String formattedTime = timeFormat.format(selectedCal.getTime());
             long timestamp = selectedCal.getTimeInMillis();
 
             boolean hasReminder = cbEnableReminder.isChecked();
-            boolean isRecurring = hasReminder && cbRepeatWeekly.isChecked();
-            String reminderTimeStr = hasReminder ? timeFormat.format(reminderCal.getTime()) : "";
-            long reminderTs = hasReminder ? reminderCal.getTimeInMillis() : 0L;
+            String reminderTimeStr = hasReminder ? timeFormat.format(reminderCal.getTime()) : null;
+            long reminderTimestamp = hasReminder ? reminderCal.getTimeInMillis() : 0;
 
-            StringBuilder recurringDaysSb = new StringBuilder();
+            boolean isRecurring = cbRepeatWeekly.isChecked();
+            StringBuilder recDays = new StringBuilder();
             if (isRecurring) {
-                if (cbMon.isChecked()) recurringDaysSb.append("MON,");
-                if (cbTue.isChecked()) recurringDaysSb.append("TUE,");
-                if (cbWed.isChecked()) recurringDaysSb.append("WED,");
-                if (cbThu.isChecked()) recurringDaysSb.append("THU,");
-                if (cbFri.isChecked()) recurringDaysSb.append("FRI,");
-                if (cbSat.isChecked()) recurringDaysSb.append("SAT,");
-                if (cbSun.isChecked()) recurringDaysSb.append("SUN,");
-            }
-            String recurringDays = recurringDaysSb.toString();
-            if (recurringDays.endsWith(",")) {
-                recurringDays = recurringDays.substring(0, recurringDays.length() - 1);
+                if (cbMon.isChecked()) recDays.append("MON,");
+                if (cbTue.isChecked()) recDays.append("TUE,");
+                if (cbWed.isChecked()) recDays.append("WED,");
+                if (cbThu.isChecked()) recDays.append("THU,");
+                if (cbFri.isChecked()) recDays.append("FRI,");
+                if (cbSat.isChecked()) recDays.append("SAT,");
+                if (cbSun.isChecked()) recDays.append("SUN,");
+                if (recDays.length() > 0) recDays.setLength(recDays.length() - 1);
             }
 
-            AssignmentItem updatedItem = editing != null ? editing : new AssignmentItem(
-                    title, subject, category, dateStr, timeStr, timestamp,
-                    false, category.equals(AssignmentItem.CATEGORY_WORK) ? AssignmentItem.CATEGORY_WORK : AssignmentItem.CATEGORY_SCHOOL);
-            updatedItem.setTitle(title);
-            updatedItem.setSubject(subject);
-            updatedItem.setCategory(category);
-            updatedItem.setImportance(importance);
-            updatedItem.setDueDate(dateStr);
-            updatedItem.setDueTime(timeStr);
-            updatedItem.setDueTimestamp(timestamp);
-            updatedItem.setTaskCategory(category);
-            updatedItem.setHasReminder(hasReminder);
-            updatedItem.setReminderTime(reminderTimeStr);
-            updatedItem.setReminderTimestamp(reminderTs);
-            updatedItem.setRecurring(isRecurring);
-            updatedItem.setRecurringDays(recurringDays);
+            AssignmentItem targetItem = editing != null ? editing : new AssignmentItem(
+                    title,
+                    subject,
+                    selectedCategory[0],
+                    formattedDate,
+                    formattedTime,
+                    timestamp,
+                    false,
+                    selectedCategory[0]
+            );
+
+            targetItem.setTitle(title);
+            targetItem.setSubject(selectedCategory[0].equals(AssignmentItem.CATEGORY_SCHOOL) ? subject : "");
+            targetItem.setCategory(selectedCategory[0]);
+            targetItem.setImportance(selectedImportance[0]);
+            targetItem.setTaskCategory(selectedCategory[0]);
+            targetItem.setDueDate(formattedDate);
+            targetItem.setDueTime(formattedTime);
+            targetItem.setDueTimestamp(timestamp);
+            targetItem.setHasReminder(hasReminder);
+            targetItem.setReminderTime(reminderTimeStr);
+            targetItem.setReminderTimestamp(reminderTimestamp);
+            targetItem.setRecurring(isRecurring);
+            targetItem.setRecurringDays(isRecurring ? recDays.toString() : null);
 
             new Thread(() -> {
-                AppDatabase database = AppDatabase.getInstance(getApplicationContext());
-                if (editing == null) {
-                    LocalDataRepository.saveAssignment(database, updatedItem);
+                AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+                if (editing != null) {
+                    LocalDataRepository.updateAssignment(db, targetItem);
                 } else {
-                    LocalDataRepository.updateAssignment(database, updatedItem);
+                    LocalDataRepository.saveAssignment(db, targetItem);
                 }
                 ((WorkStudyProApplication) getApplication()).onLocalChangesQueued();
 
                 runOnUiThread(() -> {
-                    String message = editing != null ? "Task updated" : "Task added";
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(TasksActivity.this,
+                            editing != null ? "Task updated" : "Task added",
+                            Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
                 });
             }).start();
         });
 
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
-    }
-
-    private long utcDateMillis(Calendar localDate) {
-        Calendar utcDate = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        utcDate.clear();
-        utcDate.set(localDate.get(Calendar.YEAR), localDate.get(Calendar.MONTH),
-                localDate.get(Calendar.DAY_OF_MONTH));
-        return utcDate.getTimeInMillis();
-    }
-
-    private boolean isBeforeToday(Calendar date, Calendar today) {
-        Calendar dateOnly = (Calendar) date.clone();
-        Calendar todayOnly = (Calendar) today.clone();
-        dateOnly.set(Calendar.HOUR_OF_DAY, 0);
-        dateOnly.set(Calendar.MINUTE, 0);
-        dateOnly.set(Calendar.SECOND, 0);
-        dateOnly.set(Calendar.MILLISECOND, 0);
-        todayOnly.set(Calendar.HOUR_OF_DAY, 0);
-        todayOnly.set(Calendar.MINUTE, 0);
-        todayOnly.set(Calendar.SECOND, 0);
-        todayOnly.set(Calendar.MILLISECOND, 0);
-        return dateOnly.before(todayOnly);
     }
 
     private void configureSubjectDropdown(TextInputLayout layout,
                                           MaterialAutoCompleteTextView field,
                                           List<String> subjects) {
-        String currentText = field.getText().toString();
-        if (subjects == null || subjects.isEmpty()) {
-            if (activeSubjectAdapter != null && field.isPopupShowing()) {
-                activeSubjectAdapter.updateSubjects(new ArrayList<>(), currentText, true);
-                return;
-            }
-            activeSubjectAdapter = null;
+        if (field == null || layout == null) return;
+        List<String> safeSubjects = subjects != null ? subjects : new ArrayList<>();
+        if (safeSubjects.isEmpty()) {
             field.setAdapter(null);
             layout.setEndIconMode(TextInputLayout.END_ICON_NONE);
             return;
         }
 
+        SubjectAdapter adapter = new SubjectAdapter(this, safeSubjects);
+        field.setAdapter(adapter);
         layout.setEndIconMode(TextInputLayout.END_ICON_DROPDOWN_MENU);
-        if (activeSubjectAdapter == null || field.getAdapter() != activeSubjectAdapter) {
-            activeSubjectAdapter = new SubjectAdapter(this, subjects);
-            field.setAdapter(activeSubjectAdapter);
-            field.setThreshold(0);
-        } else {
-            activeSubjectAdapter.updateSubjects(subjects, currentText, field.isPopupShowing());
-        }
+        activeSubjectAdapter = adapter;
     }
 
     private void showAllSubjects(MaterialAutoCompleteTextView field) {
-        if (activeSubjectAdapter == null) return;
-        activeSubjectAdapter.showAllSubjects();
+        if (field == null) return;
+        if (activeSubjectAdapter != null) {
+            activeSubjectAdapter.showAllSubjects();
+        }
         field.showDropDown();
     }
 
-    private int findDayIndexAt(float rawX, float rawY, CheckBox[] dayChips) {
-        for (int i = 0; i < dayChips.length; i++) {
-            if (dayChips[i] == null) continue;
-            int[] loc = new int[2];
-            dayChips[i].getLocationOnScreen(loc);
-            int left = loc[0];
-            int top = loc[1] - 40;
-            int right = loc[0] + dayChips[i].getWidth();
-            int bottom = loc[1] + dayChips[i].getHeight() + 40;
-            if (rawX >= left && rawX <= right && rawY >= top && rawY <= bottom) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private void updateDayDragSelection(int startIdx, int currIdx, CheckBox[] dayChips, boolean targetState, boolean[] initialStates) {
-        int minIdx = Math.min(startIdx, currIdx);
-        int maxIdx = Math.max(startIdx, currIdx);
-        for (int i = 0; i < dayChips.length; i++) {
-            if (dayChips[i] == null) continue;
-            boolean shouldBeChecked = (i >= minIdx && i <= maxIdx) ? targetState : initialStates[i];
-            dayChips[i].setChecked(shouldBeChecked);
-            float scale = (i == currIdx) ? 1.08f : 1.0f;
-            dayChips[i].animate().scaleX(scale).scaleY(scale).setDuration(80).start();
-        }
-    }
-
     private static class SubjectAdapter extends ArrayAdapter<String> implements Filterable {
-        private final List<String> allSubjects = new ArrayList<>();
+        private final List<String> allSubjects;
         private List<String> pendingSubjects;
         private String useSubject;
 
-        SubjectAdapter(TasksActivity context, List<String> subjects) {
+        SubjectAdapter(Context context, List<String> subjects) {
             super(context, android.R.layout.simple_dropdown_item_1line, new ArrayList<>(subjects));
-            allSubjects.addAll(subjects);
+            this.allSubjects = new ArrayList<>(subjects);
         }
 
+        @NonNull
         @Override
         public Filter getFilter() {
             return new Filter() {
