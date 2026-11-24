@@ -164,6 +164,17 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
         onItemChangedListener.onItemChanged(originalItem, updatedItem);
     }
 
+    static void updateSubject(TimeSlotItem item, String subject,
+                              OnItemChangedListener listener) {
+        TimeSlotItem originalItem = item.copy();
+        TimeSlotItem updatedItem = item.copy();
+        updatedItem.setSubject(subject);
+        updatedItem.setSubjectError(null);
+        if (listener != null) listener.onItemChanged(originalItem, updatedItem);
+        item.setSubject(subject);
+        item.setSubjectError(null);
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -235,16 +246,11 @@ public class TimeSlotAdapter extends ListAdapter<TimeSlotItem, TimeSlotAdapter.V
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String subject = s.toString();
-                item.setSubject(subject);
-                item.setSubjectError(null);
+                updateSubject(item, subject, onItemChangedListener);
                 showInlineError(holder.tvSubjectError, null);
                 holder.tvBlockTitle.setText(subject.trim().isEmpty()
                         ? context.getString(R.string.schedule_block_title, Math.max(1, holder.getBindingAdapterPosition() + 1))
                         : subject.trim());
-                onItemChanged(item, updated -> {
-                    updated.setSubject(subject);
-                    updated.setSubjectError(null);
-                });
             }
 
             @Override

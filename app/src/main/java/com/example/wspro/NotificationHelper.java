@@ -21,6 +21,7 @@ public class NotificationHelper {
     public static final String EXTRA_RELATED_ID = "notification_related_id";
 
     public static void createChannels(Context context) {
+        if (context == null) return;
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
 
         NotificationManager manager = context.getSystemService(NotificationManager.class);

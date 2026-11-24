@@ -18,10 +18,6 @@ public class NotificationTriggerEngine {
 
     public static void schedulePeriodicCheck(Context context) {
         if (context == null) return;
-        SupabaseClient supabaseClient = SupabaseClient.getInstance(context);
-        if (!supabaseClient.isLoggedIn() || supabaseClient.isDemoSession()
-                || supabaseClient.getAccessToken() == null
-                || supabaseClient.getAccessToken().isEmpty()) return;
         PeriodicWorkRequest periodicRequest = new PeriodicWorkRequest.Builder(
                 NotificationWorker.class,
                 15,
@@ -49,10 +45,6 @@ public class NotificationTriggerEngine {
 
     public static synchronized void runTriggers(Context context) {
         if (context == null) return;
-        SupabaseClient supabaseClient = SupabaseClient.getInstance(context);
-        if (!supabaseClient.isLoggedIn() || supabaseClient.isDemoSession()
-                || supabaseClient.getAccessToken() == null
-                || supabaseClient.getAccessToken().isEmpty()) return;
 
         AppDatabase db = AppDatabase.getInstance(context);
         long now = System.currentTimeMillis();
@@ -184,12 +176,12 @@ public class NotificationTriggerEngine {
                             long rowId = db.notificationDao().insert(item);
                             if (rowId > 0) {
                                 NotificationHelper.postNotification(
-                                    context,
-                                    (int) rowId,
-                                    NotificationItem.TYPE_CONFLICT,
-                                    title,
-                                    message,
-                                    minId + "," + maxId
+                                        context,
+                                        (int) rowId,
+                                        NotificationItem.TYPE_CONFLICT,
+                                        title,
+                                        message,
+                                        minId + "," + maxId
                                 );
                             }
                         }
