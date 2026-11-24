@@ -72,45 +72,6 @@
             tools:text="Active" />
     </LinearLayout>
 
-    <!-- Course & Role Metadata Row -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Course: "
-            android:textColor="@color/admin_mute"
-            android:textSize="12sp" />
-
-        <TextView
-            android:id="@+id/userCourse"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/admin_ink"
-            android:textSize="12sp"
-            tools:text="BS Computer Science" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="  ·  Role: "
-            android:textColor="@color/admin_mute"
-            android:textSize="12sp" />
-
-        <TextView
-            android:id="@+id/userRole"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/admin_mute"
-            android:textSize="12sp"
-            tools:text="user" />
-    </LinearLayout>
-
     <!-- Action Buttons Row -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -145,26 +106,9 @@
             android:paddingStart="4dp"
             android:paddingEnd="4dp"
             android:stateListAnimator="@null"
-            android:text="Deactivate"
+            android:text="Archive"
             android:textAllCaps="false"
             android:textColor="@color/admin_ink"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnDelete"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_admin_btn_danger"
-            android:minHeight="38dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:stateListAnimator="@null"
-            android:text="Delete"
-            android:textAllCaps="false"
-            android:textColor="@color/admin_raspberry"
             android:textSize="11sp"
             android:textStyle="bold" />
     </LinearLayout>

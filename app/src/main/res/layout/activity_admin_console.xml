@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -57,22 +58,6 @@
                     android:textSize="17sp"
                     android:textStyle="bold" />
             </LinearLayout>
-
-            <!-- Header Quick Actions (Refresh & Sign Out) -->
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnRefresh"
-                android:layout_width="wrap_content"
-                android:layout_height="34dp"
-                android:background="@drawable/bg_admin_btn"
-                android:minHeight="34dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:stateListAnimator="@null"
-                android:text="Refresh"
-                android:textAllCaps="false"
-                android:textColor="@color/admin_ink"
-                android:textSize="12sp"
-                android:textStyle="bold" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnSignOut"
@@ -151,8 +136,8 @@
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/tabAccounts"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="38dp"
+            android:layout_weight="1"
             android:background="@drawable/bg_admin_tab_selected"
             android:minHeight="38dp"
             android:paddingStart="6dp"
@@ -167,32 +152,15 @@
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/tabLogs"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="38dp"
             android:layout_marginStart="8dp"
+            android:layout_weight="1"
             android:background="@drawable/bg_admin_tab_unselected"
             android:minHeight="38dp"
             android:paddingStart="6dp"
             android:paddingEnd="6dp"
             android:stateListAnimator="@null"
             android:text="Debug logs"
-            android:textAllCaps="false"
-            android:textColor="@color/admin_mute"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/tabAlgorithm"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="38dp"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/bg_admin_tab_unselected"
-            android:minHeight="38dp"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:stateListAnimator="@null"
-            android:text="@string/admin_tab_algorithm"
             android:textAllCaps="false"
             android:textColor="@color/admin_mute"
             android:textSize="13sp"
@@ -289,7 +257,7 @@
                             android:textSize="11sp" />
                     </LinearLayout>
 
-                    <!-- Stat Card: Inactive / Suspended -->
+                    <!-- Stat Card: Archived -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -312,7 +280,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Inactive"
+                            android:text="Archived"
                             android:textColor="@color/admin_mute"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -348,14 +316,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="14dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:orientation="vertical">
 
                         <EditText
                             android:id="@+id/inputSearch"
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="44dp"
-                            android:layout_weight="1"
+                            android:layout_marginBottom="10dp"
                             android:background="@drawable/bg_admin_input"
                             android:hint="Search name or email…"
                             android:imeOptions="actionSearch"
@@ -368,15 +335,35 @@
                             android:textColorHint="@color/admin_mute"
                             android:textSize="13sp" />
 
-                        <Spinner
-                            android:id="@+id/spinnerStatusFilter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:layout_marginStart="8dp"
-                            android:background="@drawable/bg_admin_input"
-                            android:minWidth="120dp"
-                            android:paddingStart="8dp"
-                            android:paddingEnd="8dp" />
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/chipGroupStatusFilter"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipFilterAll"
+                                style="@style/Widget.Material3.Chip.Filter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true"
+                                android:text="All" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipFilterActive"
+                                style="@style/Widget.Material3.Chip.Filter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Active" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipFilterArchived"
+                                style="@style/Widget.Material3.Chip.Filter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Archived" />
+                        </com.google.android.material.chip.ChipGroup>
                     </LinearLayout>
 
                     <!-- Users List Container -->
@@ -397,143 +384,6 @@
                         android:textColor="@color/admin_mute"
                         android:textSize="13sp"
                         android:visibility="gone" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- ALGORITHM SETTINGS SECTION -->
-            <LinearLayout
-                android:id="@+id/sectionAlgorithm"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_admin_card"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/admin_algorithm_weights_title"
-                        android:textColor="@color/admin_ink"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/admin_algorithm_weights_description"
-                        android:textColor="@color/admin_mute"
-                        android:textSize="13sp" />
-
-                    <LinearLayout
-                        android:id="@+id/algorithmWeightsContainer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="vertical" />
-
-                    <TextView
-                        android:id="@+id/textAlgorithmWeightTotal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_admin_stat_card"
-                        android:padding="12dp"
-                        android:text="@string/admin_algorithm_weight_total_default"
-                        android:textColor="@color/admin_ink"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
-                        android:text="@string/admin_algorithm_thresholds_title"
-                        android:textColor="@color/admin_ink"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/admin_algorithm_thresholds_description"
-                        android:textColor="@color/admin_mute"
-                        android:textSize="13sp" />
-
-                    <LinearLayout
-                        android:id="@+id/algorithmThresholdsContainer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical" />
-
-                    <TextView
-                        android:id="@+id/textAlgorithmUpdatedAt"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:textColor="@color/admin_mute"
-                        android:textSize="12sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="end"
-                        android:orientation="horizontal">
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/btnNormalizeAlgorithmWeights"
-                            android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:background="@drawable/bg_admin_btn"
-                            android:minHeight="44dp"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:stateListAnimator="@null"
-                            android:text="@string/admin_algorithm_auto_normalize"
-                            android:textAllCaps="false"
-                            android:textColor="@color/admin_ink"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/btnResetAlgorithmWeights"
-                            android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:layout_marginStart="8dp"
-                            android:background="@drawable/bg_admin_btn"
-                            android:minHeight="44dp"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:stateListAnimator="@null"
-                            android:text="@string/admin_algorithm_reset"
-                            android:textAllCaps="false"
-                            android:textColor="@color/admin_ink"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/btnPublishAlgorithmWeights"
-                            android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:layout_marginStart="8dp"
-                            android:background="@drawable/bg_admin_btn_primary"
-                            android:minHeight="44dp"
-                            android:paddingStart="14dp"
-                            android:paddingEnd="14dp"
-                            android:stateListAnimator="@null"
-                            android:text="@string/admin_algorithm_publish"
-                            android:textAllCaps="false"
-                            android:textColor="@android:color/white"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
 

@@ -1,10 +1,14 @@
 package com.example.wspro;
 
+import android.content.res.ColorStateList;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import androidx.core.widget.TextViewCompat;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -560,6 +564,7 @@ public class TasksActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
 
         EditText etTitle = dialogView.findViewById(R.id.etAssignmentTitle);
@@ -662,13 +667,10 @@ public class TasksActivity extends AppCompatActivity {
 
         View.OnClickListener categoryClick = v -> {
             for (int i = 0; i < categoryChips.length; i++) {
-                if (categoryChips[i] == v) {
-                    categoryChips[i].setBackgroundResource(R.drawable.bg_toggle_selected);
-                    categoryChips[i].setTextColor(ContextCompat.getColor(this, R.color.ws_on_brand));
+                boolean selected = (categoryChips[i] == v);
+                categoryChips[i].setSelected(selected);
+                if (selected) {
                     selectedCategory[0] = categoryNames[i];
-                } else {
-                    categoryChips[i].setBackgroundResource(R.drawable.bg_toggle_unselected);
-                    categoryChips[i].setTextColor(ContextCompat.getColor(this, R.color.text_primary));
                 }
             }
             subjectSection.setVisibility(selectedCategory[0].equals(AssignmentItem.CATEGORY_SCHOOL) ? View.VISIBLE : View.GONE);
@@ -677,19 +679,17 @@ public class TasksActivity extends AppCompatActivity {
         for (TextView chip : categoryChips) {
             chip.setOnClickListener(categoryClick);
         }
+        categoryClick.onClick(chipSchool);
 
         TextView[] importanceChips = {chipHigh, chipMid, chipLow};
         String[] importanceNames = {PriorityEngine.IMPORTANCE_HIGH, PriorityEngine.IMPORTANCE_MID, PriorityEngine.IMPORTANCE_LOW};
 
         View.OnClickListener importanceClick = v -> {
             for (int i = 0; i < importanceChips.length; i++) {
-                if (importanceChips[i] == v) {
-                    importanceChips[i].setBackgroundResource(R.drawable.bg_toggle_selected);
-                    importanceChips[i].setTextColor(ContextCompat.getColor(this, R.color.ws_on_brand));
+                boolean selected = (importanceChips[i] == v);
+                importanceChips[i].setSelected(selected);
+                if (selected) {
                     selectedImportance[0] = importanceNames[i];
-                } else {
-                    importanceChips[i].setBackgroundResource(R.drawable.bg_toggle_unselected);
-                    importanceChips[i].setTextColor(ContextCompat.getColor(this, R.color.text_primary));
                 }
             }
         };
@@ -697,6 +697,7 @@ public class TasksActivity extends AppCompatActivity {
         for (TextView chip : importanceChips) {
             chip.setOnClickListener(importanceClick);
         }
+        importanceClick.onClick(chipMid);
 
         if (editing != null) {
             String cat = editing.getCategory();
@@ -737,13 +738,151 @@ public class TasksActivity extends AppCompatActivity {
             }
         }
 
+        TextView btnModeDeadline = dialogView.findViewById(R.id.btnModeDeadline);
+        TextView btnModeReminder = dialogView.findViewById(R.id.btnModeReminder);
+        LinearLayout layoutDeadlineSection = dialogView.findViewById(R.id.layoutDeadlineSection);
+        TextView tvRepeatSub = dialogView.findViewById(R.id.tvRepeatSub);
+        LinearLayout layoutDaysRow = dialogView.findViewById(R.id.layoutDaysRow);
+
+        CheckBox[] dayChips = {cbMon, cbTue, cbWed, cbThu, cbFri, cbSat, cbSun};
+
+        final String[] selectedMode = { "deadline" };
+
+        if (btnModeDeadline != null && btnModeReminder != null) {
+            Runnable updateModeUI = () -> {
+                boolean isDeadline = "deadline".equals(selectedMode[0]);
+                btnModeDeadline.setBackgroundResource(isDeadline ? R.drawable.bg_task_mode_selected : android.R.color.transparent);
+                btnModeDeadline.setTextColor(ContextCompat.getColor(this, isDeadline ? R.color.ws_accent : R.color.text_muted));
+                TextViewCompat.setCompoundDrawableTintList(btnModeDeadline,
+                        ColorStateList.valueOf(ContextCompat.getColor(this, isDeadline ? R.color.ws_accent : R.color.text_muted)));
+
+                btnModeReminder.setBackgroundResource(!isDeadline ? R.drawable.bg_task_mode_selected : android.R.color.transparent);
+                btnModeReminder.setTextColor(ContextCompat.getColor(this, !isDeadline ? R.color.ws_accent : R.color.text_muted));
+                TextViewCompat.setCompoundDrawableTintList(btnModeReminder,
+                        ColorStateList.valueOf(ContextCompat.getColor(this, !isDeadline ? R.color.ws_accent : R.color.text_muted)));
+
+                if (layoutDeadlineSection != null) {
+                    layoutDeadlineSection.setVisibility(isDeadline ? View.VISIBLE : View.GONE);
+                }
+                dialogSubtitle.setText(isDeadline ? "Something with a deadline. We can nudge you before it's due." : "Just a ping. No due date.");
+            };
+
+            btnModeDeadline.setOnClickListener(v -> {
+                selectedMode[0] = "deadline";
+                updateModeUI.run();
+            });
+            btnModeReminder.setOnClickListener(v -> {
+                selectedMode[0] = "reminder";
+                updateModeUI.run();
+            });
+            updateModeUI.run();
+        }
+
+        Runnable validateTaskInput = () -> {
+            boolean ok = etTitle.getText().toString().trim().length() > 0;
+            boolean anyDayChecked = false;
+            for (CheckBox cb : dayChips) {
+                if (cb != null && cb.isChecked()) {
+                    anyDayChecked = true;
+                    break;
+                }
+            }
+            if (cbRepeatWeekly.isChecked() && !anyDayChecked) {
+                ok = false;
+                if (tvRepeatSub != null) {
+                    tvRepeatSub.setText("Choose at least one day");
+                    tvRepeatSub.setTextColor(ContextCompat.getColor(this, R.color.brand_raspberry));
+                }
+            } else {
+                if (tvRepeatSub != null) {
+                    tvRepeatSub.setText("Pick the days it repeats");
+                    tvRepeatSub.setTextColor(ContextCompat.getColor(this, R.color.text_muted));
+                }
+            }
+            btnSave.setEnabled(ok);
+            btnSave.setAlpha(ok ? 1.0f : 0.5f);
+        };
+
+        etTitle.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { validateTaskInput.run(); }
+            @Override public void afterTextChanged(android.text.Editable s) {}
+        });
+
+        final boolean[] isDraggingDays = {false};
+        final int[] startDayIndex = {-1};
+        final boolean[] targetDayState = {false};
+        final boolean[] initialDayStates = new boolean[7];
+
+        View.OnTouchListener dayTouchListener = (v, event) -> {
+            int action = event.getActionMasked();
+            float rawX = event.getRawX();
+            float rawY = event.getRawY();
+
+            if (action == MotionEvent.ACTION_DOWN) {
+                int touchedIdx = findDayIndexAt(rawX, rawY, dayChips);
+                if (touchedIdx != -1) {
+                    isDraggingDays[0] = true;
+                    startDayIndex[0] = touchedIdx;
+                    for (int i = 0; i < 7; i++) {
+                        initialDayStates[i] = dayChips[i] != null && dayChips[i].isChecked();
+                    }
+                    targetDayState[0] = !initialDayStates[touchedIdx];
+                    if (v.getParent() != null) {
+                        v.getParent().requestDisallowInterceptTouchEvent(true);
+                    }
+                    updateDayDragSelection(startDayIndex[0], touchedIdx, dayChips, targetDayState[0], initialDayStates);
+                }
+                return true;
+            } else if (action == MotionEvent.ACTION_MOVE) {
+                if (isDraggingDays[0]) {
+                    if (v.getParent() != null) {
+                        v.getParent().requestDisallowInterceptTouchEvent(true);
+                    }
+                    int currIdx = findDayIndexAt(rawX, rawY, dayChips);
+                    if (currIdx != -1) {
+                        updateDayDragSelection(startDayIndex[0], currIdx, dayChips, targetDayState[0], initialDayStates);
+                    }
+                }
+                return true;
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                if (isDraggingDays[0]) {
+                    isDraggingDays[0] = false;
+                    if (v.getParent() != null) {
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+                    }
+                    for (CheckBox chip : dayChips) {
+                        if (chip != null) {
+                            chip.animate().scaleX(1.0f).scaleY(1.0f).setDuration(80).start();
+                        }
+                    }
+                    validateTaskInput.run();
+                }
+                return true;
+            }
+            return false;
+        };
+
+        if (layoutDaysRow != null) {
+            layoutDaysRow.setOnTouchListener(dayTouchListener);
+        }
+        for (CheckBox cb : dayChips) {
+            if (cb != null) {
+                cb.setOnTouchListener(dayTouchListener);
+            }
+        }
+
         cbEnableReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
             layoutReminderDetails.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            validateTaskInput.run();
         });
 
         cbRepeatWeekly.setOnCheckedChangeListener((buttonView, isChecked) -> {
             layoutRecurringDays.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            validateTaskInput.run();
         });
+
+        validateTaskInput.run();
 
         btnPickReminderTime.setOnClickListener(v -> {
             MaterialTimePicker picker = new MaterialTimePicker.Builder()
@@ -959,6 +1098,34 @@ public class TasksActivity extends AppCompatActivity {
         if (activeSubjectAdapter == null) return;
         activeSubjectAdapter.showAllSubjects();
         field.showDropDown();
+    }
+
+    private int findDayIndexAt(float rawX, float rawY, CheckBox[] dayChips) {
+        for (int i = 0; i < dayChips.length; i++) {
+            if (dayChips[i] == null) continue;
+            int[] loc = new int[2];
+            dayChips[i].getLocationOnScreen(loc);
+            int left = loc[0];
+            int top = loc[1] - 40;
+            int right = loc[0] + dayChips[i].getWidth();
+            int bottom = loc[1] + dayChips[i].getHeight() + 40;
+            if (rawX >= left && rawX <= right && rawY >= top && rawY <= bottom) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void updateDayDragSelection(int startIdx, int currIdx, CheckBox[] dayChips, boolean targetState, boolean[] initialStates) {
+        int minIdx = Math.min(startIdx, currIdx);
+        int maxIdx = Math.max(startIdx, currIdx);
+        for (int i = 0; i < dayChips.length; i++) {
+            if (dayChips[i] == null) continue;
+            boolean shouldBeChecked = (i >= minIdx && i <= maxIdx) ? targetState : initialStates[i];
+            dayChips[i].setChecked(shouldBeChecked);
+            float scale = (i == currIdx) ? 1.08f : 1.0f;
+            dayChips[i].animate().scaleX(scale).scaleY(scale).setDuration(80).start();
+        }
     }
 
     private static class SubjectAdapter extends ArrayAdapter<String> implements Filterable {

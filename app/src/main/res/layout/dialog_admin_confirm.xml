@@ -14,7 +14,7 @@
         android:textColor="@color/admin_ink"
         android:textSize="18sp"
         android:textStyle="bold"
-        tools:text="Deactivate account?" />
+        tools:text="Archive account?" />
 
     <TextView
         android:id="@+id/dialogConfirmMessage"

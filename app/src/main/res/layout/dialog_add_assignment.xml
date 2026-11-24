@@ -1,61 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scrollViewAddTask"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_card"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:fillViewport="true"
     android:padding="20dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:orientation="vertical">
 
-        <!-- Title -->
+        <!-- Title & Subtitle -->
         <TextView
             android:id="@+id/tvAssignmentDialogTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Add Task"
             android:textColor="@color/text_primary"
-            android:textSize="23sp"
+            android:textSize="22sp"
             android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="2dp" />
 
         <TextView
             android:id="@+id/tvAssignmentDialogSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/task_dialog_subtitle"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
+            android:text="Something with a deadline. We can nudge you before it's due."
+            android:textColor="@color/text_muted"
+            android:textSize="13sp"
             android:layout_marginBottom="16dp" />
 
+        <!-- Segmented Mode Switch: Deadline vs Reminder Only -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="TASK CATEGORY"
-            android:textColor="@color/text_primary"
-            android:textSize="12sp"
+            android:text="WHAT KIND?"
+            android:textColor="@color/text_muted"
+            android:textSize="11sp"
             android:textStyle="bold"
+            android:letterSpacing="0.08"
             android:layout_marginBottom="6dp" />
 
-        <!-- Three Categories: School, Work, Other -->
+        <LinearLayout
+            android:id="@+id/layoutModeSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_schedule_tab_unselected"
+            android:padding="4dp"
+            android:clipChildren="false"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/btnModeDeadline"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_task_mode_selected"
+                android:gravity="center"
+                app:drawableStartCompat="@drawable/ic_task_deadline"
+                app:drawableTint="@color/ws_accent"
+                android:drawablePadding="6dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="Deadline"
+                android:textColor="@color/ws_accent"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/btnModeReminder"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:background="@android:color/transparent"
+                android:gravity="center"
+                app:drawableStartCompat="@drawable/ic_task_reminder"
+                app:drawableTint="@color/text_muted"
+                android:drawablePadding="6dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="Reminder only"
+                android:textColor="@color/text_muted"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- Category -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CATEGORY"
+            android:textColor="@color/text_muted"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:layout_marginBottom="6dp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="14dp">
+            android:layout_marginBottom="16dp">
 
             <TextView
                 android:id="@+id/chipCategorySchool"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_height="44dp"
-                android:background="@drawable/bg_toggle_selected"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_task_category_chip"
                 android:gravity="center"
                 android:text="@string/schedule_school"
-                android:textColor="@color/ws_on_brand"
+                android:textColor="@color/selector_task_category_text"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:clickable="true"
@@ -65,12 +133,12 @@
                 android:id="@+id/chipCategoryWork"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_height="44dp"
+                android:layout_height="40dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_toggle_unselected"
+                android:background="@drawable/bg_task_category_chip"
                 android:gravity="center"
                 android:text="@string/schedule_work"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/selector_task_category_text"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:clickable="true"
@@ -80,12 +148,12 @@
                 android:id="@+id/chipCategoryOther"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_height="44dp"
+                android:layout_height="40dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_toggle_unselected"
+                android:background="@drawable/bg_task_category_chip"
                 android:gravity="center"
                 android:text="@string/task_category_other"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/selector_task_category_text"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:clickable="true"
@@ -97,26 +165,27 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/task_importance"
-            android:textColor="@color/text_primary"
-            android:textSize="12sp"
+            android:textColor="@color/text_muted"
+            android:textSize="11sp"
             android:textStyle="bold"
+            android:letterSpacing="0.08"
             android:layout_marginBottom="6dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="14dp">
+            android:layout_marginBottom="16dp">
 
             <TextView
                 android:id="@+id/chipImportanceHigh"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="40dp"
-                android:background="@drawable/bg_toggle_unselected"
+                android:background="@drawable/bg_task_category_chip"
                 android:gravity="center"
                 android:text="@string/task_importance_high"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/selector_task_category_text"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:clickable="true"
@@ -128,10 +197,10 @@
                 android:layout_weight="1"
                 android:layout_height="40dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_toggle_selected"
+                android:background="@drawable/bg_task_category_chip"
                 android:gravity="center"
                 android:text="@string/task_importance_mid"
-                android:textColor="@color/ws_on_brand"
+                android:textColor="@color/selector_task_category_text"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:clickable="true"
@@ -143,25 +212,25 @@
                 android:layout_weight="1"
                 android:layout_height="40dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_toggle_unselected"
+                android:background="@drawable/bg_task_category_chip"
                 android:gravity="center"
                 android:text="@string/task_importance_low"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/selector_task_category_text"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:clickable="true"
                 android:focusable="true" />
         </LinearLayout>
 
-        <!-- Title Input ("Task title") -->
+        <!-- Title Input -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="TASK TITLE"
-            android:textColor="@color/text_primary"
-            android:textSize="12sp"
+            android:text="TITLE"
+            android:textColor="@color/text_muted"
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:letterSpacing="0.06"
+            android:letterSpacing="0.08"
             android:layout_marginBottom="6dp" />
 
         <EditText
@@ -172,26 +241,29 @@
             android:hint="e.g. Chapter 4 System Architecture ERD"
             android:textColorHint="@color/text_muted"
             android:textColor="@color/text_primary"
-            android:textSize="16sp"
-            android:padding="12dp"
+            android:textSize="15sp"
+            android:padding="13dp"
             android:inputType="textCapSentences"
-            android:layout_marginBottom="14dp" />
+            android:layout_marginBottom="16dp" />
 
+        <!-- Course / Subject section -->
         <LinearLayout
             android:id="@+id/layoutSubjectSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Subject Input -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="COURSE / SUBJECT"
-                android:textColor="@color/text_primary"
-                android:textSize="12sp"
+                app:drawableStartCompat="@drawable/ic_task_book"
+                app:drawableTint="@color/text_muted"
+                android:drawablePadding="6dp"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.06"
+                android:letterSpacing="0.08"
                 android:layout_marginBottom="6dp" />
 
             <com.google.android.material.textfield.TextInputLayout
@@ -199,7 +271,7 @@
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="14dp"
+                android:layout_marginBottom="16dp"
                 app:boxStrokeColor="@color/ws_accent"
                 app:endIconMode="dropdown_menu">
 
@@ -211,141 +283,195 @@
                     android:inputType="textCapWords"
                     android:textColor="@color/text_primary"
                     android:textColorHint="@color/text_muted"
-                    android:textSize="16sp" />
+                    android:textSize="15sp" />
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
-        <!-- Due Date & Time -->
+        <!-- DEADLINE / DUE DATE SECTION -->
         <LinearLayout
+            android:id="@+id/layoutDeadlineSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="14dp">
+            android:orientation="vertical">
 
-            <!-- Calendar Picker Button -->
-            <LinearLayout
-                android:id="@+id/btnPickDate"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/tvDueHeader"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:background="@drawable/bg_input"
-                android:padding="12dp"
-                android:layout_marginEnd="8dp"
-                android:clickable="true"
-                android:focusable="true">
+                android:text="DUE"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="6dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📅 DUE DATE"
-                    android:textColor="@color/text_primary"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:id="@+id/tvSelectedDate"
-                    android:layout_width="wrap_content"
+                <!-- Calendar Picker -->
+                <LinearLayout
+                    android:id="@+id/btnPickDate"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Select Date"
-                    android:textColor="@color/ws_accent"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="4dp" />
+                    android:layout_weight="1.2"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_input"
+                    android:padding="12dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DATE"
+                        app:drawableStartCompat="@drawable/ic_task_calendar"
+                        app:drawableTint="@color/ws_accent"
+                        android:drawablePadding="4dp"
+                        android:textColor="@color/ws_accent"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvSelectedDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Select Date"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Clock Picker -->
+                <LinearLayout
+                    android:id="@+id/btnPickTime"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_input"
+                    android:padding="12dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TIME"
+                        app:drawableStartCompat="@drawable/ic_task_clock"
+                        app:drawableTint="@color/ws_accent"
+                        android:drawablePadding="4dp"
+                        android:textColor="@color/ws_accent"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvSelectedTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="23:59"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- Clock Picker Button -->
+            <!-- Card: Remind me before it's due -->
             <LinearLayout
-                android:id="@+id/btnPickTime"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:background="@drawable/bg_input"
-                android:padding="12dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⏰ DUE TIME"
-                    android:textColor="@color/text_primary"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvSelectedTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="11:59 PM"
-                    android:textColor="@color/ws_accent"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="4dp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Reminder & Recurrence Section -->
-        <CheckBox
-            android:id="@+id/cbEnableReminder"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/task_reminder_enable"
-            android:textColor="@color/text_primary"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:buttonTint="@color/ws_accent"
-            android:layout_marginBottom="8dp" />
-
-        <LinearLayout
-            android:id="@+id/layoutReminderDetails"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone"
-            android:layout_marginBottom="14dp">
-
-            <LinearLayout
-                android:id="@+id/btnPickReminderTime"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/bg_input"
-                android:padding="12dp"
-                android:layout_marginBottom="10dp"
-                android:clickable="true"
-                android:focusable="true">
+                android:background="@drawable/bg_admin_card"
+                android:padding="14dp"
+                android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <CheckBox
+                    android:id="@+id/cbEnableReminder"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/task_reminder_time"
+                    android:text="Remind me before it's due"
                     android:textColor="@color/text_primary"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvSelectedReminderTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/task_reminder_time_default"
-                    android:textColor="@color/ws_accent"
                     android:textSize="15sp"
                     android:textStyle="bold"
-                    android:layout_marginTop="4dp" />
+                    android:buttonTint="@color/ws_accent" />
+
+                <LinearLayout
+                    android:id="@+id/layoutReminderDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="10dp">
+
+                    <LinearLayout
+                        android:id="@+id/btnPickReminderTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_input"
+                        android:padding="12dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="REMINDER TIME"
+                            android:textColor="@color/ws_accent"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvSelectedReminderTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="17:00"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
             </LinearLayout>
+        </LinearLayout>
+
+        <!-- Card: REPEAT WEEKLY -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_admin_card"
+            android:padding="14dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:layout_marginBottom="16dp">
 
             <CheckBox
                 android:id="@+id/cbRepeatWeekly"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/task_repeat_weekly"
+                app:drawableStartCompat="@drawable/ic_task_repeat"
+                app:drawableTint="@color/ws_accent"
+                android:drawablePadding="8dp"
                 android:textColor="@color/text_primary"
                 android:textSize="15sp"
                 android:textStyle="bold"
-                android:buttonTint="@color/ws_accent"
-                android:layout_marginBottom="8dp" />
+                android:buttonTint="@color/ws_accent" />
+
+            <TextView
+                android:id="@+id/tvRepeatSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pick the days it repeats"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
 
             <LinearLayout
                 android:id="@+id/layoutRecurringDays"
@@ -353,51 +479,50 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone"
-                android:layout_marginBottom="8dp">
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:layout_marginTop="12dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/task_recurring_days"
-                    android:textColor="@color/text_primary"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="6dp" />
-
-                <GridLayout
+                <!-- Swipeable Day Chips Row -->
+                <LinearLayout
+                    android:id="@+id/layoutDaysRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:columnCount="4">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
 
-                    <CheckBox android:id="@+id/cbMon" android:text="@string/task_day_mon" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbTue" android:text="@string/task_day_tue" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbWed" android:text="@string/task_day_wed" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbThu" android:text="@string/task_day_thu" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbFri" android:text="@string/task_day_fri" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbSat" android:text="@string/task_day_sat" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                    <CheckBox android:id="@+id/cbSun" android:text="@string/task_day_sun" android:textColor="@color/text_primary" android:textSize="14sp" android:buttonTint="@color/ws_accent"/>
-                </GridLayout>
+                    <CheckBox android:id="@+id/cbMon" android:layout_width="0dp" android:layout_weight="1" android:layout_height="40dp" android:layout_marginEnd="3dp" android:button="@null" android:background="@drawable/bg_task_day_chip_selector" android:gravity="center" android:text="M" android:textColor="@color/selector_task_day_chip_text" android:textSize="14sp" android:textStyle="bold"/>
+                    <CheckBox android:id="@+id/cbTue" android:layout_width="0dp" android:layout_weight="1" android:layout_height="40dp" android:layout_marginEnd="3dp" android:button="@null" android:background="@drawable/bg_task_day_chip_selector" android:gravity="center" android:text="T" android:textColor="@color/selector_task_day_chip_text" android:textSize="14sp" android:textStyle="bold"/>
+                    <CheckBox android:id="@+id/cbWed" android:layout_width="0dp" android:layout_weight="1" android:layout_height="40dp" android:layout_marginEnd="3dp" android:button="@null" android:background="@drawable/bg_task_day_chip_selector" android:gravity="center" android:text="W" android:textColor="@color/selector_task_day_chip_text" android:textSize="14sp" android:textStyle="bold"/>
+                    <CheckBox android:id="@+id/cbThu" android:layout_width="0dp" android:layout_weight="1" android:layout_height="40dp" android:layout_marginEnd="3dp" android:button="@null" android:background="@drawable/bg_task_day_chip_selector" android:gravity="center" android:text="T" android:textColor="@color/selector_task_day_chip_text" android:textSize="14sp" android:textStyle="bold"/>
+                    <CheckBox android:id="@+id/cbFri" android:layout_width="0dp" android:layout_weight="1" android:layout_height="40dp" android:layout_marginEnd="3dp" android:button="@null" android:background="@drawable/bg_task_day_chip_selector" android:gravity="center" android:text="F" android:textColor="@color/selector_task_day_chip_text" android:textSize="14sp" android:textStyle="bold"/>
+                    <CheckBox android:id="@+id/cbSat" android:layout_width="0dp" android:layout_weight="1" android:layout_height="40dp" android:layout_marginEnd="3dp" android:button="@null" android:background="@drawable/bg_task_day_chip_selector" android:gravity="center" android:text="S" android:textColor="@color/selector_task_day_chip_text" android:textSize="14sp" android:textStyle="bold"/>
+                    <CheckBox android:id="@+id/cbSun" android:layout_width="0dp" android:layout_weight="1" android:layout_height="40dp" android:button="@null" android:background="@drawable/bg_task_day_chip_selector" android:gravity="center" android:text="S" android:textColor="@color/selector_task_day_chip_text" android:textSize="14sp" android:textStyle="bold"/>
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Save Button -->
+        <!-- Save Task Button -->
         <Button
             android:id="@+id/btnSaveAssignment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/task_save"
+            android:text="Save Task"
             android:textColor="@color/ws_on_brand"
             android:textSize="16sp"
             android:textStyle="bold"
             android:backgroundTint="@color/ws_accent"
-            android:padding="14dp"
+            android:padding="16dp"
+            android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp" />
 
         <Button
             android:id="@+id/btnCancelAssignment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/task_discard"
+            android:text="Discard"
             android:textColor="@color/text_primary"
             android:textSize="15sp"
             android:backgroundTint="@android:color/transparent" />

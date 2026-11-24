@@ -924,7 +924,7 @@ public class SupabaseClient {
 
             if ("user_banned".equalsIgnoreCase(errorCode)
                     || message.toLowerCase(Locale.ROOT).contains("banned")) {
-                return "This account has been deactivated. Contact workstudypro.app@gmail.com for support.";
+                return "This account has been archived. Contact workstudypro.app@gmail.com for support.";
             }
         } catch (RuntimeException ignored) {
             // Keep the existing status-code message when the error body is not valid JSON.

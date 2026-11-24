@@ -14,7 +14,6 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.chip.ChipGroup;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -40,26 +40,20 @@ public class AdminConsoleActivity extends AppCompatActivity {
 
     // Header & Navigation
     private TextView textStatus;
-    private AppCompatButton btnRefresh;
     private AppCompatButton btnSignOut;
     private AppCompatButton tabAccounts;
     private AppCompatButton tabLogs;
-    private AppCompatButton tabAlgorithm;
-    private AppCompatButton btnNormalizeWeights;
-    private AppCompatButton btnResetWeights;
-    private AppCompatButton btnPublishWeights;
 
     // Sections
     private View sectionAccounts;
     private View sectionLogs;
-    private View sectionAlgorithm;
 
     // Accounts section views
     private TextView statTotalUsers;
     private TextView statActiveUsers;
     private TextView statInactiveUsers;
     private EditText inputSearch;
-    private Spinner spinnerStatusFilter;
+    private ChipGroup chipGroupStatusFilter;
     private LinearLayout usersContainer;
     private TextView textEmptyUsers;
 
@@ -68,25 +62,6 @@ public class AdminConsoleActivity extends AppCompatActivity {
     private AppCompatButton btnExportLogs;
     private LinearLayout logsContainer;
     private TextView textEmptyLogs;
-    private LinearLayout algorithmWeightsContainer;
-    private LinearLayout algorithmThresholdsContainer;
-    private TextView textAlgorithmWeightTotal;
-    private TextView textAlgorithmUpdatedAt;
-    private final List<SeekBar> weightSeekBars = new ArrayList<>();
-    private final List<TextView> weightValueLabels = new ArrayList<>();
-    private SeekBar moderateThresholdSeekBar;
-    private SeekBar highThresholdSeekBar;
-    private TextView moderateThresholdValue;
-    private TextView highThresholdValue;
-    private int[] algorithmWeights = AlgorithmConfig.defaults().getWeights();
-    private int moderateLoadPercent = AlgorithmConfig.defaults().moderateLoadPercent;
-    private int highLoadPercent = AlgorithmConfig.defaults().highLoadPercent;
-    private boolean renderingAlgorithmConfig;
-
-    private static final String[] ALGORITHM_WEIGHT_LABELS = {
-            "Deadline proximity", "Task Performance", "Group Work", "Laboratory",
-            "Assignment", "Work shift collision"
-    };
 
     // Cached data
     private final List<JsonObject> allUsers = new ArrayList<>();
@@ -100,7 +75,6 @@ public class AdminConsoleActivity extends AppCompatActivity {
         supabaseClient = SupabaseClient.getInstance(this);
 
         initViews();
-        setupAlgorithmControls();
         setupListeners();
         setupFilters();
 
@@ -109,22 +83,19 @@ public class AdminConsoleActivity extends AppCompatActivity {
 
     private void initViews() {
         textStatus = findViewById(R.id.textStatus);
-        btnRefresh = findViewById(R.id.btnRefresh);
         btnSignOut = findViewById(R.id.btnSignOut);
         tabAccounts = findViewById(R.id.tabAccounts);
         tabLogs = findViewById(R.id.tabLogs);
-        tabAlgorithm = findViewById(R.id.tabAlgorithm);
 
         sectionAccounts = findViewById(R.id.sectionAccounts);
         sectionLogs = findViewById(R.id.sectionLogs);
-        sectionAlgorithm = findViewById(R.id.sectionAlgorithm);
 
         statTotalUsers = findViewById(R.id.statTotalUsers);
         statActiveUsers = findViewById(R.id.statActiveUsers);
         statInactiveUsers = findViewById(R.id.statInactiveUsers);
 
         inputSearch = findViewById(R.id.inputSearch);
-        spinnerStatusFilter = findViewById(R.id.spinnerStatusFilter);
+        chipGroupStatusFilter = findViewById(R.id.chipGroupStatusFilter);
         usersContainer = findViewById(R.id.usersContainer);
         textEmptyUsers = findViewById(R.id.textEmptyUsers);
 
@@ -132,22 +103,13 @@ public class AdminConsoleActivity extends AppCompatActivity {
         btnExportLogs = findViewById(R.id.btnExportLogs);
         logsContainer = findViewById(R.id.logsContainer);
         textEmptyLogs = findViewById(R.id.textEmptyLogs);
-        algorithmWeightsContainer = findViewById(R.id.algorithmWeightsContainer);
-        algorithmThresholdsContainer = findViewById(R.id.algorithmThresholdsContainer);
-        textAlgorithmWeightTotal = findViewById(R.id.textAlgorithmWeightTotal);
-        textAlgorithmUpdatedAt = findViewById(R.id.textAlgorithmUpdatedAt);
-        btnNormalizeWeights = findViewById(R.id.btnNormalizeAlgorithmWeights);
-        btnResetWeights = findViewById(R.id.btnResetAlgorithmWeights);
-        btnPublishWeights = findViewById(R.id.btnPublishAlgorithmWeights);
     }
 
     private void setupListeners() {
-        btnRefresh.setOnClickListener(v -> verifyAdminSession());
         btnSignOut.setOnClickListener(v -> signOut());
 
         tabAccounts.setOnClickListener(v -> selectTab(0));
         tabLogs.setOnClickListener(v -> selectTab(1));
-        tabAlgorithm.setOnClickListener(v -> selectTab(2));
 
         inputSearch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -166,20 +128,7 @@ public class AdminConsoleActivity extends AppCompatActivity {
     }
 
     private void setupFilters() {
-        String[] statusOptions = new String[]{"All status", "Active", "Inactive"};
-        ArrayAdapter<String> statusAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, statusOptions);
-        statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerStatusFilter.setAdapter(statusAdapter);
-        spinnerStatusFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                renderFilteredUsers();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        chipGroupStatusFilter.setOnCheckedStateChangeListener((group, checkedIds) -> renderFilteredUsers());
 
         String[] initialLogOptions = new String[]{"All events"};
         ArrayAdapter<String> logAdapter = new ArrayAdapter<>(this,
@@ -198,7 +147,7 @@ public class AdminConsoleActivity extends AppCompatActivity {
     }
 
     private void selectTab(int selectedTab) {
-        AppCompatButton[] tabs = {tabAccounts, tabLogs, tabAlgorithm};
+        AppCompatButton[] tabs = {tabAccounts, tabLogs};
         for (int i = 0; i < tabs.length; i++) {
             boolean selected = i == selectedTab;
             tabs[i].setBackgroundResource(selected
@@ -208,11 +157,10 @@ public class AdminConsoleActivity extends AppCompatActivity {
         }
         sectionAccounts.setVisibility(selectedTab == 0 ? View.VISIBLE : View.GONE);
         sectionLogs.setVisibility(selectedTab == 1 ? View.VISIBLE : View.GONE);
-        sectionAlgorithm.setVisibility(selectedTab == 2 ? View.VISIBLE : View.GONE);
     }
 
     private void verifyAdminSession() {
-        setBusy(true, "Verifying administrator access");
+        statusText("Verifying administrator access");
         JsonObject payload = new JsonObject();
         payload.addProperty("action", "check_role");
         supabaseClient.callAdminConsole(payload, new SupabaseClient.DataCallback<>() {
@@ -222,18 +170,16 @@ public class AdminConsoleActivity extends AppCompatActivity {
                 boolean mfaVerified = boolValue(result, "mfa_verified");
                 if (!isAdmin || !mfaVerified) {
                     statusText("Administrator access or MFA verification is no longer valid. Sign in again.");
-                    setBusy(false, textStatus.getText().toString());
                     return;
                 }
-                setBusy(false, "Administrator access verified.");
+                statusText("Administrator access verified.");
                 loadUsers();
                 loadLogs();
-                loadAlgorithmConfig();
             }
 
             @Override
             public void onError(String errorMessage) {
-                setBusy(false, "Couldn't verify administrator access: " + errorMessage);
+                statusText("Couldn't verify administrator access: " + errorMessage);
             }
         });
     }
@@ -270,13 +216,13 @@ public class AdminConsoleActivity extends AppCompatActivity {
         String query = inputSearch.getText() != null
                 ? inputSearch.getText().toString().trim().toLowerCase(Locale.ROOT)
                 : "";
-        String statusFilter = spinnerStatusFilter.getSelectedItem() != null
-                ? spinnerStatusFilter.getSelectedItem().toString()
-                : "All status";
+        int checkedChipId = chipGroupStatusFilter.getCheckedChipId();
+        boolean filterActive = checkedChipId == R.id.chipFilterActive;
+        boolean filterArchived = checkedChipId == R.id.chipFilterArchived;
 
         usersContainer.removeAllViews();
         int activeCount = 0;
-        int inactiveCount = 0;
+        int archivedCount = 0;
         int matchedCount = 0;
 
         for (JsonObject user : allUsers) {
@@ -284,17 +230,17 @@ public class AdminConsoleActivity extends AppCompatActivity {
             if (active) {
                 activeCount++;
             } else {
-                inactiveCount++;
+                archivedCount++;
             }
 
             String name = value(user, "full_name");
             String email = value(user, "email");
 
-            // Filter by status
-            if ("Active".equals(statusFilter) && !active) {
+            // Filter by status chip
+            if (filterActive && !active) {
                 continue;
             }
-            if ("Inactive".equals(statusFilter) && active) {
+            if (filterArchived && active) {
                 continue;
             }
 
@@ -312,7 +258,7 @@ public class AdminConsoleActivity extends AppCompatActivity {
 
         statTotalUsers.setText(String.valueOf(allUsers.size()));
         statActiveUsers.setText(String.valueOf(activeCount));
-        statInactiveUsers.setText(String.valueOf(inactiveCount));
+        statInactiveUsers.setText(String.valueOf(archivedCount));
 
         textEmptyUsers.setVisibility(matchedCount == 0 ? View.VISIBLE : View.GONE);
     }
@@ -321,8 +267,6 @@ public class AdminConsoleActivity extends AppCompatActivity {
         String userId = value(user, "id");
         String email = value(user, "email");
         String name = value(user, "full_name");
-        String course = value(user, "course");
-        String role = value(user, "role");
         boolean active = boolValue(user, "is_active");
 
         String displayName = name.isEmpty() ? email : name;
@@ -333,11 +277,8 @@ public class AdminConsoleActivity extends AppCompatActivity {
         TextView userName = card.findViewById(R.id.userName);
         TextView userEmail = card.findViewById(R.id.userEmail);
         TextView userStatusPill = card.findViewById(R.id.userStatusPill);
-        TextView userCourse = card.findViewById(R.id.userCourse);
-        TextView userRole = card.findViewById(R.id.userRole);
         AppCompatButton btnResetPassword = card.findViewById(R.id.btnResetPassword);
         AppCompatButton btnToggleActive = card.findViewById(R.id.btnToggleActive);
-        AppCompatButton btnDelete = card.findViewById(R.id.btnDelete);
 
         // Avatar initial matching mockup .av style
         String initial = "?";
@@ -362,24 +303,20 @@ public class AdminConsoleActivity extends AppCompatActivity {
             userStatusPill.setText("Active");
             userStatusPill.setBackgroundResource(R.drawable.bg_admin_pill_active);
             userStatusPill.setTextColor(ContextCompat.getColor(this, R.color.admin_active_text));
-            btnToggleActive.setText("Deactivate");
+            btnToggleActive.setText("Archive");
             btnToggleActive.setTextColor(ContextCompat.getColor(this, R.color.admin_ink));
             btnToggleActive.setBackgroundResource(R.drawable.bg_admin_btn);
         } else {
-            userStatusPill.setText("Inactive");
+            userStatusPill.setText("Archived");
             userStatusPill.setBackgroundResource(R.drawable.bg_admin_pill_inactive);
             userStatusPill.setTextColor(ContextCompat.getColor(this, R.color.admin_suspended_text));
-            btnToggleActive.setText("Activate");
+            btnToggleActive.setText("Restore");
             btnToggleActive.setTextColor(ContextCompat.getColor(this, R.color.admin_ink));
             btnToggleActive.setBackgroundResource(R.drawable.bg_admin_btn);
         }
 
-        userCourse.setText(course.isEmpty() ? "No course" : course);
-        userRole.setText(role.isEmpty() ? "user" : role);
-
         btnResetPassword.setOnClickListener(v -> showSetPasswordDialog(userId, displayName));
         btnToggleActive.setOnClickListener(v -> confirmToggleActive(userId, displayName, active));
-        btnDelete.setOnClickListener(v -> confirmDelete(userId, displayName));
 
         usersContainer.addView(card);
     }
@@ -389,7 +326,7 @@ public class AdminConsoleActivity extends AppCompatActivity {
         payload.addProperty("action", "set_user_active");
         payload.addProperty("user_id", userId);
         payload.addProperty("is_active", active);
-        runAction(payload, successMessage(active ? "User activated." : "User deactivated."));
+        runAction(payload, successMessage(active ? "User restored." : "User archived."));
     }
 
     private void showSetPasswordDialog(String userId, String displayName) {
@@ -442,15 +379,15 @@ public class AdminConsoleActivity extends AppCompatActivity {
         AppCompatButton btnAction = dialogView.findViewById(R.id.btnDialogConfirmAction);
 
         if (active) {
-            title.setText("Deactivate account?");
+            title.setText("Archive account?");
             message.setText(displayName + " will be signed out and blocked from logging in.");
-            btnAction.setText("Deactivate");
+            btnAction.setText("Archive");
             btnAction.setBackgroundResource(R.drawable.bg_admin_btn_danger);
             btnAction.setTextColor(ContextCompat.getColor(this, R.color.admin_raspberry));
         } else {
-            title.setText("Activate account?");
+            title.setText("Restore account?");
             message.setText(displayName + " will be able to log in again.");
-            btnAction.setText("Activate");
+            btnAction.setText("Restore");
             btnAction.setBackgroundResource(R.drawable.bg_admin_btn_primary);
             btnAction.setTextColor(Color.WHITE);
         }
@@ -470,284 +407,6 @@ public class AdminConsoleActivity extends AppCompatActivity {
         });
 
         dialog.show();
-    }
-
-    private void confirmDelete(String userId, String displayName) {
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_admin_confirm, null);
-        TextView title = dialogView.findViewById(R.id.dialogConfirmTitle);
-        TextView message = dialogView.findViewById(R.id.dialogConfirmMessage);
-        AppCompatButton btnCancel = dialogView.findViewById(R.id.btnDialogConfirmCancel);
-        AppCompatButton btnAction = dialogView.findViewById(R.id.btnDialogConfirmAction);
-
-        title.setText("Delete account?");
-        message.setText("This permanently removes " + displayName + " and all their schedules and tasks. This can’t be undone.");
-        btnAction.setText("Delete");
-        btnAction.setBackgroundResource(R.drawable.bg_admin_btn_danger);
-        btnAction.setTextColor(ContextCompat.getColor(this, R.color.admin_raspberry));
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setView(dialogView)
-                .create();
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
-        btnAction.setOnClickListener(v -> {
-            deleteUser(userId);
-            dialog.dismiss();
-        });
-
-        dialog.show();
-    }
-
-    private void deleteUser(String userId) {
-        JsonObject payload = new JsonObject();
-        payload.addProperty("action", "delete_user");
-        payload.addProperty("user_id", userId);
-        runAction(payload, successMessage("User deleted."));
-    }
-
-    private void setupAlgorithmControls() {
-        for (int i = 0; i < ALGORITHM_WEIGHT_LABELS.length; i++) {
-            final int index = i;
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.VERTICAL);
-            row.setPadding(0, dp(8), 0, dp(4));
-
-            TextView label = new TextView(this);
-            label.setTextColor(ContextCompat.getColor(this, R.color.admin_ink));
-            label.setTextSize(14);
-            weightValueLabels.add(label);
-            row.addView(label);
-
-            SeekBar seekBar = new SeekBar(this);
-            seekBar.setMax(100);
-            seekBar.setContentDescription(ALGORITHM_WEIGHT_LABELS[i]);
-            weightSeekBars.add(seekBar);
-            row.addView(seekBar, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, dp(40)));
-            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override
-                public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
-                    if (renderingAlgorithmConfig) return;
-                    algorithmWeights[index] = progress;
-                    updateAlgorithmWeightSummary();
-                }
-
-                @Override
-                public void onStartTrackingTouch(SeekBar bar) {}
-
-                @Override
-                public void onStopTrackingTouch(SeekBar bar) {}
-            });
-            algorithmWeightsContainer.addView(row);
-        }
-
-        moderateThresholdSeekBar = addThresholdControl(
-                "Moderate load starts at", 10, 95, true);
-        highThresholdSeekBar = addThresholdControl(
-                "High load starts at", 20, 100, false);
-        moderateThresholdSeekBar.setOnSeekBarChangeListener(thresholdListener(true));
-        highThresholdSeekBar.setOnSeekBarChangeListener(thresholdListener(false));
-
-        btnNormalizeWeights.setOnClickListener(v -> normalizeAlgorithmWeights());
-        btnResetWeights.setOnClickListener(v -> renderAlgorithmConfig(AlgorithmConfig.defaults(), null));
-        btnPublishWeights.setOnClickListener(v -> confirmPublishAlgorithmConfig());
-        renderAlgorithmConfig(AlgorithmConfig.defaults(), null);
-    }
-
-    private SeekBar addThresholdControl(String labelText, int minimum, int maximum, boolean moderate) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(0, dp(8), 0, dp(4));
-
-        TextView label = new TextView(this);
-        label.setTextColor(ContextCompat.getColor(this, R.color.admin_ink));
-        label.setTextSize(14);
-        label.setText(labelText + ": " + (moderate ? moderateLoadPercent : highLoadPercent) + "%");
-        row.addView(label);
-
-        SeekBar seekBar = new SeekBar(this);
-        seekBar.setMax(maximum - minimum);
-        seekBar.setProgress((moderate ? moderateLoadPercent : highLoadPercent) - minimum);
-        seekBar.setContentDescription(labelText);
-        row.addView(seekBar, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(40)));
-        if (moderate) moderateThresholdValue = label;
-        else highThresholdValue = label;
-        algorithmThresholdsContainer.addView(row);
-        return seekBar;
-    }
-
-    private SeekBar.OnSeekBarChangeListener thresholdListener(boolean moderate) {
-        final int minimum = moderate ? 10 : 20;
-        return new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (renderingAlgorithmConfig) return;
-                int value = minimum + progress;
-                if (moderate) {
-                    moderateLoadPercent = value;
-                    moderateThresholdValue.setText("Moderate load starts at: " + value + "%");
-                } else {
-                    highLoadPercent = value;
-                    highThresholdValue.setText("High load starts at: " + value + "%");
-                }
-                updateAlgorithmWeightSummary();
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
-        };
-    }
-
-    private void renderAlgorithmConfig(AlgorithmConfig config, String updatedAt) {
-        renderingAlgorithmConfig = true;
-        algorithmWeights = config.getWeights();
-        moderateLoadPercent = config.moderateLoadPercent;
-        highLoadPercent = config.highLoadPercent;
-        for (int i = 0; i < weightSeekBars.size(); i++) {
-            weightSeekBars.get(i).setProgress(algorithmWeights[i]);
-            weightValueLabels.get(i).setText(ALGORITHM_WEIGHT_LABELS[i] + ": " + algorithmWeights[i] + "%");
-        }
-        moderateThresholdSeekBar.setProgress(moderateLoadPercent - 10);
-        highThresholdSeekBar.setProgress(highLoadPercent - 20);
-        moderateThresholdValue.setText("Moderate load starts at: " + moderateLoadPercent + "%");
-        highThresholdValue.setText("High load starts at: " + highLoadPercent + "%");
-        textAlgorithmUpdatedAt.setText(updatedAt == null || updatedAt.isEmpty()
-                ? "Using the default configuration."
-                : "Last published: " + updatedAt);
-        renderingAlgorithmConfig = false;
-        updateAlgorithmWeightSummary();
-    }
-
-    private void updateAlgorithmWeightSummary() {
-        int total = 0;
-        for (int weight : algorithmWeights) total += weight;
-        textAlgorithmWeightTotal.setText("Total: " + total + "%");
-        boolean valid = total == 100 && moderateLoadPercent < highLoadPercent;
-        textAlgorithmWeightTotal.setTextColor(ContextCompat.getColor(this,
-                total == 100 ? R.color.admin_green : R.color.admin_raspberry));
-        btnPublishWeights.setEnabled(valid);
-        btnPublishWeights.setAlpha(valid ? 1f : 0.5f);
-    }
-
-    private void normalizeAlgorithmWeights() {
-        int total = 0;
-        for (int weight : algorithmWeights) total += weight;
-        if (total == 0) {
-            algorithmWeights = AlgorithmConfig.defaults().getWeights();
-        } else {
-            int[] normalized = new int[algorithmWeights.length];
-            int normalizedTotal = 0;
-            for (int i = 0; i < algorithmWeights.length; i++) {
-                normalized[i] = (int) Math.round(algorithmWeights[i] * 100.0 / total);
-                normalizedTotal += normalized[i];
-            }
-            for (int i = 0; normalizedTotal != 100; i = (i + 1) % normalized.length) {
-                if (normalizedTotal < 100) {
-                    normalized[i]++;
-                    normalizedTotal++;
-                } else if (normalized[i] > 0) {
-                    normalized[i]--;
-                    normalizedTotal--;
-                }
-            }
-            algorithmWeights = normalized;
-        }
-        renderingAlgorithmConfig = true;
-        for (int i = 0; i < weightSeekBars.size(); i++) {
-            weightSeekBars.get(i).setProgress(algorithmWeights[i]);
-            weightValueLabels.get(i).setText(ALGORITHM_WEIGHT_LABELS[i] + ": " + algorithmWeights[i] + "%");
-        }
-        renderingAlgorithmConfig = false;
-        updateAlgorithmWeightSummary();
-    }
-
-    private void confirmPublishAlgorithmConfig() {
-        AlgorithmConfig config;
-        try {
-            config = new AlgorithmConfig(algorithmWeights, moderateLoadPercent, highLoadPercent);
-        } catch (IllegalArgumentException e) {
-            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-            return;
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("Publish algorithm settings?")
-                .setMessage("All users will receive these ranking weights and load thresholds on their next sync.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Publish", (dialog, which) -> publishAlgorithmConfig(config))
-                .show();
-    }
-
-    private void loadAlgorithmConfig() {
-        JsonObject payload = new JsonObject();
-        payload.addProperty("action", "get_algorithm_config");
-        runAction(payload, new SupabaseClient.DataCallback<>() {
-            @Override
-            public void onSuccess(JsonObject result) {
-                JsonElement configElement = result.get("config");
-                if (configElement == null || !configElement.isJsonObject()) {
-                    statusText("The admin service returned an unreadable algorithm configuration.");
-                    return;
-                }
-                try {
-                    renderAlgorithmConfig(AlgorithmConfig.fromJson(configElement.getAsJsonObject()),
-                            value(result, "updated_at"));
-                } catch (IllegalArgumentException e) {
-                    statusText("The saved algorithm configuration is invalid: " + e.getMessage());
-                }
-            }
-
-            @Override
-            public void onError(String errorMessage) {
-                statusText("Couldn't load algorithm settings: " + errorMessage);
-            }
-        });
-    }
-
-    private void publishAlgorithmConfig(AlgorithmConfig config) {
-        JsonObject payload = new JsonObject();
-        payload.addProperty("action", "publish_algorithm_config");
-        payload.add("config", config.toJson());
-        runAction(payload, new SupabaseClient.DataCallback<>() {
-            @Override
-            public void onSuccess(JsonObject result) {
-                try {
-                    JsonElement configElement = result.get("config");
-                    if (configElement == null || !configElement.isJsonObject()) {
-                        throw new IllegalArgumentException("Missing published configuration.");
-                    }
-                    AlgorithmConfig published = AlgorithmConfig.fromJson(configElement.getAsJsonObject());
-                    AlgorithmConfig.save(getApplicationContext(), published);
-                    renderAlgorithmConfig(published, value(result, "updated_at"));
-                    boolean auditLogged = boolValue(result, "audit_logged");
-                    String message = auditLogged
-                            ? "Algorithm settings published to all users."
-                            : "Settings were published, but the audit log could not be saved.";
-                    statusText(message);
-                    Toast.makeText(AdminConsoleActivity.this, message,
-                            auditLogged ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
-                } catch (IllegalArgumentException | IllegalStateException e) {
-                    statusText("The admin service returned an invalid published configuration.");
-                }
-            }
-
-            @Override
-            public void onError(String errorMessage) {
-                Toast.makeText(AdminConsoleActivity.this,
-                        "Couldn't publish algorithm settings: " + errorMessage, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private void loadLogs() {
@@ -894,7 +553,6 @@ public class AdminConsoleActivity extends AppCompatActivity {
                 Toast.makeText(AdminConsoleActivity.this, message, Toast.LENGTH_SHORT).show();
                 loadUsers();
                 loadLogs();
-                loadAlgorithmConfig();
             }
 
             @Override
@@ -908,10 +566,6 @@ public class AdminConsoleActivity extends AppCompatActivity {
         supabaseClient.callAdminConsole(payload, callback);
     }
 
-    private void setBusy(boolean busy, String message) {
-        statusText(message);
-        btnRefresh.setEnabled(!busy);
-    }
 
     private void statusText(String message) {
         if (textStatus != null) {
